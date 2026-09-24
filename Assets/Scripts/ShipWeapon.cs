@@ -88,12 +88,14 @@ public class ShipWeapon : MonoBehaviour
         line.startColor = new Color(1f, 0.92f, 0.25f, 1f);
         line.endColor = new Color(1f, 0.5f, 0.1f, 1f);
         line.material = CreateLaserMaterial();
-        line.sortingOrder = 3;
+
+        // Гарантируем, что лазер рисуется ПОВЕРХ фона и кораблей
+        line.sortingLayerName = "Default";
+        line.sortingOrder = 10;
 
         ApplyLaserGeometry(line);
         return line;
     }
-
     private static void ApplyLaserGeometry(LineRenderer line)
     {
         line.positionCount = 2;
