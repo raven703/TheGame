@@ -2,34 +2,32 @@ using System.Collections.Generic;
 using UnityEngine;
 
 /// <summary>
-/// Full runtime state of a ship: hull integrity plus the health of every module.
+/// Full runtime state of a ship: hull integrity, shield, hit chance stats, mass, plus module states.
 /// </summary>
-/// <remarks>
-/// Plain C# class on purpose: MonoBehaviours (views, selection, movement) hold a
-/// reference to <see cref="ShipData"/> instead of carrying combat state themselves.
-/// </remarks>
 public class ShipData
 {
-    /// <summary>Default hit points of the weapon module.</summary>
     public const float DefaultWeaponMaxHP = 30f;
-
-    /// <summary>Default hit points of the shield module.</summary>
     public const float DefaultShieldMaxHP = 40f;
-
-    /// <summary>Default hit points of the engine module.</summary>
     public const float DefaultEngineMaxHP = 30f;
 
-    /// <summary>Maximum hull hit points of the ship.</summary>
     public float maxHullHP;
-
-    /// <summary>Current hull hit points of the ship.</summary>
     public float currentHullHP;
 
-    /// <summary>Module states keyed by <see cref="ModuleType"/>. Always contains all module types.</summary>
+    // Параметры физики и инерции
+    public float mass = 2f;             // Масса корабля (влияет на инерцию)
+    public float enginePower = 15f;     // Тяга маршевых двигателей
+
+    // Параметры для математики боя
+    public float accuracy = 0.85f;      // Базовая точность (85%)
+    public float baseEvasion = 0.10f;   // Базовое уклонение неподвижного корабля (10%)
+    public float speedEvasionMultiplier = 0.05f; // Бонус уклонения за каждый unit/sec скорости
+
+    // Динамический щит
+    public float maxShieldHP = 50f;
+    public float currentShieldHP = 50f;
+
     public Dictionary<ModuleType, ShipModule> modules = new Dictionary<ModuleType, ShipModule>();
 
-    /// <summary>Creates a ship with a full hull and all three modules at full health.</summary>
-    /// <param name="maxHull">Maximum (and starting) hull hit points. Negative values are clamped to 0.</param>
     public ShipData(float maxHull)
     {
         maxHullHP = Mathf.Max(0f, maxHull);
@@ -40,18 +38,47 @@ public class ShipData
         modules.Add(ModuleType.Engine, new ShipModule(ModuleType.Engine, DefaultEngineMaxHP));
     }
 
-    /// <summary>True when the hull has no hit points left.</summary>
     public bool IsDestroyed => currentHullHP <= 0f;
 
-    /// <summary>Returns the module of the requested type, or null when it is not tracked.</summary>
+    /// <summary>
+    /// Вычисляет итоговое уклонение с учётом текущей физической скорости.
+    /// </summary>
+    public float GetTotalEvasion(float currentSpeed)
+    {
+        var engineMod = GetModule(ModuleType.Engine);
+        if (engineMod != null && engineMod.isDestroyed)
+            return 0f; // С выбитым двигателем уклонение падаёт до нуля
+
+        return baseEvasion + (currentSpeed * speedEvasionMultiplier);
+    }
+
     public ShipModule GetModule(ModuleType type)
     {
         ShipModule module;
         return modules.TryGetValue(type, out module) ? module : null;
     }
 
-    /// <summary>Applies damage to the hull. Hull never drops below 0.</summary>
-    /// <param name="amount">Damage amount. Non-positive values are ignored.</param>
+    public float AbsorbDamageWithShield(float damage)
+    {
+        var shieldMod = GetModule(ModuleType.Shield);
+
+        if (shieldMod != null && shieldMod.isDestroyed)
+            return damage;
+
+        if (currentShieldHP <= 0f)
+            return damage;
+
+        if (currentShieldHP >= damage)
+        {
+            currentShieldHP -= damage;
+            return 0f;
+        }
+
+        float excessDamage = damage - currentShieldHP;
+        currentShieldHP = 0f;
+        return excessDamage;
+    }
+
     public void TakeHullDamage(float amount)
     {
         if (amount <= 0f)
@@ -60,9 +87,6 @@ public class ShipData
         currentHullHP = Mathf.Max(0f, currentHullHP - amount);
     }
 
-    /// <summary>Applies damage to a single module through <see cref="GetModule"/>.</summary>
-    /// <param name="type">Module to damage.</param>
-    /// <param name="amount">Damage amount. Non-positive values are ignored.</param>
     public void TakeModuleDamage(ModuleType type, float amount)
     {
         var module = GetModule(type);

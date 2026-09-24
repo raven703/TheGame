@@ -3,14 +3,11 @@ using UnityEngine.InputSystem;
 
 /// <summary>
 /// Translates player input into ship orders: left click on an enemy captures it as a target
-/// and flies towards it, left click on empty space issues a plain move order.
+/// and enables automatic approach/orbiting, left click on empty space keeps the active target
+/// but forces a manual movement order (allowing strafe runs and retreat while firing).
 /// </summary>
-/// <remarks>
-/// Lives on the [Managers] object and drives the components of the player ship.
-/// </remarks>
 public class PlayerInputHandler : MonoBehaviour
 {
-    /// <summary>Tag that marks a clickable hostile collider.</summary>
     private const string EnemyTag = "Enemy";
 
     [Tooltip("Movement component of the player ship.")]
@@ -67,15 +64,27 @@ public class PlayerInputHandler : MonoBehaviour
             var enemyHealth = hit.collider.GetComponentInParent<ShipHealth>();
             if (enemyHealth != null)
             {
+                // Клик по врагу: захватываем цель и включаем авто-маневрирование (орбита/кайтинг)
                 playerWeapon.SetTarget(enemyHealth);
-                playerMovement.SetTargetPosition(hit.transform.position);
-                Debug.Log($"Игрок взял в захват цель: {enemyHealth.name}");
+                playerWeapon.manualMoveOrder = false;
+                Debug.Log($"[PlayerInputHandler] Захват цели и авто-маневрирование: {enemyHealth.name}");
             }
         }
         else
         {
+            // Клик по пустому месту — НЕ сбрасываем захваченную цель!
+            // Задаем точку движения и переводим корабль в режим ручного маневрирования.
+            playerWeapon.manualMoveOrder = true;
             playerMovement.SetTargetPosition(worldPosition);
-            Debug.Log($"Игрок отдал приказ двигаться в {worldPosition}");
+
+            if (playerWeapon.Target != null)
+            {
+                Debug.Log($"[PlayerInputHandler] Ручной приказ в {worldPosition}. Ведётся прикрывающий огонь по: {playerWeapon.Target.name}");
+            }
+            else
+            {
+                Debug.Log($"[PlayerInputHandler] Приказ двигаться в {worldPosition} (цель не захвачена)");
+            }
         }
     }
 }

@@ -3,7 +3,7 @@ using UnityEngine;
 
 public class ShipHealth : MonoBehaviour
 {
-    private const float ModuleHitChance = 0.5f;
+    private const float ModuleHitChance = 0.4f; // 40% шанс попадания по модулю при пробитом щите
 
     private static readonly ModuleType[] AllModuleTypes =
     {
@@ -41,10 +41,26 @@ public class ShipHealth : MonoBehaviour
         if (Data == null || Data.IsDestroyed || amount <= 0f)
             return;
 
+        // 1. Поглощение урона Щитом
+        float remainingDamage = Data.AbsorbDamageWithShield(amount);
+
+        if (remainingDamage < amount)
+        {
+            Debug.Log($"{gameObject.name}: Щит принял урон! Остаток: {remainingDamage}, Щит HP: {Data.currentShieldHP}/{Data.maxShieldHP}");
+        }
+
+        // Если весь урон погашен щитом
+        if (remainingDamage <= 0f)
+        {
+            OnDamageTaken?.Invoke();
+            return;
+        }
+
+        // 2. Распределение оставшегося урона (Модуль или Корпус)
         if (UnityEngine.Random.value < ModuleHitChance)
-            ApplyModuleDamage(amount);
+            ApplyModuleDamage(remainingDamage);
         else
-            ApplyHullDamage(amount);
+            ApplyHullDamage(remainingDamage);
 
         OnDamageTaken?.Invoke();
     }
@@ -55,7 +71,7 @@ public class ShipHealth : MonoBehaviour
         var module = Data.GetModule(moduleType);
         if (module == null)
         {
-            Debug.Log($"{gameObject.name}: попадание в {moduleType}, но этот модуль отсутствует в ShipData");
+            ApplyHullDamage(amount);
             return;
         }
 
@@ -63,15 +79,22 @@ public class ShipHealth : MonoBehaviour
         Data.TakeModuleDamage(moduleType, amount);
 
         if (wasAlreadyDestroyed)
-            Debug.Log($"{gameObject.name}: попадание в выбитый модуль {moduleType} (урон {amount} ушёл в никуда), HP модуля {module.currentHP}/{module.maxHP}");
+        {
+            // 50% урона по выбитому модулю переходит в корпус
+            float spilloverDamage = amount * 0.5f;
+            Data.TakeHullDamage(spilloverDamage);
+            Debug.Log($"{gameObject.name}: Попадание в выбитый модуль {moduleType}! {spilloverDamage} урона прошло в корпус.");
+        }
         else
-            Debug.Log($"{gameObject.name}: попадание в модуль {moduleType} - урон {amount}, HP модуля {module.currentHP}/{module.maxHP}{(module.isDestroyed ? " (МОДУЛЬ ВЫБИТ)" : string.Empty)}");
+        {
+            Debug.Log($"{gameObject.name}: Попадание в модуль {moduleType} - урон {amount}, HP модуля {module.currentHP}/{module.maxHP}{(module.isDestroyed ? " (МОДУЛЬ ВЫБИТ)" : string.Empty)}");
+        }
     }
 
     private void ApplyHullDamage(float amount)
     {
         Data.TakeHullDamage(amount);
-        Debug.Log($"{gameObject.name}: попадание в корпус - урон {amount}, HP корпуса {Data.currentHullHP}/{Data.maxHullHP}");
+        Debug.Log($"{gameObject.name}: Попадание в корпус - урон {amount}, HP корпуса {Data.currentHullHP}/{Data.maxHullHP}");
     }
 
     private void Die()
