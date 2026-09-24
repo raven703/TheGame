@@ -1,145 +1,112 @@
 using UnityEngine;
-using UnityEngine.UI;
 
 /// <summary>
-/// Простая полоска HP и статуса модулей прямо над кораблём в 2D.
+/// World-space mini healthbar & module status display drawn directly above each ship.
 /// </summary>
+[RequireComponent(typeof(ShipHealth))]
 public class ShipWorldHealthBar : MonoBehaviour
 {
-    public Vector3 offset = new Vector3(0, 1.2f, 0);
+    [Header("Position & Dimensions")]
+    [Tooltip("Vertical offset above the ship in world units.")]
+    public float verticalOffset = 0.8f;
+    public float barWidth = 60f;
+    public float barHeight = 6f;
 
     private ShipHealth shipHealth;
-    private Slider hullSlider;
-    private Image shieldImg;
-    private Image weaponImg;
-    private Image engineImg;
+    private Camera mainCamera;
+
+    // Встроенные цветные текстуры GUI
+    private Texture2D bgTexture;
+    private Texture2D shieldTexture;
+    private Texture2D hullTexture;
+    private Texture2D moduleOkTexture;
+    private Texture2D moduleDestroyedTexture;
+    private GUIStyle moduleTextStyle;
 
     private void Awake()
     {
         shipHealth = GetComponent<ShipHealth>();
-        CreateWorldUI();
+        mainCamera = Camera.main;
+
+        InitTextures();
     }
 
-    private void OnEnable()
+    private void InitTextures()
     {
-        if (shipHealth != null)
-            shipHealth.OnDamageTaken += UpdateUI;
-    }
+        bgTexture = MakeTex(1, 1, new Color(0.1f, 0.1f, 0.1f, 0.75f));
+        shieldTexture = MakeTex(1, 1, new Color(0.2f, 0.6f, 1f, 0.9f));
+        hullTexture = MakeTex(1, 1, new Color(0.2f, 0.8f, 0.2f, 0.9f));
+        moduleOkTexture = MakeTex(1, 1, new Color(0.2f, 0.8f, 0.2f, 0.9f));
+        moduleDestroyedTexture = MakeTex(1, 1, new Color(0.9f, 0.2f, 0.2f, 0.9f));
 
-    private void OnDisable()
-    {
-        if (shipHealth != null)
-            shipHealth.OnDamageTaken -= UpdateUI;
-    }
-
-    private void Start() => UpdateUI();
-
-    private void UpdateUI()
-    {
-        if (shipHealth == null || shipHealth.Data == null) return;
-
-        if (hullSlider != null)
+        moduleTextStyle = new GUIStyle
         {
-            hullSlider.maxValue = shipHealth.Data.maxHullHP;
-            hullSlider.value = shipHealth.Data.currentHullHP;
+            fontSize = 9,
+            alignment = TextAnchor.MiddleCenter,
+            normal = { textColor = Color.white }
+        };
+    }
+
+    private void OnGUI()
+    {
+        if (shipHealth == null || shipHealth.Data == null || !gameObject.activeInHierarchy)
+            return;
+
+        if (mainCamera == null)
+            mainCamera = Camera.main;
+
+        if (mainCamera == null)
+            return;
+
+        // Перевод позиции корабля из мировых координат в экранные координаты OnGUI
+        Vector3 worldPos = transform.position + new Vector3(0f, verticalOffset, 0f);
+        Vector3 screenPos = mainCamera.WorldToScreenPoint(worldPos);
+
+        // В OnGUI ось Y перевернута
+        if (screenPos.z < 0) return; // Объект за камерой
+        float guiX = screenPos.x - (barWidth * 0.5f);
+        float guiY = Screen.height - screenPos.y;
+
+        // 1. Полоска Щита
+        if (shipHealth.Data.maxShieldHP > 0)
+        {
+            float shieldPct = Mathf.Clamp01(shipHealth.Data.currentShieldHP / shipHealth.Data.maxShieldHP);
+            GUI.DrawTexture(new Rect(guiX, guiY, barWidth, barHeight), bgTexture);
+            GUI.DrawTexture(new Rect(guiX, guiY, barWidth * shieldPct, barHeight), shieldTexture);
+            guiY += barHeight + 2;
         }
 
-        UpdateModuleIcon(shieldImg, ModuleType.Shield);
-        UpdateModuleIcon(weaponImg, ModuleType.Weapon);
-        UpdateModuleIcon(engineImg, ModuleType.Engine);
+        // 2. Полоска Корпуса (Hull)
+        float hullPct = Mathf.Clamp01(shipHealth.Data.currentHullHP / shipHealth.Data.maxHullHP);
+        GUI.DrawTexture(new Rect(guiX, guiY, barWidth, barHeight), bgTexture);
+        GUI.DrawTexture(new Rect(guiX, guiY, barWidth * hullPct, barHeight), hullTexture);
+        guiY += barHeight + 3;
+
+        // 3. Плашки статуса 3 модулей (W = Weapon, S = Shield, E = Engine)
+        DrawModuleBadge(guiX, guiY, "W", ModuleType.Weapon);
+        DrawModuleBadge(guiX + 18, guiY, "S", ModuleType.Shield);
+        DrawModuleBadge(guiX + 36, guiY, "E", ModuleType.Engine);
     }
 
-    private void UpdateModuleIcon(Image img, ModuleType type)
+    private void DrawModuleBadge(float x, float y, string label, ModuleType type)
     {
-        if (img == null) return;
-        var mod = shipHealth.Data.GetModule(type);
-        if (mod == null) return;
+        var module = shipHealth.Data.GetModule(type);
+        bool isOk = module != null && !module.isDestroyed;
 
-        // Если модуль уничтожен — красный, если повреждён — жёлтый, цел — зелёный
-        if (mod.isDestroyed) img.color = Color.red;
-        else if (mod.currentHP < mod.maxHP) img.color = Color.yellow;
-        else img.color = Color.green;
+        Texture2D badgeTex = isOk ? moduleOkTexture : moduleDestroyedTexture;
+        Rect badgeRect = new Rect(x, y, 14, 12);
+
+        GUI.DrawTexture(badgeRect, badgeTex);
+        GUI.Label(badgeRect, label, moduleTextStyle);
     }
 
-    private void CreateWorldUI()
+    private Texture2D MakeTex(int width, int height, Color col)
     {
-        var canvasGO = new GameObject("WorldCanvas", typeof(Canvas));
-        canvasGO.transform.SetParent(transform, false);
-        canvasGO.transform.localPosition = offset;
-
-        var canvas = canvasGO.GetComponent<Canvas>();
-        canvas.renderMode = RenderMode.WorldSpace;
-        canvas.sortingOrder = 10;
-
-        // Используем стандартный пиксельный размер Canvas и уменьшаем его масштабом (Scale)
-        var rect = canvasGO.GetComponent<RectTransform>();
-        rect.sizeDelta = new Vector2(150f, 40f);
-        rect.localScale = new Vector3(0.01f, 0.01f, 0.01f);
-
-        // Корпус Slider
-        var sliderGO = new GameObject("HullBar", typeof(Slider));
-        sliderGO.transform.SetParent(canvasGO.transform, false);
-        hullSlider = sliderGO.GetComponent<Slider>();
-        var sliderRect = sliderGO.GetComponent<RectTransform>();
-        sliderRect.anchorMin = new Vector2(0, 0.45f);
-        sliderRect.anchorMax = new Vector2(1, 1f);
-        sliderRect.offsetMin = Vector2.zero;
-        sliderRect.offsetMax = Vector2.zero;
-
-        // Фон слайдера
-        var bg = new GameObject("BG", typeof(Image)).GetComponent<Image>();
-        bg.transform.SetParent(sliderGO.transform, false);
-        bg.color = new Color(0.15f, 0.15f, 0.15f, 0.9f);
-        bg.rectTransform.anchorMin = Vector2.zero;
-        bg.rectTransform.anchorMax = Vector2.one;
-        bg.rectTransform.offsetMin = Vector2.zero;
-        bg.rectTransform.offsetMax = Vector2.zero;
-
-        // Заполнение слайдера
-        var fillArea = new GameObject("FillArea", typeof(RectTransform));
-        fillArea.transform.SetParent(sliderGO.transform, false);
-        var fillAreaRect = fillArea.GetComponent<RectTransform>();
-        fillAreaRect.anchorMin = Vector2.zero;
-        fillAreaRect.anchorMax = Vector2.one;
-        fillAreaRect.offsetMin = Vector2.zero;
-        fillAreaRect.offsetMax = Vector2.zero;
-
-        var fill = new GameObject("Fill", typeof(Image)).GetComponent<Image>();
-        fill.transform.SetParent(fillArea.transform, false);
-        fill.color = new Color(0.2f, 0.8f, 0.2f, 1f); // Зеленый цвет здоровья вместо Cyan
-        fill.rectTransform.anchorMin = Vector2.zero;
-        fill.rectTransform.anchorMax = Vector2.one;
-        fill.rectTransform.offsetMin = Vector2.zero;
-        fill.rectTransform.offsetMax = Vector2.zero;
-
-        hullSlider.fillRect = fill.rectTransform;
-        hullSlider.targetGraphic = fill;
-        hullSlider.minValue = 0;
-        hullSlider.maxValue = 100;
-        hullSlider.value = 100;
-
-        // Индикаторы модулей (3 точки снизу: Shield, Weapon, Engine)
-        var modulesPanel = new GameObject("Modules", typeof(RectTransform));
-        modulesPanel.transform.SetParent(canvasGO.transform, false);
-        var modRect = modulesPanel.GetComponent<RectTransform>();
-        modRect.anchorMin = new Vector2(0, 0);
-        modRect.anchorMax = new Vector2(1, 0.35f);
-        modRect.offsetMin = Vector2.zero;
-        modRect.offsetMax = Vector2.zero;
-
-        shieldImg = CreateDot(modulesPanel.transform, "S", new Vector2(0.2f, 0.5f));
-        weaponImg = CreateDot(modulesPanel.transform, "W", new Vector2(0.5f, 0.5f));
-        engineImg = CreateDot(modulesPanel.transform, "E", new Vector2(0.8f, 0.5f));
-    }
-
-    private Image CreateDot(Transform parent, string label, Vector2 pos)
-    {
-        var dot = new GameObject($"Mod_{label}", typeof(Image)).GetComponent<Image>();
-        dot.transform.SetParent(parent, false);
-        dot.rectTransform.anchorMin = pos;
-        dot.rectTransform.anchorMax = pos;
-        dot.rectTransform.sizeDelta = new Vector2(16f, 12f);
-        dot.color = Color.green;
-        return dot;
+        Color[] pix = new Color[width * height];
+        for (int i = 0; i < pix.Length; i++) pix[i] = col;
+        Texture2D result = new Texture2D(width, height);
+        result.SetPixels(pix);
+        result.Apply();
+        return result;
     }
 }

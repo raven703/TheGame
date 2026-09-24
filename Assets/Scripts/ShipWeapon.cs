@@ -56,6 +56,8 @@ public class ShipWeapon : MonoBehaviour
     private const float LaserVisibleTime = 0.1f;
     private float currentCooldown = 0f;
     private ShipHealth ownerHealth;
+    public ShipHealth OwnerHealth => ownerHealth;
+
     private ShipMovement shipMovement;
 
     // Переменные для динамической волнистой орбиты

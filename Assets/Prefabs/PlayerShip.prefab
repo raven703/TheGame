@@ -188,8 +188,10 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 416debe8c00d0ce45a6204f8907112f3, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::ShipMovement
-  speed: 3
+  maxSpeed: 5
+  acceleration: 12
   rotationSpeed: 360
+  spriteNoseIsUp: 1
 --- !u!114 &6778177482386116974
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -205,6 +207,10 @@ MonoBehaviour:
   range: 6
   cooldown: 1.5
   damage: 10
+  firingArcAngle: 60
+  behavior: 0
+  orbitClockwise: 1
+  manualMoveOrder: 0
   weaponPoint: {fileID: 4530226626962565830}
   laserLine: {fileID: 1872751737393846700}
 --- !u!120 &1872751737393846700
@@ -326,6 +332,21 @@ LineRenderer:
   m_UseWorldSpace: 1
   m_Loop: 0
   m_ApplyActiveColorSpace: 1
+--- !u!114 &910000000000000001
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2033888778526251229}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: b4338a3fcc3460a4e83b98c473874d7e, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::ShipWorldHealthBar
+  verticalOffset: 0.8
+  barWidth: 60
+  barHeight: 6
 --- !u!1 &3269286399042095776
 GameObject:
   m_ObjectHideFlags: 0
@@ -418,16 +439,3 @@ SpriteRenderer:
   m_WasSpriteAssigned: 1
   m_SpriteSortPoint: 0
   m_BlendShapeWeights: []
---- !u!114 &910000000000000001
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 2033888778526251229}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: b4338a3fcc3460a4e83b98c473874d7e, type: 3}
-  m_Name:
-  m_EditorClassIdentifier: Assembly-CSharp::ShipWorldHealthBar
-  offset: {x: 0, y: 1.2, z: 0}
