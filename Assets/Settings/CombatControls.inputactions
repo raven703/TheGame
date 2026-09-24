@@ -1,0 +1,99 @@
+{
+    "version": 1,
+    "name": "CombatControls",
+    "maps": [
+        {
+            "name": "Combat",
+            "id": "e446871d-393e-4e2e-82fc-699c857ea229",
+            "actions": [
+                {
+                    "name": "Click",
+                    "type": "Button",
+                    "id": "8e14f19e-e1c5-4221-a7f6-1a06d89c98e2",
+                    "expectedControlType": "Button",
+                    "processors": "",
+                    "interactions": "",
+                    "initialStateCheck": false,
+                    "priority": 0
+                },
+                {
+                    "name": "Pause",
+                    "type": "Button",
+                    "id": "e2e7142c-f3b0-41ac-8263-9761acda0a91",
+                    "expectedControlType": "Button",
+                    "processors": "",
+                    "interactions": "",
+                    "initialStateCheck": false,
+                    "priority": 0
+                },
+                {
+                    "name": "Speed1",
+                    "type": "Button",
+                    "id": "5f119330-9a7b-4d13-9d2c-c15e93ea434b",
+                    "expectedControlType": "Button",
+                    "processors": "",
+                    "interactions": "",
+                    "initialStateCheck": false,
+                    "priority": 0
+                },
+                {
+                    "name": "Speed2",
+                    "type": "Button",
+                    "id": "e3857b65-0987-4a8f-8555-8b70cb63af75",
+                    "expectedControlType": "Button",
+                    "processors": "",
+                    "interactions": "",
+                    "initialStateCheck": false,
+                    "priority": 0
+                }
+            ],
+            "bindings": [
+                {
+                    "name": "",
+                    "id": "1fac828e-394d-4550-a4dd-c887e835b6d2",
+                    "path": "<Mouse>/leftButton",
+                    "interactions": "",
+                    "processors": "",
+                    "groups": "",
+                    "action": "Click",
+                    "isComposite": false,
+                    "isPartOfComposite": false
+                },
+                {
+                    "name": "",
+                    "id": "40e3b96d-b2db-4a4f-8e06-af94a87eb8e5",
+                    "path": "<Keyboard>/space",
+                    "interactions": "",
+                    "processors": "",
+                    "groups": "",
+                    "action": "Pause",
+                    "isComposite": false,
+                    "isPartOfComposite": false
+                },
+                {
+                    "name": "",
+                    "id": "abcdb517-a9c9-4ffb-b20a-a845dacf4503",
+                    "path": "<Keyboard>/1",
+                    "interactions": "",
+                    "processors": "",
+                    "groups": "",
+                    "action": "Speed1",
+                    "isComposite": false,
+                    "isPartOfComposite": false
+                },
+                {
+                    "name": "",
+                    "id": "0564345c-d785-476d-90dc-7a4b17d600a1",
+                    "path": "<Keyboard>/2",
+                    "interactions": "",
+                    "processors": "",
+                    "groups": "",
+                    "action": "Speed2",
+                    "isComposite": false,
+                    "isPartOfComposite": false
+                }
+            ]
+        }
+    ],
+    "controlSchemes": []
+}
