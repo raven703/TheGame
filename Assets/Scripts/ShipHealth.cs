@@ -3,7 +3,7 @@ using UnityEngine;
 
 public class ShipHealth : MonoBehaviour
 {
-    private const float ModuleHitChance = 0.4f; // 40% шанс попадания по модулю при пробитом щите
+    private const float ModuleHitChance = 0.4f;
 
     private static readonly ModuleType[] AllModuleTypes =
     {
@@ -17,7 +17,6 @@ public class ShipHealth : MonoBehaviour
 
     public ShipData Data { get; private set; }
 
-    // C# Events для UI
     public event Action OnDamageTaken;
     public event Action OnDestroyed;
 
@@ -36,7 +35,7 @@ public class ShipHealth : MonoBehaviour
         Die();
     }
 
-    public void TakeDamage(float amount)
+    public void TakeDamage(float amount, ModuleType? targetedModule = null)
     {
         if (Data == null || Data.IsDestroyed || amount <= 0f)
             return;
@@ -44,30 +43,31 @@ public class ShipHealth : MonoBehaviour
         // 1. Поглощение урона Щитом
         float remainingDamage = Data.AbsorbDamageWithShield(amount);
 
-        if (remainingDamage < amount)
-        {
-            Debug.Log($"{gameObject.name}: Щит принял урон! Остаток: {remainingDamage}, Щит HP: {Data.currentShieldHP}/{Data.maxShieldHP}");
-        }
-
-        // Если весь урон погашен щитом
         if (remainingDamage <= 0f)
         {
             OnDamageTaken?.Invoke();
             return;
         }
 
-        // 2. Распределение оставшегося урона (Модуль или Корпус)
-        if (UnityEngine.Random.value < ModuleHitChance)
-            ApplyModuleDamage(remainingDamage);
+        // 2. Распределение оставшегося урона (Целевой модуль / Случайный модуль / Корпус)
+        if (targetedModule.HasValue)
+        {
+            ApplyModuleDamage(remainingDamage, targetedModule.Value);
+        }
+        else if (UnityEngine.Random.value < ModuleHitChance)
+        {
+            ApplyModuleDamage(remainingDamage, AllModuleTypes[UnityEngine.Random.Range(0, AllModuleTypes.Length)]);
+        }
         else
+        {
             ApplyHullDamage(remainingDamage);
+        }
 
         OnDamageTaken?.Invoke();
     }
 
-    private void ApplyModuleDamage(float amount)
+    private void ApplyModuleDamage(float amount, ModuleType moduleType)
     {
-        var moduleType = AllModuleTypes[UnityEngine.Random.Range(0, AllModuleTypes.Length)];
         var module = Data.GetModule(moduleType);
         if (module == null)
         {
@@ -80,7 +80,6 @@ public class ShipHealth : MonoBehaviour
 
         if (wasAlreadyDestroyed)
         {
-            // 50% урона по выбитому модулю переходит в корпус
             float spilloverDamage = amount * 0.5f;
             Data.TakeHullDamage(spilloverDamage);
             Debug.Log($"{gameObject.name}: Попадание в выбитый модуль {moduleType}! {spilloverDamage} урона прошло в корпус.");

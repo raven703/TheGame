@@ -12,25 +12,18 @@ public enum CombatBehavior
 public class ShipWeapon : MonoBehaviour
 {
     [Header("Weapon Stats")]
-    [Tooltip("Maximum firing distance in world units.")]
     public float range = 6f;
-
-    [Tooltip("Seconds between shots.")]
     public float cooldown = 1.5f;
-
-    [Tooltip("Damage per shot.")]
     public float damage = 15f;
-
-    [Tooltip("Firing arc in degrees.")]
     public float firingArcAngle = 60f;
 
     [Header("Tactics & AI")]
     public CombatBehavior behavior = CombatBehavior.Orbit;
     public bool orbitClockwise = true;
 
-    /// <summary>
-    /// Если true — корабль выполняет ручной приказ движения от игрока и не меняет TargetPosition сам.
-    /// </summary>
+    [Tooltip("Приоритетный модуль для выбивания (null = авто-распределение урона)")]
+    public ModuleType? targetedModule = null;
+
     [HideInInspector] public bool manualMoveOrder = false;
 
     [Header("Visuals")]
@@ -60,7 +53,6 @@ public class ShipWeapon : MonoBehaviour
 
     private ShipMovement shipMovement;
 
-    // Переменные для динамической волнистой орбиты
     private float orbitChangeTimer = 0f;
     private float randomRadiusOffset = 0f;
 
@@ -79,6 +71,9 @@ public class ShipWeapon : MonoBehaviour
         laserLine.enabled = false;
     }
 
+    public void SetBehavior(CombatBehavior newBehavior) => behavior = newBehavior;
+    public void SetTargetModule(ModuleType? module) => targetedModule = module;
+
     private LineRenderer CreateLaserLine()
     {
         var beamObject = new GameObject("LaserBeam");
@@ -89,13 +84,13 @@ public class ShipWeapon : MonoBehaviour
         line.endColor = new Color(1f, 0.5f, 0.1f, 1f);
         line.material = CreateLaserMaterial();
 
-        // Гарантируем, что лазер рисуется ПОВЕРХ фона и кораблей
         line.sortingLayerName = "Default";
         line.sortingOrder = 10;
 
         ApplyLaserGeometry(line);
         return line;
     }
+
     private static void ApplyLaserGeometry(LineRenderer line)
     {
         line.positionCount = 2;
@@ -107,10 +102,8 @@ public class ShipWeapon : MonoBehaviour
     private static Material CreateLaserMaterial()
     {
         var shader = Shader.Find("Universal Render Pipeline/2D/Sprite-Unlit-Default");
-        if (shader == null)
-            shader = Shader.Find("Sprites/Default");
-        if (shader == null)
-            shader = Shader.Find("Unlit/Color");
+        if (shader == null) shader = Shader.Find("Sprites/Default");
+        if (shader == null) shader = Shader.Find("Unlit/Color");
 
         var material = new Material(shader);
         material.color = Color.white;
@@ -120,7 +113,7 @@ public class ShipWeapon : MonoBehaviour
     public void SetTarget(ShipHealth target)
     {
         Target = target;
-        manualMoveOrder = false; // При смене цели возвращаем авто-маневрирование
+        manualMoveOrder = false;
     }
 
     public void ClearTarget() => Target = null;
@@ -136,20 +129,17 @@ public class ShipWeapon : MonoBehaviour
         if (ownerHealth.Data.IsDestroyed || weaponModule == null || weaponModule.isDestroyed)
             return;
 
-        // Если цели нет или она уничтожена
         if (Target == null || (Target.Data != null && Target.Data.IsDestroyed))
         {
             Target = null;
             return;
         }
 
-        // Авто-маневрирование работает ТОЛЬКО если игрок не отдал ручной приказ движения в космос
         if (!manualMoveOrder)
         {
             UpdateCombatTactics();
         }
 
-        // Стрельба идет ВСЕГДА, когда цель попадает в сектор и радиус, независимо от того, куда летит корабль
         var distance = Vector2.Distance(transform.position, Target.transform.position);
         bool isInFiringArc = IsTargetInFiringArc(Target.transform.position);
 
@@ -157,9 +147,6 @@ public class ShipWeapon : MonoBehaviour
             Fire();
     }
 
-    /// <summary>
-    /// Автоматическое маневрирование с защитой от замкнутых орбит.
-    /// </summary>
     private void UpdateCombatTactics()
     {
         if (shipMovement == null) return;
@@ -169,18 +156,14 @@ public class ShipWeapon : MonoBehaviour
         Vector3 dirToEnemy = (enemyPos - myPos).normalized;
         float currentDistance = Vector2.Distance(myPos, enemyPos);
 
-        // Периодически сдвигаем радиус и меняем направление, чтобы избавиться от паттернов
         orbitChangeTimer -= Time.deltaTime;
         if (orbitChangeTimer <= 0f)
         {
             orbitChangeTimer = UnityEngine.Random.Range(3f, 6f);
             randomRadiusOffset = UnityEngine.Random.Range(-1.2f, 1.2f);
 
-            // С шансом 30% меняем направление вращения по орбите
             if (UnityEngine.Random.value < 0.3f)
-            {
                 orbitClockwise = !orbitClockwise;
-            }
         }
 
         float optimalDistance = Mathf.Clamp(range * 0.65f + randomRadiusOffset, 2f, range * 0.9f);
@@ -262,8 +245,8 @@ public class ShipWeapon : MonoBehaviour
             if (laserLine != null)
                 StartCoroutine(ShowLaser(muzzle, targetPosition, Color.yellow));
 
-            Target.TakeDamage(damage);
-            Debug.Log($"[HIT] {gameObject.name} попал по {Target.name}!");
+            Target.TakeDamage(damage, targetedModule);
+            Debug.Log($"[HIT] {gameObject.name} попал по {Target.name}! (Приоритет модуля: {(targetedModule.HasValue ? targetedModule.Value.ToString() : "Авто")})");
         }
         else
         {
