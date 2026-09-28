@@ -5,7 +5,7 @@ using UnityEngine;
 public enum CombatBehavior
 {
     Orbit,          // Вращаться по орбите
-    KeepDistance,   // Кайтить (держать дистанцию)
+    KeepDistance,   // Кайтить (держать дистанцию на пределе дальности)
     Flank           // Заходить во фланг/корму
 }
 
@@ -52,9 +52,7 @@ public class ShipWeapon : MonoBehaviour
     public ShipHealth OwnerHealth => ownerHealth;
 
     private ShipMovement shipMovement;
-
     private float orbitChangeTimer = 0f;
-    private float randomRadiusOffset = 0f;
 
     private void Awake()
     {
@@ -149,62 +147,103 @@ public class ShipWeapon : MonoBehaviour
 
     private void UpdateCombatTactics()
     {
-        if (shipMovement == null) return;
+        if (shipMovement == null || Target == null) return;
 
         Vector3 enemyPos = Target.transform.position;
         Vector3 myPos = transform.position;
-        Vector3 dirToEnemy = (enemyPos - myPos).normalized;
-        float currentDistance = Vector2.Distance(myPos, enemyPos);
 
         orbitChangeTimer -= Time.deltaTime;
         if (orbitChangeTimer <= 0f)
         {
-            orbitChangeTimer = UnityEngine.Random.Range(3f, 6f);
-            randomRadiusOffset = UnityEngine.Random.Range(-1.2f, 1.2f);
-
-            if (UnityEngine.Random.value < 0.3f)
+            orbitChangeTimer = UnityEngine.Random.Range(6f, 10f);
+            if (UnityEngine.Random.value < 0.25f)
                 orbitClockwise = !orbitClockwise;
         }
-
-        float optimalDistance = Mathf.Clamp(range * 0.65f + randomRadiusOffset, 2f, range * 0.9f);
 
         switch (behavior)
         {
             case CombatBehavior.Orbit:
-                Vector3 tangent = orbitClockwise
-                    ? new Vector3(-dirToEnemy.y, dirToEnemy.x, 0f)
-                    : new Vector3(dirToEnemy.y, -dirToEnemy.x, 0f);
-
-                float radialCorrection = (currentDistance - optimalDistance);
-                Vector3 orbitDestination = myPos + tangent * 4f + dirToEnemy * radialCorrection;
-
-                shipMovement.SetTargetPosition(orbitDestination);
+                ExecuteOrbitBehavior(myPos, enemyPos);
                 break;
 
             case CombatBehavior.KeepDistance:
-                if (currentDistance < optimalDistance)
-                {
-                    Vector3 retreatPoint = myPos - dirToEnemy * 4f;
-                    shipMovement.SetTargetPosition(retreatPoint);
-                }
-                else
-                {
-                    shipMovement.SetTargetPosition(enemyPos);
-                }
+                ExecuteKiteBehavior(myPos, enemyPos);
                 break;
 
             case CombatBehavior.Flank:
-                Vector3 enemyForward = Target.transform.right;
-                var targetMovement = Target.GetComponent<ShipMovement>();
-                if (targetMovement != null)
-                {
-                    enemyForward = targetMovement.GetForwardVector();
-                }
-
-                Vector3 rearPosition = enemyPos - enemyForward * optimalDistance;
-                shipMovement.SetTargetPosition(rearPosition);
+                ExecuteFlankBehavior(myPos, enemyPos);
                 break;
         }
+    }
+
+    /// <summary>
+    /// Орбита: вычисляем фиксированную точку на окружности вокруг врага
+    /// </summary>
+    private void ExecuteOrbitBehavior(Vector3 myPos, Vector3 enemyPos)
+    {
+        float targetRadius = range * 0.70f;
+        Vector3 dirFromEnemy = (myPos - enemyPos).normalized;
+
+        if (dirFromEnemy == Vector3.zero)
+            dirFromEnemy = Vector3.up;
+
+        // Поворачиваем вектор от врага на 40 градусов по или против часовой стрелки
+        float angleOffset = orbitClockwise ? -40f : 40f;
+        Vector3 rotatedDir = Quaternion.Euler(0, 0, angleOffset) * dirFromEnemy;
+
+        // Целевая точка строго привязана к позиции врага!
+        Vector3 orbitTargetPoint = enemyPos + rotatedDir * targetRadius;
+        shipMovement.SetTargetPosition(orbitTargetPoint);
+    }
+
+    /// <summary>
+    /// Кайт: удерживаем дистанцию на краю зоны поражения (85% от range)
+    /// </summary>
+    private void ExecuteKiteBehavior(Vector3 myPos, Vector3 enemyPos)
+    {
+        float currentDist = Vector2.Distance(myPos, enemyPos);
+        float optimalKiteDist = range * 0.85f;
+        Vector3 dirFromEnemy = (myPos - enemyPos).normalized;
+
+        if (dirFromEnemy == Vector3.zero)
+            dirFromEnemy = Vector3.up;
+
+        if (currentDist < range * 0.75f)
+        {
+            // Враг близко — отступаем в точку на дистанции 85% от врага с небольшим боковым смещением
+            float sideAngle = orbitClockwise ? -25f : 25f;
+            Vector3 retreatDir = Quaternion.Euler(0, 0, sideAngle) * dirFromEnemy;
+            Vector3 kiteTargetPoint = enemyPos + retreatDir * optimalKiteDist;
+            shipMovement.SetTargetPosition(kiteTargetPoint);
+        }
+        else if (currentDist > range * 0.95f)
+        {
+            // Враг далеко — сближаемся к нему на 80% дальности
+            Vector3 approachTargetPoint = enemyPos + dirFromEnemy * (range * 0.80f);
+            shipMovement.SetTargetPosition(approachTargetPoint);
+        }
+        else
+        {
+            // В идеальной зоне — совершаем плавную орбиту по краю дальности
+            ExecuteOrbitBehavior(myPos, enemyPos);
+        }
+    }
+
+    /// <summary>
+    /// Фланк: заходим в корму противника
+    /// </summary>
+    private void ExecuteFlankBehavior(Vector3 myPos, Vector3 enemyPos)
+    {
+        float optimalDist = range * 0.70f;
+        Vector3 enemyForward = Target.transform.right;
+
+        if (Target.TryGetComponent<ShipMovement>(out var targetMovement))
+        {
+            enemyForward = targetMovement.GetForwardVector();
+        }
+
+        Vector3 flankTargetPoint = enemyPos - enemyForward * optimalDist;
+        shipMovement.SetTargetPosition(flankTargetPoint);
     }
 
     private bool IsTargetInFiringArc(Vector3 targetPos)

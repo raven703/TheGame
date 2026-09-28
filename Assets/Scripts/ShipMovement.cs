@@ -6,7 +6,7 @@ using UnityEngine;
 [RequireComponent(typeof(Rigidbody2D))]
 public class ShipMovement : MonoBehaviour
 {
-    private const float ArriveDistance = 0.3f;
+    private const float ArriveDistance = 0.4f;
 
     [Tooltip("Maximum velocity limit.")]
     public float maxSpeed = 5f;
@@ -15,7 +15,7 @@ public class ShipMovement : MonoBehaviour
     public float acceleration = 12f;
 
     [Tooltip("Turn speed in degrees per second.")]
-    public float rotationSpeed = 240f;
+    public float rotationSpeed = 300f;
 
     [Tooltip("Check TRUE if your sprite image points UP (along Y axis). Check FALSE if it points RIGHT (along X axis).")]
     public bool spriteNoseIsUp = true;
@@ -34,10 +34,9 @@ public class ShipMovement : MonoBehaviour
         Rb = GetComponent<Rigidbody2D>();
         shipHealth = GetComponent<ShipHealth>();
 
-        // Настраиваем физический Rigidbody2D под работу с инерцией
         Rb.gravityScale = 0f;
-        Rb.linearDamping = 1f;  // Сопротивление среды в космосе для гашения дрейфа
-        Rb.angularDamping = 2f;
+        Rb.linearDamping = 1.2f;
+        Rb.angularDamping = 3f;
     }
 
     private void Start()
@@ -69,7 +68,6 @@ public class ShipMovement : MonoBehaviour
     {
         if (shipHealth != null && shipHealth.Data != null)
         {
-            // Если двигатель выбит, физика теряет тягу
             var engineMod = shipHealth.Data.GetModule(ModuleType.Engine);
             if (engineMod != null && engineMod.isDestroyed)
                 return;
@@ -90,21 +88,29 @@ public class ShipMovement : MonoBehaviour
 
         Vector2 desiredDirection = toTarget.normalized;
 
-        // 1. Поворот корабля носом по направлению движения (с переносом инерционной точки)
+        // 1. Поворот корабля в сторону цели
         RotateTowardsDirection(desiredDirection);
 
-        // 2. Движение с учетом инерции и разгона
         Vector2 forwardVector = GetForwardVector();
 
-        // Гашение бокового скольжения для более аккуратной дуги при поворотах
+        // 2. Гашение бокового заноса (дрейфа)
         Vector2 forwardVelocity = forwardVector * Vector2.Dot(Rb.linearVelocity, forwardVector);
         Vector2 rightVector = new Vector2(-forwardVector.y, forwardVector.x);
         Vector2 rightVelocity = rightVector * Vector2.Dot(Rb.linearVelocity, rightVector);
 
-        Rb.linearVelocity = forwardVelocity + rightVelocity * 0.9f; // Небольшой дрейф боком сохраняется
+        // Активно гасим боковую скорость (0.15f вместо 0.9f) для точного вхождения в повороты
+        Rb.linearVelocity = forwardVelocity + rightVelocity * 0.15f;
 
-        // Импульс вперед
-        Rb.AddForce(forwardVector * acceleration, ForceMode2D.Force);
+        // 3. Вычисление alignment (насколько нос сориентирован на цель)
+        float alignment = Vector2.Dot(forwardVector, desiredDirection);
+
+        // Импульс даем ТОЛЬКО если сориентированы в сторону цели (alignment > 0)
+        if (alignment > 0f)
+        {
+            // Чем точнее повернут нос к цели, тем больше тяги применяем
+            float thrustFactor = Mathf.Pow(alignment, 2f);
+            Rb.AddForce(forwardVector * (acceleration * thrustFactor), ForceMode2D.Force);
+        }
 
         // Ограничение максимальной скорости
         if (Rb.linearVelocity.magnitude > maxSpeed)
