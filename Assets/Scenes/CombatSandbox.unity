@@ -1421,10 +1421,10 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 2f7e28ab11b3b7b45a54c972c207756a, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::ShipFitting
-  weaponPreset: "\u041B\u0430\u0437\u0435\u0440\u043D\u044B\u0439 \u0420\u0435\u0437\u0430\u043A"
-  enginePreset: "\u0424\u043E\u0440\u0441\u0430\u0436 + \u041C\u0430\u043D\u0435\u0432\u0440\u043E\u0432\u044B\u0435"
-  shieldPreset: "\u0421\u0442\u0430\u043D\u0434\u0430\u0440\u0442\u043D\u044B\u0439
-    \u0429\u0438\u0442"
+  shipDefinition: {fileID: 0}
+  shipLibrary: {fileID: 0}
+  shipSilhouetteTexture: {fileID: 0}
+  toggleKey: 105
 --- !u!114 &1898430285
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -1602,6 +1602,10 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 0}
     m_Modifications:
+    - target: {fileID: 174234594062148408, guid: be2cad60f7b33f1458687759bde43394, type: 3}
+      propertyPath: shipDefinition
+      value: 
+      objectReference: {fileID: 11400000, guid: c346ed5929ae76343a04e9f5c080ea0c, type: 2}
     - target: {fileID: 197946540115066981, guid: be2cad60f7b33f1458687759bde43394, type: 3}
       propertyPath: m_BodyType
       value: 0
@@ -1654,6 +1658,22 @@ PrefabInstance:
       propertyPath: playerTarget
       value: 
       objectReference: {fileID: 1898430270}
+    - target: {fileID: 5474175375395448484, guid: be2cad60f7b33f1458687759bde43394, type: 3}
+      propertyPath: fallbackColor.b
+      value: 0.09623915
+      objectReference: {fileID: 0}
+    - target: {fileID: 5474175375395448484, guid: be2cad60f7b33f1458687759bde43394, type: 3}
+      propertyPath: fallbackColor.g
+      value: 0.9919137
+      objectReference: {fileID: 0}
+    - target: {fileID: 5474175375395448484, guid: be2cad60f7b33f1458687759bde43394, type: 3}
+      propertyPath: fallbackColor.r
+      value: 0.0013367634
+      objectReference: {fileID: 0}
+    - target: {fileID: 5474175375395448484, guid: be2cad60f7b33f1458687759bde43394, type: 3}
+      propertyPath: useFallbackWeapon
+      value: 1
+      objectReference: {fileID: 0}
     - target: {fileID: 5865611579440152740, guid: be2cad60f7b33f1458687759bde43394, type: 3}
       propertyPath: m_Name
       value: EnemyShip
@@ -1675,6 +1695,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: PlayerShip
       objectReference: {fileID: 0}
+    - target: {fileID: 3072698895562210237, guid: 86c6c15693c9af74e8d6f223692aaf19, type: 3}
+      propertyPath: shipDefinition
+      value: 
+      objectReference: {fileID: 11400000, guid: c346ed5929ae76343a04e9f5c080ea0c, type: 2}
     - target: {fileID: 4113797704254462880, guid: 86c6c15693c9af74e8d6f223692aaf19, type: 3}
       propertyPath: spriteNoseIsUp
       value: 0
@@ -1686,6 +1710,10 @@ PrefabInstance:
     - target: {fileID: 4544784419633712830, guid: 86c6c15693c9af74e8d6f223692aaf19, type: 3}
       propertyPath: m_LinearDamping
       value: 2
+      objectReference: {fileID: 0}
+    - target: {fileID: 6778177482386116974, guid: 86c6c15693c9af74e8d6f223692aaf19, type: 3}
+      propertyPath: firePoint
+      value: 
       objectReference: {fileID: 0}
     - target: {fileID: 8503075024867107222, guid: 86c6c15693c9af74e8d6f223692aaf19, type: 3}
       propertyPath: m_LocalPosition.x
@@ -1727,7 +1755,8 @@ PrefabInstance:
       propertyPath: m_LocalEulerAnglesHint.z
       value: 0
       objectReference: {fileID: 0}
-    m_RemovedComponents: []
+    m_RemovedComponents:
+    - {fileID: 0}
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
     m_AddedComponents:

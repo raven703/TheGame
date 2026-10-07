@@ -176,6 +176,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 4ffec3a1de9ee1646af2709da84d55c9, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::ShipHealth
+  shipDefinition: {fileID: 11400000, guid: c346ed5929ae76343a04e9f5c080ea0c, type: 2}
   maxHullHP: 100
 --- !u!114 &6167235650484620889
 MonoBehaviour:
@@ -205,15 +206,23 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: ab32137614338a54abd9d732837112ef, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::ShipWeapon
+  bulletPrefab: {fileID: 0}
+  firePoint: {fileID: 0}
+  bulletSpeed: 15
   range: 6
-  cooldown: 1.5
-  damage: 10
+  baseCooldown: 0.6
   firingArcAngle: 60
+  useFallbackWeapon: 0
+  fallbackDamage: 0.5
+  fallbackColor: {r: 1, g: 0.3, b: 0.3, a: 1}
+  fallbackVisual: 0
+  laserVisualDuration: 0.1
+  plasmaVisualDuration: 0.15
+  laserWidth: 0.05
+  plasmaWidth: 0.25
   behavior: 0
   orbitClockwise: 1
   manualMoveOrder: 0
-  weaponPoint: {fileID: 601818821042622504}
-  laserLine: {fileID: 5058467939490232147}
 --- !u!120 &5058467939490232147
 LineRenderer:
   serializedVersion: 3
@@ -361,9 +370,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: b4338a3fcc3460a4e83b98c473874d7e, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::ShipWorldHealthBar
-  verticalOffset: 0.8
-  barWidth: 60
-  barHeight: 6
 --- !u!1 &6878741096236716883
 GameObject:
   m_ObjectHideFlags: 0

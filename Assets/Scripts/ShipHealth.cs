@@ -12,7 +12,12 @@ public class ShipHealth : MonoBehaviour
         ModuleType.Engine
     };
 
-    [Tooltip("Maximum hull hit points. ShipData is created from this value in Awake.")]
+    [Header("Ship Definition")]
+    [Tooltip("ScriptableObject с базовыми ТТХ. Если назначен — maxHullHP/shield/mass берутся оттуда.")]
+    public ShipDefinition shipDefinition;
+
+    [Header("Fallback")]
+    [Tooltip("Fallback max hull HP, если ShipDefinition не назначен.")]
     public float maxHullHP = 100f;
 
     public ShipData Data { get; private set; }
@@ -24,7 +29,16 @@ public class ShipHealth : MonoBehaviour
 
     private void Awake()
     {
-        Data = new ShipData(maxHullHP);
+        // Берём ТТХ из ShipDefinition, если он назначен.
+        float hull = shipDefinition != null ? shipDefinition.maxHullHP : maxHullHP;
+        Data = new ShipData(hull);
+
+        if (shipDefinition != null)
+        {
+            Data.maxShieldHP = shipDefinition.baseShieldHP;
+            Data.currentShieldHP = shipDefinition.baseShieldHP;
+            Data.mass = shipDefinition.baseMass;
+        }
     }
 
     private void Update()
