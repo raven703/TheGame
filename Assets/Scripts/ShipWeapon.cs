@@ -1,20 +1,35 @@
 using System;
-using System.Collections;
+using System.Collections.Generic;
 using UnityEngine;
 
+#if ENABLE_INPUT_SYSTEM
+using UnityEngine.InputSystem;
+#endif
+
+/// <summary>
+/// Тактические режимы поведения корабля в бою
+/// </summary>
 public enum CombatBehavior
 {
-    Orbit,          // Вращаться по орбите
-    KeepDistance,   // Кайтить (держать дистанцию на пределе дальности)
+    Orbit,          // Огибать цель по орбите
+    KeepDistance,   // Кайтить (держать дистанцию)
     Flank           // Заходить во фланг/корму
 }
 
 public class ShipWeapon : MonoBehaviour
 {
-    [Header("Weapon Stats")]
-    public float range = 6f;
-    public float cooldown = 1.5f;
-    public float damage = 15f;
+    [Header("Weapon & Projectile Setup")]
+    public GameObject bulletPrefab;
+    public Transform firePoint;
+    // Свойство для совместимости с автотестами (Step5Verify) и другими скриптами:
+    public Transform weaponPoint
+    {
+        get => firePoint != null ? firePoint : transform;
+        set => firePoint = value;
+    }
+    public float bulletSpeed = 15f;
+    public float range = 8f;
+    public float baseCooldown = 0.6f;
     public float firingArcAngle = 60f;
 
     [Header("Tactics & AI")]
@@ -26,9 +41,8 @@ public class ShipWeapon : MonoBehaviour
 
     [HideInInspector] public bool manualMoveOrder = false;
 
-    [Header("Visuals")]
-    public Transform weaponPoint;
-    [SerializeField] private LineRenderer laserLine;
+    private List<FittingItem> activeWeapons = new List<FittingItem>();
+    private float nextFireTime = 0f;
 
     private ShipHealth target;
     public ShipHealth Target
@@ -46,13 +60,12 @@ public class ShipWeapon : MonoBehaviour
 
     public event Action<ShipHealth> OnTargetChanged;
 
-    private const float LaserVisibleTime = 0.1f;
-    private float currentCooldown = 0f;
     private ShipHealth ownerHealth;
     public ShipHealth OwnerHealth => ownerHealth;
-
     private ShipMovement shipMovement;
+
     private float orbitChangeTimer = 0f;
+    private float randomRadiusOffset = 0f;
 
     private void Awake()
     {
@@ -60,66 +73,20 @@ public class ShipWeapon : MonoBehaviour
         shipMovement = GetComponentInParent<ShipMovement>();
         if (shipMovement == null)
             shipMovement = GetComponent<ShipMovement>();
-
-        if (laserLine == null)
-            laserLine = CreateLaserLine();
-        else
-            ApplyLaserGeometry(laserLine);
-
-        laserLine.enabled = false;
     }
 
     public void SetBehavior(CombatBehavior newBehavior) => behavior = newBehavior;
     public void SetTargetModule(ModuleType? module) => targetedModule = module;
-
-    private LineRenderer CreateLaserLine()
-    {
-        var beamObject = new GameObject("LaserBeam");
-        beamObject.transform.SetParent(transform, false);
-
-        var line = beamObject.AddComponent<LineRenderer>();
-        line.startColor = new Color(1f, 0.92f, 0.25f, 1f);
-        line.endColor = new Color(1f, 0.5f, 0.1f, 1f);
-        line.material = CreateLaserMaterial();
-
-        line.sortingLayerName = "Default";
-        line.sortingOrder = 10;
-
-        ApplyLaserGeometry(line);
-        return line;
-    }
-
-    private static void ApplyLaserGeometry(LineRenderer line)
-    {
-        line.positionCount = 2;
-        line.useWorldSpace = true;
-        line.startWidth = 0.08f;
-        line.endWidth = 0.04f;
-    }
-
-    private static Material CreateLaserMaterial()
-    {
-        var shader = Shader.Find("Universal Render Pipeline/2D/Sprite-Unlit-Default");
-        if (shader == null) shader = Shader.Find("Sprites/Default");
-        if (shader == null) shader = Shader.Find("Unlit/Color");
-
-        var material = new Material(shader);
-        material.color = Color.white;
-        return material;
-    }
-
-    public void SetTarget(ShipHealth target)
-    {
-        Target = target;
-        manualMoveOrder = false;
-    }
-
+    public void SetTarget(ShipHealth newTarget) { Target = newTarget; manualMoveOrder = false; }
     public void ClearTarget() => Target = null;
+
+    public void SetEquippedWeapons(List<FittingItem> weapons)
+    {
+        activeWeapons = weapons;
+    }
 
     private void Update()
     {
-        currentCooldown -= Time.deltaTime;
-
         if (ownerHealth == null || ownerHealth.Data == null)
             return;
 
@@ -127,22 +94,34 @@ public class ShipWeapon : MonoBehaviour
         if (ownerHealth.Data.IsDestroyed || weaponModule == null || weaponModule.isDestroyed)
             return;
 
-        if (Target == null || (Target.Data != null && Target.Data.IsDestroyed))
+        // Сброс цели при её уничтожении
+        if (Target != null && (Target.Data == null || Target.Data.IsDestroyed))
         {
             Target = null;
-            return;
         }
 
-        if (!manualMoveOrder)
+        // Автоматический выбор маневра
+        if (Target != null && !manualMoveOrder)
         {
             UpdateCombatTactics();
         }
 
-        var distance = Vector2.Distance(transform.position, Target.transform.position);
-        bool isInFiringArc = IsTargetInFiringArc(Target.transform.position);
+        // Проверка ввода пользователя (автострельба по цели или ручная стрельба)
+        bool isManualFiring = false;
+#if ENABLE_INPUT_SYSTEM
+        isManualFiring = (Mouse.current != null && Mouse.current.leftButton.isPressed) ||
+                         (Keyboard.current != null && Keyboard.current.spaceKey.isPressed);
+#else
+        isManualFiring = Input.GetMouseButton(0) || Input.GetKey(KeyCode.Space);
+#endif
 
-        if (distance <= range && isInFiringArc && currentCooldown <= 0f)
-            Fire();
+        bool canAutoFire = Target != null && Vector2.Distance(transform.position, Target.transform.position) <= range && IsTargetInFiringArc(Target.transform.position);
+
+        if ((isManualFiring || canAutoFire) && Time.time >= nextFireTime)
+        {
+            Shoot();
+            nextFireTime = Time.time + baseCooldown;
+        }
     }
 
     private void UpdateCombatTactics()
@@ -151,99 +130,58 @@ public class ShipWeapon : MonoBehaviour
 
         Vector3 enemyPos = Target.transform.position;
         Vector3 myPos = transform.position;
+        Vector3 dirToEnemy = (enemyPos - myPos).normalized;
+        float currentDistance = Vector2.Distance(myPos, enemyPos);
 
         orbitChangeTimer -= Time.deltaTime;
         if (orbitChangeTimer <= 0f)
         {
-            orbitChangeTimer = UnityEngine.Random.Range(6f, 10f);
-            if (UnityEngine.Random.value < 0.25f)
+            orbitChangeTimer = UnityEngine.Random.Range(3f, 6f);
+            randomRadiusOffset = UnityEngine.Random.Range(-1.2f, 1.2f);
+
+            if (UnityEngine.Random.value < 0.3f)
                 orbitClockwise = !orbitClockwise;
         }
+
+        float optimalDistance = Mathf.Clamp(range * 0.65f + randomRadiusOffset, 2f, range * 0.9f);
 
         switch (behavior)
         {
             case CombatBehavior.Orbit:
-                ExecuteOrbitBehavior(myPos, enemyPos);
+                Vector3 tangent = orbitClockwise
+                    ? new Vector3(-dirToEnemy.y, dirToEnemy.x, 0f)
+                    : new Vector3(dirToEnemy.y, -dirToEnemy.x, 0f);
+
+                float radialCorrection = (currentDistance - optimalDistance);
+                Vector3 orbitDestination = myPos + tangent * 4f + dirToEnemy * radialCorrection;
+
+                shipMovement.SetTargetPosition(orbitDestination);
                 break;
 
             case CombatBehavior.KeepDistance:
-                ExecuteKiteBehavior(myPos, enemyPos);
+                if (currentDistance < optimalDistance)
+                {
+                    Vector3 retreatPoint = myPos - dirToEnemy * 4f;
+                    shipMovement.SetTargetPosition(retreatPoint);
+                }
+                else
+                {
+                    shipMovement.SetTargetPosition(enemyPos);
+                }
                 break;
 
             case CombatBehavior.Flank:
-                ExecuteFlankBehavior(myPos, enemyPos);
+                Vector3 enemyForward = Target.transform.right;
+                var targetMovement = Target.GetComponent<ShipMovement>();
+                if (targetMovement != null)
+                {
+                    enemyForward = targetMovement.GetForwardVector();
+                }
+
+                Vector3 rearPosition = enemyPos - enemyForward * optimalDistance;
+                shipMovement.SetTargetPosition(rearPosition);
                 break;
         }
-    }
-
-    /// <summary>
-    /// Орбита: вычисляем фиксированную точку на окружности вокруг врага
-    /// </summary>
-    private void ExecuteOrbitBehavior(Vector3 myPos, Vector3 enemyPos)
-    {
-        float targetRadius = range * 0.70f;
-        Vector3 dirFromEnemy = (myPos - enemyPos).normalized;
-
-        if (dirFromEnemy == Vector3.zero)
-            dirFromEnemy = Vector3.up;
-
-        // Поворачиваем вектор от врага на 40 градусов по или против часовой стрелки
-        float angleOffset = orbitClockwise ? -40f : 40f;
-        Vector3 rotatedDir = Quaternion.Euler(0, 0, angleOffset) * dirFromEnemy;
-
-        // Целевая точка строго привязана к позиции врага!
-        Vector3 orbitTargetPoint = enemyPos + rotatedDir * targetRadius;
-        shipMovement.SetTargetPosition(orbitTargetPoint);
-    }
-
-    /// <summary>
-    /// Кайт: удерживаем дистанцию на краю зоны поражения (85% от range)
-    /// </summary>
-    private void ExecuteKiteBehavior(Vector3 myPos, Vector3 enemyPos)
-    {
-        float currentDist = Vector2.Distance(myPos, enemyPos);
-        float optimalKiteDist = range * 0.85f;
-        Vector3 dirFromEnemy = (myPos - enemyPos).normalized;
-
-        if (dirFromEnemy == Vector3.zero)
-            dirFromEnemy = Vector3.up;
-
-        if (currentDist < range * 0.75f)
-        {
-            // Враг близко — отступаем в точку на дистанции 85% от врага с небольшим боковым смещением
-            float sideAngle = orbitClockwise ? -25f : 25f;
-            Vector3 retreatDir = Quaternion.Euler(0, 0, sideAngle) * dirFromEnemy;
-            Vector3 kiteTargetPoint = enemyPos + retreatDir * optimalKiteDist;
-            shipMovement.SetTargetPosition(kiteTargetPoint);
-        }
-        else if (currentDist > range * 0.95f)
-        {
-            // Враг далеко — сближаемся к нему на 80% дальности
-            Vector3 approachTargetPoint = enemyPos + dirFromEnemy * (range * 0.80f);
-            shipMovement.SetTargetPosition(approachTargetPoint);
-        }
-        else
-        {
-            // В идеальной зоне — совершаем плавную орбиту по краю дальности
-            ExecuteOrbitBehavior(myPos, enemyPos);
-        }
-    }
-
-    /// <summary>
-    /// Фланк: заходим в корму противника
-    /// </summary>
-    private void ExecuteFlankBehavior(Vector3 myPos, Vector3 enemyPos)
-    {
-        float optimalDist = range * 0.70f;
-        Vector3 enemyForward = Target.transform.right;
-
-        if (Target.TryGetComponent<ShipMovement>(out var targetMovement))
-        {
-            enemyForward = targetMovement.GetForwardVector();
-        }
-
-        Vector3 flankTargetPoint = enemyPos - enemyForward * optimalDist;
-        shipMovement.SetTargetPosition(flankTargetPoint);
     }
 
     private bool IsTargetInFiringArc(Vector3 targetPos)
@@ -255,57 +193,50 @@ public class ShipWeapon : MonoBehaviour
         return angle <= (firingArcAngle * 0.5f);
     }
 
-    private void Fire()
+    private void Shoot()
     {
-        var weaponMod = ownerHealth.Data.GetModule(ModuleType.Weapon);
-        float actualCooldown = cooldown;
-        if (weaponMod != null && weaponMod.currentHP < weaponMod.maxHP)
+        Transform spawnPoint = firePoint != null ? firePoint : transform;
+
+        // Сколько установленных стволов — столько и выстрелов за один залп
+        int weaponCount = activeWeapons.Count > 0 ? activeWeapons.Count : 1;
+
+        float spacing = 0.35f;
+        float startOffset = -(weaponCount - 1) * spacing * 0.5f;
+
+        for (int i = 0; i < weaponCount; i++)
         {
-            actualCooldown *= 1.5f;
+            FittingItem weaponModule = activeWeapons.Count > 0 ? activeWeapons[i] : null;
+            float currentDamage = weaponModule != null ? weaponModule.damageBonus : 15f;
+            Color bulletColor = weaponModule != null ? weaponModule.iconColor : Color.yellow;
+
+            Vector3 offset = spawnPoint.right * (startOffset + i * spacing);
+            Vector3 spawnPos = spawnPoint.position + offset;
+
+            if (bulletPrefab != null)
+            {
+                GameObject bullet = Instantiate(bulletPrefab, spawnPos, spawnPoint.rotation);
+
+                var rb = bullet.GetComponent<Rigidbody2D>();
+                if (rb != null)
+                {
+                    rb.linearVelocity = spawnPoint.up * bulletSpeed;
+                }
+
+                var renderer = bullet.GetComponent<SpriteRenderer>();
+                if (renderer != null)
+                {
+                    renderer.color = bulletColor;
+                }
+            }
+            else
+            {
+                // Если префаб снаряда не назначен, мгновенно передаем урон по выбранному модулю
+                if (Target != null)
+                {
+                    Target.TakeDamage(currentDamage, targetedModule);
+                }
+                Debug.DrawRay(spawnPos, spawnPoint.up * 5f, bulletColor, 0.2f);
+            }
         }
-        currentCooldown = actualCooldown;
-
-        var muzzle = weaponPoint != null ? weaponPoint.position : transform.position;
-        var targetPosition = Target.transform.position;
-
-        float targetSpeed = 0f;
-        if (Target.TryGetComponent<Rigidbody2D>(out var targetRb))
-        {
-            targetSpeed = targetRb.linearVelocity.magnitude;
-        }
-
-        float targetEvasion = Target.Data.GetTotalEvasion(targetSpeed);
-        float hitChance = ownerHealth.Data.accuracy - targetEvasion;
-
-        bool isHit = UnityEngine.Random.value <= hitChance;
-
-        if (isHit)
-        {
-            if (laserLine != null)
-                StartCoroutine(ShowLaser(muzzle, targetPosition, Color.yellow));
-
-            Target.TakeDamage(damage, targetedModule);
-            Debug.Log($"[HIT] {gameObject.name} попал по {Target.name}! (Приоритет модуля: {(targetedModule.HasValue ? targetedModule.Value.ToString() : "Авто")})");
-        }
-        else
-        {
-            Vector3 missOffset = new Vector3(UnityEngine.Random.Range(-1.2f, 1.2f), UnityEngine.Random.Range(-1.2f, 1.2f), 0f);
-            if (laserLine != null)
-                StartCoroutine(ShowLaser(muzzle, targetPosition + missOffset, Color.gray));
-
-            Debug.Log($"[MISS] {gameObject.name} промахнулся по {Target.name}!");
-        }
-    }
-
-    private IEnumerator ShowLaser(Vector3 start, Vector3 end, Color laserColor)
-    {
-        laserLine.startColor = laserColor;
-        laserLine.enabled = true;
-        laserLine.SetPosition(0, start);
-        laserLine.SetPosition(1, end);
-
-        yield return new WaitForSeconds(LaserVisibleTime);
-
-        laserLine.enabled = false;
     }
 }

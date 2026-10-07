@@ -17,6 +17,7 @@ GameObject:
   - component: {fileID: 6778177482386116974}
   - component: {fileID: 1872751737393846700}
   - component: {fileID: 910000000000000001}
+  - component: {fileID: 3050474726897920827}
   m_Layer: 0
   m_Name: PlayerShip
   m_TagString: Player
@@ -344,9 +345,20 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: b4338a3fcc3460a4e83b98c473874d7e, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::ShipWorldHealthBar
-  verticalOffset: 0.8
-  barWidth: 60
-  barHeight: 6
+--- !u!114 &3050474726897920827
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2033888778526251229}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 2f7e28ab11b3b7b45a54c972c207756a, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::ShipFitting
+  shipSilhouetteTexture: {fileID: 0}
+  toggleKey: 105
 --- !u!1 &3269286399042095776
 GameObject:
   m_ObjectHideFlags: 0

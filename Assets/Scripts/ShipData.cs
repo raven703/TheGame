@@ -2,7 +2,7 @@ using System.Collections.Generic;
 using UnityEngine;
 
 /// <summary>
-/// Full runtime state of a ship: hull integrity, shield, hit chance stats, mass, plus module states.
+/// Полное динамическое состояние корабля: прочность корпуса, щиты, точность, масса и состояние модулей.
 /// </summary>
 public class ShipData
 {
@@ -10,6 +10,7 @@ public class ShipData
     public const float DefaultShieldMaxHP = 40f;
     public const float DefaultEngineMaxHP = 30f;
 
+    // Прочность корпуса
     public float maxHullHP;
     public float currentHullHP;
 
@@ -26,6 +27,7 @@ public class ShipData
     public float maxShieldHP = 50f;
     public float currentShieldHP = 50f;
 
+    // Состояния повреждений отдельных узлов
     public Dictionary<ModuleType, ShipModule> modules = new Dictionary<ModuleType, ShipModule>();
 
     public ShipData(float maxHull)
@@ -33,9 +35,9 @@ public class ShipData
         maxHullHP = Mathf.Max(0f, maxHull);
         currentHullHP = maxHullHP;
 
-        modules.Add(ModuleType.Weapon, new ShipModule(ModuleType.Weapon, DefaultWeaponMaxHP));
-        modules.Add(ModuleType.Shield, new ShipModule(ModuleType.Shield, DefaultShieldMaxHP));
-        modules.Add(ModuleType.Engine, new ShipModule(ModuleType.Engine, DefaultEngineMaxHP));
+        modules[ModuleType.Weapon] = new ShipModule(ModuleType.Weapon, DefaultWeaponMaxHP);
+        modules[ModuleType.Shield] = new ShipModule(ModuleType.Shield, DefaultShieldMaxHP);
+        modules[ModuleType.Engine] = new ShipModule(ModuleType.Engine, DefaultEngineMaxHP);
     }
 
     public bool IsDestroyed => currentHullHP <= 0f;
@@ -47,15 +49,14 @@ public class ShipData
     {
         var engineMod = GetModule(ModuleType.Engine);
         if (engineMod != null && engineMod.isDestroyed)
-            return 0f; // С выбитым двигателем уклонение падаёт до нуля
+            return 0f; // С выбитым двигателем уклонение падает до нуля
 
         return baseEvasion + (currentSpeed * speedEvasionMultiplier);
     }
 
     public ShipModule GetModule(ModuleType type)
     {
-        ShipModule module;
-        return modules.TryGetValue(type, out module) ? module : null;
+        return modules.TryGetValue(type, out var module) ? module : null;
     }
 
     public float AbsorbDamageWithShield(float damage)
@@ -90,7 +91,6 @@ public class ShipData
     public void TakeModuleDamage(ModuleType type, float amount)
     {
         var module = GetModule(type);
-        if (module != null)
-            module.TakeDamage(amount);
+        module?.TakeDamage(amount);
     }
 }
