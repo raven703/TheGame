@@ -1,4 +1,5 @@
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
@@ -21,16 +22,34 @@ public class ShipWeapon : MonoBehaviour
     [Header("Weapon & Projectile Setup")]
     public GameObject bulletPrefab;
     public Transform firePoint;
+
     // Свойство для совместимости с автотестами (Step5Verify) и другими скриптами:
     public Transform weaponPoint
     {
         get => firePoint != null ? firePoint : transform;
         set => firePoint = value;
     }
+
     public float bulletSpeed = 15f;
     public float range = 8f;
     public float baseCooldown = 0.6f;
     public float firingArcAngle = 60f;
+
+    [Header("Fallback Weapon (если фитинг не задан)")]
+    [Tooltip("Если true и фитинг не установил ни одного оружия — стреляем fallback-оружием (для врагов без ShipFitting).")]
+    public bool useFallbackWeapon = false;
+    public float fallbackDamage = 0.5f;
+    public Color fallbackColor = new Color(1f, 0.3f, 0.3f);
+    public WeaponVisualType fallbackVisual = WeaponVisualType.Laser;
+
+    [Header("Shot Visuals")]
+    [Tooltip("Длительность отрисовки следа выстрела в секундах.")]
+    public float laserVisualDuration = 0.1f;
+    public float plasmaVisualDuration = 0.15f;
+    [Tooltip("Ширина лазерного луча.")]
+    public float laserWidth = 0.05f;
+    [Tooltip("Ширина плазменного луча.")]
+    public float plasmaWidth = 0.25f;
 
     [Header("Tactics & AI")]
     public CombatBehavior behavior = CombatBehavior.Orbit;
@@ -67,12 +86,36 @@ public class ShipWeapon : MonoBehaviour
     private float orbitChangeTimer = 0f;
     private float randomRadiusOffset = 0f;
 
+    // Материал для временных LineRenderer'ов (создаётся один раз)
+    private Material lineMaterial;
+
     private void Awake()
     {
         ownerHealth = GetComponentInParent<ShipHealth>();
         shipMovement = GetComponentInParent<ShipMovement>();
         if (shipMovement == null)
             shipMovement = GetComponent<ShipMovement>();
+
+        // Fallback: если Fire Point не назначен — ищем дочерний объект "WeaponPoint"
+        if (firePoint == null)
+        {
+            var found = transform.Find("WeaponPoint");
+            if (found != null)
+                firePoint = found;
+        }
+
+        // Общий материал для LineRenderer'ов выстрелов.
+        // В URP 2D "Sprites/Default" может быть вырезан — пробуем несколько вариантов.
+        var shader = Shader.Find("Sprites/Default")
+                  ?? Shader.Find("Universal Render Pipeline/2D/Sprite-Lit-Default")
+                  ?? Shader.Find("Universal Render Pipeline/Unlit")
+                  ?? Shader.Find("Unlit/Color")
+                  ?? Shader.Find("Legacy Shaders/Diffuse");
+
+        if (shader != null)
+            lineMaterial = new Material(shader);
+        else
+            Debug.LogWarning("[ShipWeapon] Не найден ни один шейдер для LineRenderer, линия выстрела может быть невидимой.");
     }
 
     public void SetBehavior(CombatBehavior newBehavior) => behavior = newBehavior;
@@ -94,6 +137,10 @@ public class ShipWeapon : MonoBehaviour
         if (ownerHealth.Data.IsDestroyed || weaponModule == null || weaponModule.isDestroyed)
             return;
 
+        // При паузе оружие не стреляет: Time.time не растёт, следующий выстрел не перезаряжается
+        if (Time.timeScale <= 0f)
+            return;
+
         // Сброс цели при её уничтожении
         if (Target != null && (Target.Data == null || Target.Data.IsDestroyed))
         {
@@ -109,18 +156,33 @@ public class ShipWeapon : MonoBehaviour
         // Проверка ввода пользователя (автострельба по цели или ручная стрельба)
         bool isManualFiring = false;
 #if ENABLE_INPUT_SYSTEM
-        isManualFiring = (Mouse.current != null && Mouse.current.leftButton.isPressed) ||
-                         (Keyboard.current != null && Keyboard.current.spaceKey.isPressed);
+        isManualFiring = Mouse.current != null && Mouse.current.leftButton.isPressed;
 #else
-        isManualFiring = Input.GetMouseButton(0) || Input.GetKey(KeyCode.Space);
+        isManualFiring = Input.GetMouseButton(0);
 #endif
 
-        bool canAutoFire = Target != null && Vector2.Distance(transform.position, Target.transform.position) <= range && IsTargetInFiringArc(Target.transform.position);
-
-        if ((isManualFiring || canAutoFire) && Time.time >= nextFireTime)
+        if ((isManualFiring || Target != null) && Time.time >= nextFireTime)
         {
-            Shoot();
-            nextFireTime = Time.time + baseCooldown;
+            if (Target != null)
+            {
+                // Если цель есть — стреляем ТОЛЬКО когда она в радиусе и в конусе прицела.
+                float dist = Vector2.Distance(transform.position, Target.transform.position);
+                bool inRange = dist <= range;
+                bool inArc = IsTargetInFiringArc(Target.transform.position);
+
+                if (inRange && inArc)
+                {
+                    Shoot();
+                    nextFireTime = Time.time + baseCooldown;
+                }
+                // Иначе — не стреляем вообще (даже при зажатой ЛКМ).
+            }
+            else if (isManualFiring)
+            {
+                // Цели нет — ручной выстрел «вперёд в пустоту» (только визуал, урона нет).
+                Shoot();
+                nextFireTime = Time.time + baseCooldown;
+            }
         }
     }
 
@@ -195,23 +257,56 @@ public class ShipWeapon : MonoBehaviour
 
     private void Shoot()
     {
+        // Защитная проверка конуса/радиуса: если есть цель, но она вне — не стреляем.
+        // (На случай, если Shoot вызовут из другого места: AI, тесты, будущие скрипты.)
+        if (Target != null)
+        {
+            float dist = Vector2.Distance(transform.position, Target.transform.position);
+            if (dist > range || !IsTargetInFiringArc(Target.transform.position))
+                return;
+        }
+
         Transform spawnPoint = firePoint != null ? firePoint : transform;
 
-        // Сколько установленных стволов — столько и выстрелов за один залп
-        int weaponCount = activeWeapons.Count > 0 ? activeWeapons.Count : 1;
+        // Собираем список выстрелов: либо из установленного фитинга, либо fallback
+        bool useFitting = activeWeapons != null && activeWeapons.Count > 0;
 
+        if (!useFitting && !useFallbackWeapon)
+            return;
+
+        int weaponCount = useFitting ? activeWeapons.Count : 1;
+
+        // Разнос стволов перпендикулярно направлению стрельбы (по "right" точки спавна)
         float spacing = 0.35f;
         float startOffset = -(weaponCount - 1) * spacing * 0.5f;
 
+        Vector2 forward = shipMovement != null
+            ? shipMovement.GetForwardVector()
+            : (Vector2)spawnPoint.up;
+
         for (int i = 0; i < weaponCount; i++)
         {
-            FittingItem weaponModule = activeWeapons.Count > 0 ? activeWeapons[i] : null;
-            float currentDamage = weaponModule != null ? weaponModule.damageBonus : 15f;
-            Color bulletColor = weaponModule != null ? weaponModule.iconColor : Color.yellow;
+            FittingItem weaponModule = useFitting ? activeWeapons[i] : null;
+
+            float currentDamage = weaponModule != null ? weaponModule.damageBonus : fallbackDamage;
+            Color shotColor = weaponModule != null ? weaponModule.iconColor : fallbackColor;
+            WeaponVisualType visual = weaponModule != null ? weaponModule.visualType : fallbackVisual;
 
             Vector3 offset = spawnPoint.right * (startOffset + i * spacing);
             Vector3 spawnPos = spawnPoint.position + offset;
 
+            // Если есть цель — линия идёт до цели; иначе — на длину range по forward
+            Vector3 endPos;
+            if (Target != null)
+            {
+                endPos = Target.transform.position;
+            }
+            else
+            {
+                endPos = spawnPos + (Vector3)(forward * range);
+            }
+
+            // Спавн снаряда (если назначен) или мгновенный урон + визуал
             if (bulletPrefab != null)
             {
                 GameObject bullet = Instantiate(bulletPrefab, spawnPos, spawnPoint.rotation);
@@ -219,24 +314,71 @@ public class ShipWeapon : MonoBehaviour
                 var rb = bullet.GetComponent<Rigidbody2D>();
                 if (rb != null)
                 {
-                    rb.linearVelocity = spawnPoint.up * bulletSpeed;
+                    rb.linearVelocity = forward * bulletSpeed;
                 }
 
                 var renderer = bullet.GetComponent<SpriteRenderer>();
                 if (renderer != null)
                 {
-                    renderer.color = bulletColor;
+                    renderer.color = shotColor;
                 }
             }
             else
             {
-                // Если префаб снаряда не назначен, мгновенно передаем урон по выбранному модулю
+                // Мгновенный урон, если есть цель (уже проверено выше, что цель в конусе)
                 if (Target != null)
                 {
                     Target.TakeDamage(currentDamage, targetedModule);
                 }
-                Debug.DrawRay(spawnPos, spawnPoint.up * 5f, bulletColor, 0.2f);
+
+                // Визуальный след
+                DrawShot(spawnPos, endPos, shotColor, visual);
             }
         }
+    }
+
+    /// <summary>
+    /// Рисует временный след выстрела через LineRenderer.
+    /// Laser — тонкий луч, Plasma — толстый луч-капля.
+    /// </summary>
+    private void DrawShot(Vector3 from, Vector3 to, Color color, WeaponVisualType visual)
+    {
+        GameObject go = new GameObject("ShotVisual");
+        var lr = go.AddComponent<LineRenderer>();
+
+        lr.useWorldSpace = true;
+        lr.positionCount = 2;
+        lr.SetPosition(0, from);
+        lr.SetPosition(1, to);
+
+        if (lineMaterial != null)
+            lr.material = lineMaterial;
+
+        lr.sortingOrder = 5;
+
+        float width;
+        float duration;
+        int capVertices;
+
+        if (visual == WeaponVisualType.Plasma)
+        {
+            width = plasmaWidth;
+            duration = plasmaVisualDuration;
+            capVertices = 4; // скруглённые концы — эффект "капли"
+        }
+        else // Laser
+        {
+            width = laserWidth;
+            duration = laserVisualDuration;
+            capVertices = 0;
+        }
+
+        lr.startWidth = width;
+        lr.endWidth = width;
+        lr.numCapVertices = capVertices;
+        lr.startColor = color;
+        lr.endColor = color;
+
+        Destroy(go, duration);
     }
 }

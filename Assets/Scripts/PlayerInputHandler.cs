@@ -36,6 +36,15 @@ public class PlayerInputHandler : MonoBehaviour
         controls.Combat.Disable();
     }
 
+    private void OnDestroy()
+    {
+        if (controls != null)
+        {
+            controls.Combat.Click.performed -= OnClick;
+            controls.Dispose();
+        }
+    }
+
     private void OnClick(InputAction.CallbackContext context)
     {
         if (playerMovement == null || playerWeapon == null)

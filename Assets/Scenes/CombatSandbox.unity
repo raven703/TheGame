@@ -1555,7 +1555,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 4137465beefcd444ba12d0eb8da819ce, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::TargetLockIndicator
-  playerWeapon: {fileID: 0}
+  playerWeapon: {fileID: 1898430268}
   targetIconSprite: {fileID: 0}
   reticleColor: {r: 1, g: 0.2, b: 0.2, a: 0.85}
   reticleScale: {x: 1.2, y: 1.2, z: 1}

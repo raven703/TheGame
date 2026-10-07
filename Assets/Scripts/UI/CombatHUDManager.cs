@@ -103,13 +103,11 @@ public class CombatHUDManager : MonoBehaviour
         float hullPct = Mathf.Clamp01(health.Data.currentHullHP / health.Data.maxHullHP);
         DrawBar(rect.x + padding, ref currentY, width, $"Корпус: {health.Data.currentHullHP:F0}/{health.Data.maxHullHP:F0}", hullPct, hullColor);
 
-        // Щит HP
-        var shieldMod = health.Data.GetModule(ModuleType.Shield);
-        if (shieldMod != null)
-        {
-            float shieldPct = Mathf.Clamp01(shieldMod.currentHP / shieldMod.maxHP);
-            DrawBar(rect.x + padding, ref currentY, width, $"Щит: {shieldMod.currentHP:F0}/{shieldMod.maxHP:F0}", shieldPct, shieldColor);
-        }
+        // Щит HP (динамический щит корабля, а не прочность модуля щита)
+        float shieldPct = health.Data.maxShieldHP > 0f
+            ? Mathf.Clamp01(health.Data.currentShieldHP / health.Data.maxShieldHP)
+            : 0f;
+        DrawBar(rect.x + padding, ref currentY, width, $"Щит: {health.Data.currentShieldHP:F0}/{health.Data.maxShieldHP:F0}", shieldPct, shieldColor);
 
         currentY += 4f;
         GUI.Label(new Rect(rect.x + padding, currentY, width, 16), "Модули:", labelStyle);

@@ -13,40 +13,6 @@ public enum SlotGroup
     Inventory         // Свободный инвентарь справа
 }
 
-[System.Serializable]
-public class FittingItem
-{
-    public string id;
-    public string name;
-    public SlotGroup allowedGroup;
-    public Color iconColor = Color.cyan;
-    public string description;
-
-    // Модификаторы характеристик
-    public float damageBonus;
-    public float cooldownBonus;
-    public float shieldBonus;
-    public float speedBonus;
-    public float accelBonus;
-    public float massBonus;
-
-    public FittingItem(string id, string name, SlotGroup allowedGroup, Color color, string desc,
-                       float damage = 0, float cooldown = 0, float shield = 0, float speed = 0, float accel = 0, float mass = 0)
-    {
-        this.id = id;
-        this.name = name;
-        this.allowedGroup = allowedGroup;
-        this.iconColor = color;
-        this.description = desc;
-        this.damageBonus = damage;
-        this.cooldownBonus = cooldown;
-        this.shieldBonus = shield;
-        this.speedBonus = speed;
-        this.accelBonus = accel;
-        this.massBonus = mass;
-    }
-}
-
 public class ShipFitting : MonoBehaviour
 {
     [Header("Visuals")]
@@ -99,9 +65,9 @@ public class ShipFitting : MonoBehaviour
 
     private void InitDefaultInventory()
     {
-        inventory.Add(new FittingItem("w1", "Лазер T1", SlotGroup.Top_Weapons, new Color(1f, 0.3f, 0.3f), "Оружие: Урон +15", damage: 15f));
-        inventory.Add(new FittingItem("w2", "Плазма T2", SlotGroup.Top_Weapons, new Color(1f, 0.1f, 0.5f), "Оружие: Урон +30", damage: 30f));
-        inventory.Add(new FittingItem("w3", "Рейлган T1", SlotGroup.Top_Weapons, new Color(1f, 0.5f, 0.2f), "Оружие: Урон +20", damage: 20f));
+        inventory.Add(new FittingItem("w1", "Лазер T1", SlotGroup.Top_Weapons, new Color(1f, 0.3f, 0.3f), "Оружие: Урон +15", damage: 15f, visual: WeaponVisualType.Laser));
+        inventory.Add(new FittingItem("w2", "Плазма T2", SlotGroup.Top_Weapons, new Color(1f, 0.1f, 0.5f), "Оружие: Урон +30", damage: 30f, visual: WeaponVisualType.Plasma));
+        inventory.Add(new FittingItem("w3", "Рейлган T1", SlotGroup.Top_Weapons, new Color(1f, 0.5f, 0.2f), "Оружие: Урон +20", damage: 20f, visual: WeaponVisualType.Laser));
 
         inventory.Add(new FittingItem("s1", "Легкий Щит", SlotGroup.Center_Shields, new Color(0.2f, 0.6f, 1f), "Защита: Щит +30 HP", shield: 30f, mass: 0.2f));
         inventory.Add(new FittingItem("s2", "Тяжелый Щит", SlotGroup.Center_Shields, new Color(0.3f, 0.9f, 0.4f), "Защита: Щит +80 HP", shield: 80f, mass: 1.0f));

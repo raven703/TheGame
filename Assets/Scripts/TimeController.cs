@@ -31,6 +31,11 @@ public class TimeController : MonoBehaviour
         controls.Combat.Disable();
     }
 
+    private void OnDestroy()
+    {
+        controls?.Dispose();
+    }
+
     /// <summary>Pauses the game, or resumes it when it was already paused.</summary>
     public void TogglePause()
     {
