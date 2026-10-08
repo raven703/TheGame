@@ -54,8 +54,9 @@ public class ShipWeapon : MonoBehaviour
     [Header("Tactics & AI")]
     public CombatBehavior behavior = CombatBehavior.Orbit;
     public bool orbitClockwise = true;
-
+    
     [Tooltip("Приоритетный модуль для выбивания (null = авто-распределение урона)")]
+    [System.NonSerialized]
     public ModuleType? targetedModule = null;
 
     [HideInInspector] public bool manualMoveOrder = false;
@@ -118,9 +119,27 @@ public class ShipWeapon : MonoBehaviour
             Debug.LogWarning("[ShipWeapon] Не найден ни один шейдер для LineRenderer, линия выстрела может быть невидимой.");
     }
 
-    public void SetBehavior(CombatBehavior newBehavior) => behavior = newBehavior;
+    /// <summary>
+    /// Устанавливает тактическое поведение.
+    /// Если цель захвачена — сбрасывает manualMoveOrder, чтобы корабль снова
+    /// перешёл к авто-маневрированию и атаке цели.
+    /// </summary>
+    public void SetBehavior(CombatBehavior newBehavior)
+    {
+        behavior = newBehavior;
+
+        if (Target != null)
+            manualMoveOrder = false;
+    }
+
     public void SetTargetModule(ModuleType? module) => targetedModule = module;
-    public void SetTarget(ShipHealth newTarget) { Target = newTarget; manualMoveOrder = false; }
+
+    public void SetTarget(ShipHealth newTarget)
+    {
+        Target = newTarget;
+        manualMoveOrder = false;
+    }
+
     public void ClearTarget() => Target = null;
 
     public void SetEquippedWeapons(List<FittingItem> weapons)

@@ -1,4 +1,5 @@
 using UnityEngine;
+using UnityEngine.EventSystems;
 using UnityEngine.InputSystem;
 
 /// <summary>
@@ -16,36 +17,29 @@ public class PlayerInputHandler : MonoBehaviour
     [Tooltip("Weapon component of the player ship.")]
     public ShipWeapon playerWeapon;
 
-    private CombatControls controls;
     private Camera mainCamera;
 
     private void Awake()
     {
-        controls = new CombatControls();
         mainCamera = Camera.main;
-        controls.Combat.Click.performed += OnClick;
     }
 
-    private void OnEnable()
+    // LateUpdate — чтобы EventSystem уже обновил состояние.
+    // Если обрабатывать клик в Update (или через InputAction callback) — IsPointerOverGameObject()
+    // вернёт состояние прошлого кадра, и клик по UI «провалится» в игровое поле.
+    private void LateUpdate()
     {
-        controls.Combat.Enable();
+        if (Mouse.current == null || !Mouse.current.leftButton.wasPressedThisFrame)
+            return;
+
+        // Клик по UI (UGUI) — игнорируем.
+        if (EventSystem.current != null && EventSystem.current.IsPointerOverGameObject())
+            return;
+
+        HandleClick();
     }
 
-    private void OnDisable()
-    {
-        controls.Combat.Disable();
-    }
-
-    private void OnDestroy()
-    {
-        if (controls != null)
-        {
-            controls.Combat.Click.performed -= OnClick;
-            controls.Dispose();
-        }
-    }
-
-    private void OnClick(InputAction.CallbackContext context)
+    private void HandleClick()
     {
         if (playerMovement == null || playerWeapon == null)
         {
@@ -62,7 +56,7 @@ public class PlayerInputHandler : MonoBehaviour
             return;
         }
 
-        var mousePosition = Mouse.current != null ? Mouse.current.position.ReadValue() : Vector2.zero;
+        var mousePosition = Mouse.current.position.ReadValue();
         var worldPosition = mainCamera.ScreenToWorldPoint(mousePosition);
         worldPosition.z = 0f;
 
@@ -73,7 +67,6 @@ public class PlayerInputHandler : MonoBehaviour
             var enemyHealth = hit.collider.GetComponentInParent<ShipHealth>();
             if (enemyHealth != null)
             {
-                // Клик по врагу: захватываем цель и включаем авто-маневрирование (орбита/кайтинг)
                 playerWeapon.SetTarget(enemyHealth);
                 playerWeapon.manualMoveOrder = false;
                 Debug.Log($"[PlayerInputHandler] Захват цели и авто-маневрирование: {enemyHealth.name}");
@@ -81,8 +74,6 @@ public class PlayerInputHandler : MonoBehaviour
         }
         else
         {
-            // Клик по пустому месту — НЕ сбрасываем захваченную цель!
-            // Задаем точку движения и переводим корабль в режим ручного маневрирования.
             playerWeapon.manualMoveOrder = true;
             playerMovement.SetTargetPosition(worldPosition);
 

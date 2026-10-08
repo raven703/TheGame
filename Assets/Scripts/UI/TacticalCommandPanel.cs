@@ -1,4 +1,6 @@
 using UnityEngine;
+using UnityEngine.UI;
+using TMPro;
 
 public class TacticalCommandPanel : MonoBehaviour
 {
@@ -6,130 +8,105 @@ public class TacticalCommandPanel : MonoBehaviour
     public ShipWeapon playerWeapon;
     public ShipAbilities playerAbilities;
 
-    private GUIStyle btnNormalStyle;
-    private GUIStyle btnActiveStyle;
-    private GUIStyle headerStyle;
-    private Texture2D whiteTexture;
+    [Header("Behavior Buttons")]
+    public Button orbitButton;
+    public Button keepDistanceButton;
+    public Button flankButton;
 
-    private void Awake()
+    [Header("Target Priority Buttons")]
+    public Button autoTargetButton;
+    public Button weaponTargetButton;
+    public Button shieldTargetButton;
+    public Button engineTargetButton;
+
+    [Header("Ability Buttons")]
+    public Button afterburnerButton;
+    public Button shieldBoostButton;
+    public Button empButton;
+
+    [Header("Ability Labels (TMP on each button)")]
+    public TextMeshProUGUI afterburnerLabel;
+    public TextMeshProUGUI shieldBoostLabel;
+    public TextMeshProUGUI empLabel;
+
+    [Header("Colors")]
+    public Color normalColor = Color.white;
+    public Color activeColor = new Color(1f, 0.85f, 0.2f, 1f);
+
+    private void Start()
     {
-        whiteTexture = new Texture2D(1, 1);
-        whiteTexture.SetPixel(0, 0, Color.white);
-        whiteTexture.Apply();
+        if (playerWeapon == null)
+        {
+            Debug.LogWarning("[TacticalCommandPanel] playerWeapon не назначен.");
+            return;
+        }
+
+        // Behavior
+        orbitButton.onClick.AddListener(() => playerWeapon.SetBehavior(CombatBehavior.Orbit));
+        keepDistanceButton.onClick.AddListener(() => playerWeapon.SetBehavior(CombatBehavior.KeepDistance));
+        flankButton.onClick.AddListener(() => playerWeapon.SetBehavior(CombatBehavior.Flank));
+
+        // Target priority
+        autoTargetButton.onClick.AddListener(() => playerWeapon.SetTargetModule(null));
+        weaponTargetButton.onClick.AddListener(() => playerWeapon.SetTargetModule(ModuleType.Weapon));
+        shieldTargetButton.onClick.AddListener(() => playerWeapon.SetTargetModule(ModuleType.Shield));
+        engineTargetButton.onClick.AddListener(() => playerWeapon.SetTargetModule(ModuleType.Engine));
+
+        // Abilities
+        afterburnerButton.onClick.AddListener(() => playerAbilities?.UseAfterburner());
+        shieldBoostButton.onClick.AddListener(() => playerAbilities?.UseShieldBoost());
+        empButton.onClick.AddListener(() => playerAbilities?.UseEMPulse());
     }
 
-    private void InitStyles()
-    {
-        if (btnNormalStyle != null) return;
-
-        btnNormalStyle = new GUIStyle(GUI.skin.button)
-        {
-            fontSize = 10,
-            fontStyle = FontStyle.Bold,
-            alignment = TextAnchor.MiddleCenter
-        };
-
-        btnActiveStyle = new GUIStyle(btnNormalStyle);
-        btnActiveStyle.normal.textColor = Color.yellow;
-
-        headerStyle = new GUIStyle(GUI.skin.label)
-        {
-            fontSize = 11,
-            fontStyle = FontStyle.Bold,
-            alignment = TextAnchor.MiddleCenter
-        };
-        headerStyle.normal.textColor = new Color(0.8f, 0.9f, 1f);
-    }
-
-    private void OnGUI()
+    private void Update()
     {
         if (playerWeapon == null) return;
-        InitStyles();
 
-        // Центрируем панель снизу экрана
-        float panelWidth = 640f;
-        float panelHeight = 65f;
-        float startX = (Screen.width - panelWidth) * 0.5f;
-        float startY = Screen.height - panelHeight - 10f;
+        HighlightBehavior(orbitButton, CombatBehavior.Orbit);
+        HighlightBehavior(keepDistanceButton, CombatBehavior.KeepDistance);
+        HighlightBehavior(flankButton, CombatBehavior.Flank);
 
-        Rect panelRect = new Rect(startX, startY, panelWidth, panelHeight);
+        HighlightTarget(autoTargetButton, null);
+        HighlightTarget(weaponTargetButton, ModuleType.Weapon);
+        HighlightTarget(shieldTargetButton, ModuleType.Shield);
+        HighlightTarget(engineTargetButton, ModuleType.Engine);
 
-        // Полупрозрачная плашка
-        Color oldColor = GUI.color;
-        GUI.color = new Color(0.05f, 0.05f, 0.1f, 0.85f);
-        GUI.DrawTexture(panelRect, whiteTexture);
-        GUI.color = oldColor;
-
-        GUILayout.BeginArea(panelRect);
-        GUILayout.BeginHorizontal();
-
-        // --- БЛОК 1: ПОВЕДЕНИЕ (3 КНОПКИ) ---
-        GUILayout.BeginVertical(GUILayout.Width(180));
-        GUILayout.Label("ПОВЕДЕНИЕ", headerStyle);
-        GUILayout.BeginHorizontal();
-        DrawBehaviorBtn("Орбита", CombatBehavior.Orbit);
-        DrawBehaviorBtn("Кайт", CombatBehavior.KeepDistance);
-        DrawBehaviorBtn("Фланг", CombatBehavior.Flank);
-        GUILayout.EndHorizontal();
-        GUILayout.EndVertical();
-
-        GUILayout.Space(10);
-
-        // --- БЛОК 2: ФОКУС ЦЕЛИ (4 КНОПКИ) ---
-        GUILayout.BeginVertical(GUILayout.Width(220));
-        GUILayout.Label("ПРИОРИТЕТ ЦЕЛИ", headerStyle);
-        GUILayout.BeginHorizontal();
-        DrawTargetBtn("Авто", null);
-        DrawTargetBtn("Пушка", ModuleType.Weapon);
-        DrawTargetBtn("Щит", ModuleType.Shield);
-        DrawTargetBtn("Двиг", ModuleType.Engine);
-        GUILayout.EndHorizontal();
-        GUILayout.EndVertical();
-
-        GUILayout.Space(10);
-
-        // --- БЛОК 3: АКТИВНЫЕ СПОСОБНОСТИ (2 ГРУППА) ---
-        GUILayout.BeginVertical(GUILayout.Width(200));
-        GUILayout.Label("СПОСОБНОСТИ (ГР. 2)", headerStyle);
-        GUILayout.BeginHorizontal();
-        DrawAbilityBtn("Форсаж", playerAbilities ? playerAbilities.afterburnerCooldown : 0f, () => playerAbilities?.UseAfterburner());
-        DrawAbilityBtn("Щит+", playerAbilities ? playerAbilities.shieldBoostCooldown : 0f, () => playerAbilities?.UseShieldBoost());
-        DrawAbilityBtn("РЭБ", playerAbilities ? playerAbilities.emPulseCooldown : 0f, () => playerAbilities?.UseEMPulse());
-        GUILayout.EndHorizontal();
-        GUILayout.EndVertical();
-
-        GUILayout.EndHorizontal();
-        GUILayout.EndArea();
+        UpdateAbilityButton(afterburnerButton, afterburnerLabel, "Форсаж", playerAbilities ? playerAbilities.afterburnerCooldown : 0f);
+        UpdateAbilityButton(shieldBoostButton, shieldBoostLabel, "Щит+", playerAbilities ? playerAbilities.shieldBoostCooldown : 0f);
+        UpdateAbilityButton(empButton, empLabel, "РЭБ", playerAbilities ? playerAbilities.emPulseCooldown : 0f);
     }
 
-    private void DrawBehaviorBtn(string label, CombatBehavior behavior)
+    private void HighlightBehavior(Button btn, CombatBehavior behavior)
     {
+        if (btn == null) return;
         bool isActive = playerWeapon.behavior == behavior;
-        GUIStyle style = isActive ? btnActiveStyle : btnNormalStyle;
-        if (GUILayout.Button(label, style, GUILayout.Height(32)))
-        {
-            playerWeapon.SetBehavior(behavior);
-        }
+        SetButtonColor(btn, isActive ? activeColor : normalColor);
     }
 
-    private void DrawTargetBtn(string label, ModuleType? module)
+    private void HighlightTarget(Button btn, ModuleType? module)
     {
+        if (btn == null) return;
         bool isActive = playerWeapon.targetedModule == module;
-        GUIStyle style = isActive ? btnActiveStyle : btnNormalStyle;
-        if (GUILayout.Button(label, style, GUILayout.Height(32)))
-        {
-            playerWeapon.SetTargetModule(module);
-        }
+        SetButtonColor(btn, isActive ? activeColor : normalColor);
     }
 
-    private void DrawAbilityBtn(string label, float cd, System.Action onClick)
+    private void SetButtonColor(Button btn, Color color)
     {
-        string display = cd > 0f ? $"{label}\n({cd:F0}s)" : label;
-        GUI.enabled = cd <= 0f;
-        if (GUILayout.Button(display, btnNormalStyle, GUILayout.Height(32)))
-        {
-            onClick?.Invoke();
-        }
-        GUI.enabled = true;
+        var cb = btn.colors;
+        cb.normalColor = color;
+        cb.selectedColor = color;
+        cb.highlightedColor = color * 1.1f;
+        btn.colors = cb;
+    }
+
+    private void UpdateAbilityButton(Button btn, TextMeshProUGUI label, string baseLabel, float cooldown)
+    {
+        if (btn == null) return;
+
+        bool ready = cooldown <= 0f;
+        btn.interactable = ready;
+
+        if (label != null)
+            label.text = ready ? baseLabel : $"{baseLabel}\n({Mathf.CeilToInt(cooldown)}s)";
     }
 }
