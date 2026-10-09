@@ -10,7 +10,7 @@ using TMPro;
 public class FittingWindow : MonoBehaviour
 {
     [Header("Ship Definition")]
-    [Tooltip("Какой корабль редактируется по умолчанию.")]
+    [Tooltip("Какой корабль редактируется по умолчанию. Если null — берётся первый из ShipLibrary.")]
     public ShipDefinition shipDefinition;
 
     [Tooltip("Справочник всех кораблей в игре (для селектора в UI).")]
@@ -55,20 +55,18 @@ public class FittingWindow : MonoBehaviour
     // Текущий loadout
     private ShipLoadout currentLoadout;
 
-    // Список созданных слотов (для очистки)
     private List<FittingSlot> weaponSlots = new List<FittingSlot>();
     private List<FittingSlot> shieldSlots = new List<FittingSlot>();
     private List<FittingSlot> engineSlots = new List<FittingSlot>();
 
-    // Список созданных элементов инвентаря
     private List<FittingItemView> itemViews = new List<FittingItemView>();
 
-    // Кэш компонентов корабля игрока
     private ShipMovement targetShipMovement;
     private ShipWeapon targetShipWeapon;
 
-    // Флаг, чтобы не строить дважды за кадр
+    // Защита от повторного билда за кадр и от повторного билда вообще
     private bool isBuilding = false;
+    private bool isBuilt = false;
 
     private void Awake()
     {
@@ -76,11 +74,6 @@ public class FittingWindow : MonoBehaviour
 
         if (closeButton != null)
             closeButton.onClick.AddListener(Close);
-    }
-
-    private void Start()
-    {
-        BuildAll();
     }
 
     // ==================== TARGET SHIP ====================
@@ -103,16 +96,34 @@ public class FittingWindow : MonoBehaviour
 
     // ==================== OPEN / CLOSE ====================
 
-    public void Open() => gameObject.SetActive(true);
+    public void Open()
+    {
+        // Автовыбор корабля, если не задан.
+        if (shipDefinition == null && shipLibrary != null && shipLibrary.ships != null && shipLibrary.ships.Count > 0)
+        {
+            shipDefinition = shipLibrary.ships[0];
+        }
+
+        // Первое открытие — строим содержимое.
+        if (!isBuilt)
+        {
+            BuildAll();
+            isBuilt = true;
+        }
+
+        gameObject.SetActive(true);
+    }
+
     public void Close() => gameObject.SetActive(false);
-    public void Toggle() => gameObject.SetActive(!gameObject.activeSelf);
+
+    public void Toggle()
+    {
+        if (gameObject.activeSelf) Close();
+        else Open();
+    }
 
     // ==================== BUILD ALL ====================
 
-    /// <summary>
-    /// Полная пересборка окна: loadout + селектор + слоты + инвентарь + применение статов.
-    /// Защищена от повторного вызова в одном кадре.
-    /// </summary>
     private void BuildAll()
     {
         if (isBuilding) return;
@@ -137,14 +148,9 @@ public class FittingWindow : MonoBehaviour
 
         if (currentLoadout == null)
         {
-            // Первый запуск — новый loadout с дефолтным инвентарём.
             currentLoadout = new ShipLoadout(def.shipId);
             PopulateDefaultInventory(currentLoadout);
         }
-
-        // Если loadout уже был — НЕ добавляем дефолт.
-        // Даже если inventory пуст — это значит, что игрок всё поставил в слоты.
-        // Иначе при каждом перезапуске появлялись бы дубликаты модулей.
 
         if (titleLabel != null)
             titleLabel.text = $"ПОСТРОЙКА И КОНФИГУРАЦИЯ: {def.displayName}";
@@ -238,10 +244,6 @@ public class FittingWindow : MonoBehaviour
         }
     }
 
-    /// <summary>
-    /// Удаляет всех детей контейнера. Итерирует в обратном порядке по индексу —
-    /// иначе Destroy (отложенный) ломает foreach и оставляет дубликаты.
-    /// </summary>
     private void ClearContainer(Transform container)
     {
         if (container == null) return;
@@ -315,13 +317,11 @@ public class FittingWindow : MonoBehaviour
         if (source.item == null) return;
         if (source.item.allowedGroup != targetSlot.group) return;
 
-        // Если в слоте уже что-то есть — вернуть в инвентарь
         if (targetSlot.Item != null)
         {
             AddToInventory(targetSlot.Item);
         }
 
-        // Убрать item из инвентаря (из loadout)
         if (currentLoadout != null && currentLoadout.inventory != null)
             currentLoadout.inventory.Remove(source.item);
 
