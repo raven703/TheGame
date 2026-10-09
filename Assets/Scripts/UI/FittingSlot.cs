@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.EventSystems;
 using UnityEngine.UI;
@@ -20,22 +21,18 @@ public class FittingSlot : MonoBehaviour, IDropHandler, IPointerClickHandler,
     public Color filledColor = new Color(0.2f, 0.22f, 0.3f, 1f);
     public Color validDropColor = new Color(0.2f, 0.5f, 0.2f, 1f);
 
-    /// <summary>Какая группа слотов (Weapon/Shield/Engine).</summary>
     public SlotGroup group;
-
-    /// <summary>Индекс слота внутри группы.</summary>
     public int index;
-
-    /// <summary>Ссылка на окно фитинга.</summary>
     public FittingWindow window;
 
     private FittingItem item;
     public FittingItem Item => item;
 
-    // Drag
     private CanvasGroup canvasGroup;
     private GameObject dragVisual;
     private bool isDragging = false;
+    private bool isHighlighted = false;
+    private FittingSlot lastHighlightedSlot;
 
     private void Awake()
     {
@@ -49,6 +46,7 @@ public class FittingSlot : MonoBehaviour, IDropHandler, IPointerClickHandler,
     public void SetItem(FittingItem newItem)
     {
         item = newItem;
+        isHighlighted = false;   // сброс подсветки при любом изменении
         RefreshVisual();
     }
 
@@ -64,7 +62,7 @@ public class FittingSlot : MonoBehaviour, IDropHandler, IPointerClickHandler,
         }
         else
         {
-            background.color = emptyColor;
+            background.color = isHighlighted ? validDropColor : emptyColor;
             if (label != null) label.text = $"[Слот {index + 1}]";
         }
     }
@@ -75,7 +73,6 @@ public class FittingSlot : MonoBehaviour, IDropHandler, IPointerClickHandler,
     {
         if (window == null) return;
 
-        // Источник — FittingItemView (инвентарь)
         var itemView = eventData.pointerDrag != null
             ? eventData.pointerDrag.GetComponent<FittingItemView>()
             : null;
@@ -86,7 +83,6 @@ public class FittingSlot : MonoBehaviour, IDropHandler, IPointerClickHandler,
             return;
         }
 
-        // Источник — другой FittingSlot
         var sourceSlot = eventData.pointerDrag != null
             ? eventData.pointerDrag.GetComponent<FittingSlot>()
             : null;
@@ -99,7 +95,6 @@ public class FittingSlot : MonoBehaviour, IDropHandler, IPointerClickHandler,
 
     public void OnPointerClick(PointerEventData eventData)
     {
-        // ПКМ = снять предмет из слота обратно в инвентарь (для мыши).
         if (eventData.button == PointerEventData.InputButton.Right)
         {
             if (window != null && item != null)
@@ -111,24 +106,24 @@ public class FittingSlot : MonoBehaviour, IDropHandler, IPointerClickHandler,
 
     public void OnBeginDrag(PointerEventData eventData)
     {
-        if (item == null) return;           // пустой слот не тащим
+        if (item == null) return;
         if (window == null) return;
 
-        // Создаём временный визуал в DragLayer
         if (window.itemViewPrefab != null && window.dragLayer != null)
         {
             var view = Instantiate(window.itemViewPrefab, window.dragLayer);
             view.window = window;
             view.SetItem(item);
-
-            // Отключаем компонент, чтобы сам view не пытался начать свой drag.
             view.enabled = false;
+
+            var cg = view.GetComponent<CanvasGroup>();
+            if (cg == null) cg = view.gameObject.AddComponent<CanvasGroup>();
+            cg.blocksRaycasts = false;
 
             dragVisual = view.gameObject;
             dragVisual.transform.position = eventData.position;
         }
 
-        // Скрываем визуал слота (фон + текст), но сам слот остаётся
         if (background != null) background.enabled = false;
         if (label != null) label.enabled = false;
 
@@ -140,6 +135,8 @@ public class FittingSlot : MonoBehaviour, IDropHandler, IPointerClickHandler,
     {
         if (dragVisual != null)
             dragVisual.transform.position = eventData.position;
+
+        HighlightSlotUnderPointer(eventData);
     }
 
     public void OnEndDrag(PointerEventData eventData)
@@ -158,6 +155,59 @@ public class FittingSlot : MonoBehaviour, IDropHandler, IPointerClickHandler,
             dragVisual = null;
         }
 
-        // Если drop не был обработан слотом или зоной инвентаря — слот остаётся как был.
+        if (lastHighlightedSlot != null)
+        {
+            lastHighlightedSlot.SetHighlight(false);
+            lastHighlightedSlot = null;
+        }
+    }
+
+    // ==================== HIGHLIGHT ====================
+
+    public void SetHighlight(bool on)
+    {
+        isHighlighted = on;
+
+        if (background == null) background = GetComponent<Image>();
+
+        if (item == null)
+        {
+            background.color = on ? validDropColor : emptyColor;
+        }
+    }
+
+    private void HighlightSlotUnderPointer(PointerEventData eventData)
+    {
+        if (EventSystem.current == null) return;
+
+        var results = new List<RaycastResult>();
+        EventSystem.current.RaycastAll(eventData, results);
+
+        FittingSlot slotUnderPointer = null;
+        foreach (var r in results)
+        {
+            var slot = r.gameObject.GetComponentInParent<FittingSlot>();
+            if (slot != null)
+            {
+                slotUnderPointer = slot;
+                break;
+            }
+        }
+
+        if (lastHighlightedSlot != null && lastHighlightedSlot != slotUnderPointer)
+        {
+            lastHighlightedSlot.SetHighlight(false);
+        }
+
+        if (slotUnderPointer != null && slotUnderPointer != this
+            && item != null && slotUnderPointer.group == item.allowedGroup)
+        {
+            slotUnderPointer.SetHighlight(true);
+            lastHighlightedSlot = slotUnderPointer;
+        }
+        else
+        {
+            lastHighlightedSlot = null;
+        }
     }
 }
