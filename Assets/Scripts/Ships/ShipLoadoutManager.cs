@@ -15,7 +15,6 @@ public static class ShipLoadoutManager
 
     private static string FilePath => Path.Combine(Application.persistentDataPath, FileName);
 
-    /// <summary>Возвращает loadout для корабля или null, если сохранённого нет.</summary>
     public static ShipLoadout GetLoadout(string shipId)
     {
         EnsureLoaded();
@@ -25,18 +24,20 @@ public static class ShipLoadoutManager
         return cache.TryGetValue(shipId, out var loadout) ? loadout : null;
     }
 
-    /// <summary>Сохраняет loadout в кэш и на диск.</summary>
     public static void SaveLoadout(ShipLoadout loadout)
     {
         if (loadout == null || string.IsNullOrEmpty(loadout.shipId))
             return;
 
         EnsureLoaded();
+
+        // Санитайзим перед сохранением — вдруг кто-то добавил пустышку.
+        Sanitize(loadout);
+
         cache[loadout.shipId] = loadout;
         SaveToDisk();
     }
 
-    /// <summary>Удаляет сохранённый loadout для корабля.</summary>
     public static void DeleteLoadout(string shipId)
     {
         EnsureLoaded();
@@ -44,7 +45,6 @@ public static class ShipLoadoutManager
             SaveToDisk();
     }
 
-    /// <summary>Полная очистка сохранений (для отладки).</summary>
     public static void ClearAll()
     {
         cache.Clear();
@@ -53,7 +53,6 @@ public static class ShipLoadoutManager
             File.Delete(FilePath);
     }
 
-    /// <summary>Путь к файлу сохранения — на случай, если хочешь посмотреть вручную.</summary>
     public static string GetSavePath() => FilePath;
 
     private static void EnsureLoaded()
@@ -76,7 +75,10 @@ public static class ShipLoadoutManager
                 foreach (var loadout in saveFile.loadouts)
                 {
                     if (loadout != null && !string.IsNullOrEmpty(loadout.shipId))
+                    {
+                        Sanitize(loadout);
                         cache[loadout.shipId] = loadout;
+                    }
                 }
             }
         }
@@ -100,5 +102,30 @@ public static class ShipLoadoutManager
         {
             Debug.LogError($"[ShipLoadoutManager] Не удалось сохранить {FilePath}: {e.Message}");
         }
+    }
+
+    /// <summary>
+    /// Удаляет пустые элементы (null или без id) из списков loadout.
+    /// JsonUtility при загрузке превращает null в пустые объекты — их нужно чистить.
+    /// </summary>
+    private static void Sanitize(ShipLoadout loadout)
+    {
+        if (loadout == null) return;
+
+        SanitizeList(loadout.weaponSlots);
+        SanitizeList(loadout.shieldSlots);
+        SanitizeList(loadout.engineSlots);
+        SanitizeList(loadout.inventory);
+
+        if (loadout.weaponSlots == null) loadout.weaponSlots = new List<FittingItem>();
+        if (loadout.shieldSlots == null) loadout.shieldSlots = new List<FittingItem>();
+        if (loadout.engineSlots == null) loadout.engineSlots = new List<FittingItem>();
+        if (loadout.inventory == null) loadout.inventory = new List<FittingItem>();
+    }
+
+    private static void SanitizeList(List<FittingItem> list)
+    {
+        if (list == null) return;
+        list.RemoveAll(item => item == null || string.IsNullOrEmpty(item.id));
     }
 }

@@ -67,6 +67,9 @@ public class FittingWindow : MonoBehaviour
     private ShipMovement targetShipMovement;
     private ShipWeapon targetShipWeapon;
 
+    // Флаг, чтобы не строить дважды за кадр
+    private bool isBuilding = false;
+
     private void Awake()
     {
         ResolveTargetShip();
@@ -77,13 +80,7 @@ public class FittingWindow : MonoBehaviour
 
     private void Start()
     {
-        if (shipDefinition != null)
-            LoadLoadoutFor(shipDefinition);
-
-        BuildShipSelector();
-        BuildSlots();
-        BuildInventory();
-        ApplyLoadoutToShip();
+        BuildAll();
     }
 
     // ==================== TARGET SHIP ====================
@@ -110,6 +107,28 @@ public class FittingWindow : MonoBehaviour
     public void Close() => gameObject.SetActive(false);
     public void Toggle() => gameObject.SetActive(!gameObject.activeSelf);
 
+    // ==================== BUILD ALL ====================
+
+    /// <summary>
+    /// Полная пересборка окна: loadout + селектор + слоты + инвентарь + применение статов.
+    /// Защищена от повторного вызова в одном кадре.
+    /// </summary>
+    private void BuildAll()
+    {
+        if (isBuilding) return;
+        isBuilding = true;
+
+        if (shipDefinition != null)
+            LoadLoadoutFor(shipDefinition);
+
+        BuildShipSelector();
+        BuildSlots();
+        BuildInventory();
+        ApplyLoadoutToShip();
+
+        isBuilding = false;
+    }
+
     // ==================== LOADOUT ====================
 
     private void LoadLoadoutFor(ShipDefinition def)
@@ -118,9 +137,14 @@ public class FittingWindow : MonoBehaviour
 
         if (currentLoadout == null)
         {
+            // Первый запуск — новый loadout с дефолтным инвентарём.
             currentLoadout = new ShipLoadout(def.shipId);
             PopulateDefaultInventory(currentLoadout);
         }
+
+        // Если loadout уже был — НЕ добавляем дефолт.
+        // Даже если inventory пуст — это значит, что игрок всё поставил в слоты.
+        // Иначе при каждом перезапуске появлялись бы дубликаты модулей.
 
         if (titleLabel != null)
             titleLabel.text = $"ПОСТРОЙКА И КОНФИГУРАЦИЯ: {def.displayName}";
@@ -144,22 +168,20 @@ public class FittingWindow : MonoBehaviour
         foreach (var s in weaponSlots) if (s.Item != null) currentLoadout.weaponSlots.Add(s.Item);
         foreach (var s in shieldSlots) if (s.Item != null) currentLoadout.shieldSlots.Add(s.Item);
         foreach (var s in engineSlots) if (s.Item != null) currentLoadout.engineSlots.Add(s.Item);
-
-        // inventory берём из currentLoadout.inventory — он обновляется при drop/auto-equip
     }
 
     private void PopulateDefaultInventory(ShipLoadout loadout)
     {
-        loadout.inventory = new List<FittingItem>
-        {
-            new FittingItem("w1", "Лазер T1", SlotGroup.Top_Weapons, new Color(1f, 0.3f, 0.3f), "Оружие: Урон +15", damage: 15f, visual: WeaponVisualType.Laser),
-            new FittingItem("w2", "Плазма T2", SlotGroup.Top_Weapons, new Color(1f, 0.1f, 0.5f), "Оружие: Урон +30", damage: 30f, visual: WeaponVisualType.Plasma),
-            new FittingItem("w3", "Рейлган T1", SlotGroup.Top_Weapons, new Color(1f, 0.5f, 0.2f), "Оружие: Урон +20", damage: 20f, visual: WeaponVisualType.Laser),
-            new FittingItem("s1", "Легкий Щит", SlotGroup.Center_Shields, new Color(0.2f, 0.6f, 1f), "Защита: Щит +30 HP", shield: 30f, mass: 0.2f),
-            new FittingItem("s2", "Тяжелый Щит", SlotGroup.Center_Shields, new Color(0.3f, 0.9f, 0.4f), "Защита: Щит +80 HP", shield: 80f, mass: 1.0f),
-            new FittingItem("e1", "Форсаж M1", SlotGroup.Bottom_Engines, new Color(0.9f, 0.8f, 0.2f), "Двиг: Скорость +3", speed: 3f, accel: 6f),
-            new FittingItem("e2", "Тяжелый Двиг", SlotGroup.Bottom_Engines, new Color(0.8f, 0.4f, 1f), "Двиг: Ускорение +10", speed: 1f, accel: 10f, mass: 0.5f)
-        };
+        if (loadout.inventory == null)
+            loadout.inventory = new List<FittingItem>();
+
+        loadout.inventory.Add(new FittingItem("w1", "Лазер T1", SlotGroup.Top_Weapons, new Color(1f, 0.3f, 0.3f), "Оружие: Урон +15", damage: 15f, visual: WeaponVisualType.Laser));
+        loadout.inventory.Add(new FittingItem("w2", "Плазма T2", SlotGroup.Top_Weapons, new Color(1f, 0.1f, 0.5f), "Оружие: Урон +30", damage: 30f, visual: WeaponVisualType.Plasma));
+        loadout.inventory.Add(new FittingItem("w3", "Рейлган T1", SlotGroup.Top_Weapons, new Color(1f, 0.5f, 0.2f), "Оружие: Урон +20", damage: 20f, visual: WeaponVisualType.Laser));
+        loadout.inventory.Add(new FittingItem("s1", "Легкий Щит", SlotGroup.Center_Shields, new Color(0.2f, 0.6f, 1f), "Защита: Щит +30 HP", shield: 30f, mass: 0.2f));
+        loadout.inventory.Add(new FittingItem("s2", "Тяжелый Щит", SlotGroup.Center_Shields, new Color(0.3f, 0.9f, 0.4f), "Защита: Щит +80 HP", shield: 80f, mass: 1.0f));
+        loadout.inventory.Add(new FittingItem("e1", "Форсаж M1", SlotGroup.Bottom_Engines, new Color(0.9f, 0.8f, 0.2f), "Двиг: Скорость +3", speed: 3f, accel: 6f));
+        loadout.inventory.Add(new FittingItem("e2", "Тяжелый Двиг", SlotGroup.Bottom_Engines, new Color(0.8f, 0.4f, 1f), "Двиг: Ускорение +10", speed: 1f, accel: 10f, mass: 0.5f));
     }
 
     // ==================== BUILD UI ====================
@@ -169,9 +191,7 @@ public class FittingWindow : MonoBehaviour
         if (shipSelectorContainer == null || shipButtonPrefab == null || shipLibrary == null)
             return;
 
-        // Очистка
-        foreach (Transform child in shipSelectorContainer)
-            Destroy(child.gameObject);
+        ClearContainer(shipSelectorContainer);
 
         foreach (var ship in shipLibrary.ships)
         {
@@ -184,7 +204,6 @@ public class FittingWindow : MonoBehaviour
             var capturedShip = ship;
             btn.onClick.AddListener(() => OnShipSelected(capturedShip));
 
-            // Подсветка активного
             if (ship == shipDefinition)
             {
                 var img = btn.GetComponent<Image>();
@@ -195,7 +214,6 @@ public class FittingWindow : MonoBehaviour
 
     private void BuildSlots()
     {
-        // Очистка
         weaponSlots.Clear();
         shieldSlots.Clear();
         engineSlots.Clear();
@@ -212,7 +230,6 @@ public class FittingWindow : MonoBehaviour
         CreateSlots(shieldSlotsContainer, shieldCount, SlotGroup.Center_Shields, shieldSlots);
         CreateSlots(engineSlotsContainer, engineCount, SlotGroup.Bottom_Engines, engineSlots);
 
-        // Заполняем слоты из loadout
         if (currentLoadout != null)
         {
             FillSlots(weaponSlots, currentLoadout.weaponSlots);
@@ -221,11 +238,24 @@ public class FittingWindow : MonoBehaviour
         }
     }
 
+    /// <summary>
+    /// Удаляет всех детей контейнера. Итерирует в обратном порядке по индексу —
+    /// иначе Destroy (отложенный) ломает foreach и оставляет дубликаты.
+    /// </summary>
     private void ClearContainer(Transform container)
     {
         if (container == null) return;
-        foreach (Transform child in container)
-            Destroy(child.gameObject);
+
+        for (int i = container.childCount - 1; i >= 0; i--)
+        {
+            var child = container.GetChild(i);
+            if (child == null) continue;
+
+            if (Application.isPlaying)
+                Destroy(child.gameObject);
+            else
+                DestroyImmediate(child.gameObject);
+        }
     }
 
     private void CreateSlots(Transform container, int count, SlotGroup group, List<FittingSlot> list)
@@ -279,9 +309,6 @@ public class FittingWindow : MonoBehaviour
 
     // ==================== DRAG & DROP HANDLERS ====================
 
-    /// <summary>
-    /// Обработка drop элемента инвентаря в слот.
-    /// </summary>
     public void HandleDropFromInventory(FittingItemView source, FittingSlot targetSlot)
     {
         if (source == null || targetSlot == null) return;
@@ -295,23 +322,18 @@ public class FittingWindow : MonoBehaviour
         }
 
         // Убрать item из инвентаря (из loadout)
-        currentLoadout.inventory.Remove(source.item);
+        if (currentLoadout != null && currentLoadout.inventory != null)
+            currentLoadout.inventory.Remove(source.item);
 
-        // Поставить в слот
         targetSlot.SetItem(source.item);
 
-        // Удалить view из инвентаря
         itemViews.Remove(source);
         Destroy(source.gameObject);
 
-        // Применить и сохранить
         ApplyLoadoutToShip();
         SaveCurrentLoadout();
     }
 
-    /// <summary>
-    /// Обработка drop слота в слот (обмен или перенос).
-    /// </summary>
     public void HandleDropFromSlot(FittingSlot sourceSlot, FittingSlot targetSlot)
     {
         if (sourceSlot == null || targetSlot == null) return;
@@ -322,7 +344,6 @@ public class FittingWindow : MonoBehaviour
         var sourceItem = sourceSlot.Item;
         var targetItem = targetSlot.Item;
 
-        // Обмен
         targetSlot.SetItem(sourceItem);
         sourceSlot.SetItem(targetItem);
 
@@ -330,9 +351,6 @@ public class FittingWindow : MonoBehaviour
         SaveCurrentLoadout();
     }
 
-    /// <summary>
-    /// Снять предмет со слота (ПКМ).
-    /// </summary>
     public void HandleUnequip(FittingSlot slot)
     {
         if (slot == null || slot.Item == null) return;
@@ -344,20 +362,17 @@ public class FittingWindow : MonoBehaviour
         SaveCurrentLoadout();
     }
 
-    /// <summary>
-    /// Автоустановка (двойной клик в инвентаре).
-    /// </summary>
     public void HandleAutoEquip(FittingItemView view)
     {
         if (view == null || view.item == null) return;
 
         var item = view.item;
-
-        // Найти первый пустой слот нужной группы
         FittingSlot target = FindFirstEmptySlot(item.allowedGroup);
-        if (target == null) return; // нет свободного
+        if (target == null) return;
 
-        currentLoadout.inventory.Remove(item);
+        if (currentLoadout != null && currentLoadout.inventory != null)
+            currentLoadout.inventory.Remove(item);
+
         target.SetItem(item);
 
         itemViews.Remove(view);
@@ -443,11 +458,9 @@ public class FittingWindow : MonoBehaviour
             }
         }
 
-        // Оружие
         if (targetShipWeapon != null)
             targetShipWeapon.SetEquippedWeapons(installedWeapons);
 
-        // Базовые ТТХ
         float baseSpeed = shipDefinition != null ? shipDefinition.baseMaxSpeed : 5f;
         float baseAccel = shipDefinition != null ? shipDefinition.baseAcceleration : 12f;
         float baseShield = shipDefinition != null ? shipDefinition.baseShieldHP : 50f;
@@ -479,11 +492,6 @@ public class FittingWindow : MonoBehaviour
         SaveCurrentLoadout();
 
         shipDefinition = newShip;
-        LoadLoadoutFor(shipDefinition);
-
-        BuildShipSelector();
-        BuildSlots();
-        BuildInventory();
-        ApplyLoadoutToShip();
+        BuildAll();
     }
 }
