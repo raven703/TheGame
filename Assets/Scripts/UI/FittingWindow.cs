@@ -4,23 +4,17 @@ using UnityEngine.UI;
 using TMPro;
 
 /// <summary>
-/// UGUI-окно фитинга. Создаёт слоты и элементы инвентаря динамически,
-/// хранит loadout, применяет статы к кораблю игрока, сохраняет через ShipLoadoutManager.
+/// UGUI-окно фитинга. Редактирует loadout ТЕКУЩЕГО корабля игрока (PlayerProfile.currentShipId).
+/// Селектор корабля в окне МЕНЯЕТ корабль игрока (ShipHealth.shipDefinition).
 /// </summary>
 public class FittingWindow : MonoBehaviour
 {
-    [Header("Ship Definition")]
-    [Tooltip("Какой корабль редактируется по умолчанию. Если null — берётся первый из ShipLibrary.")]
-    public ShipDefinition shipDefinition;
-
-    [Tooltip("Справочник всех кораблей в игре (для селектора в UI).")]
+    [Header("Ship Library (fallback)")]
+    [Tooltip("Справочник всех кораблей. Используется для селектора и fallback, если ShipRegistry не задан.")]
     public ShipLibrary shipLibrary;
 
     [Header("Prefabs")]
-    [Tooltip("Префаб одного слота.")]
     public FittingSlot slotPrefab;
-
-    [Tooltip("Префаб одного элемента инвентаря.")]
     public FittingItemView itemViewPrefab;
 
     [Header("Containers — Weapon Slots")]
@@ -37,22 +31,20 @@ public class FittingWindow : MonoBehaviour
 
     [Header("Ship Selector")]
     public Transform shipSelectorContainer;
-
-    [Tooltip("Префаб кнопки выбора корабля.")]
     public Button shipButtonPrefab;
 
     [Header("UI References")]
     public Button closeButton;
     public TextMeshProUGUI titleLabel;
-
-    [Tooltip("Слой, куда переносятся drag-объекты (обычно корень Canvas).")]
     public Transform dragLayer;
 
     [Header("Player Ship Target")]
-    [Tooltip("Корабль игрока — к нему применяются статы. Если null — ищется по тегу 'Player'.")]
+    [Tooltip("Корабль игрока. Если null — ищется по тегу 'Player'.")]
     public ShipHealth targetShipHealth;
 
-    // Текущий loadout
+    // ============ RUNTIME ============
+
+    private ShipDefinition shipDefinition;   // текущий редактируемый корабль (кэш)
     private ShipLoadout currentLoadout;
 
     private List<FittingSlot> weaponSlots = new List<FittingSlot>();
@@ -64,14 +56,11 @@ public class FittingWindow : MonoBehaviour
     private ShipMovement targetShipMovement;
     private ShipWeapon targetShipWeapon;
 
-    // Защита от повторного билда за кадр и от повторного билда вообще
     private bool isBuilding = false;
     private bool isBuilt = false;
 
     private void Awake()
     {
-        ResolveTargetShip();
-
         if (closeButton != null)
             closeButton.onClick.AddListener(Close);
     }
@@ -98,13 +87,11 @@ public class FittingWindow : MonoBehaviour
 
     public void Open()
     {
-        // Автовыбор корабля, если не задан.
-        if (shipDefinition == null && shipLibrary != null && shipLibrary.ships != null && shipLibrary.ships.Count > 0)
-        {
-            shipDefinition = shipLibrary.ships[0];
-        }
+        if (targetShipHealth == null)
+            ResolveTargetShip();
 
-        // Первое открытие — строим содержимое.
+        ResolveCurrentShipDefinition();
+
         if (!isBuilt)
         {
             BuildAll();
@@ -120,6 +107,36 @@ public class FittingWindow : MonoBehaviour
     {
         if (gameObject.activeSelf) Close();
         else Open();
+    }
+
+    /// <summary>
+    /// Определяет текущий корабль игрока.
+    /// </summary>
+    private void ResolveCurrentShipDefinition()
+    {
+        // 1. Из ShipHealth игрока
+        if (targetShipHealth != null && targetShipHealth.shipDefinition != null)
+        {
+            shipDefinition = targetShipHealth.shipDefinition;
+            return;
+        }
+
+        // 2. Из PlayerProfile + ShipRegistry
+        if (PlayerProfile.Instance != null && ShipRegistry.Instance != null)
+        {
+            var def = ShipRegistry.Instance.Get(PlayerProfile.Instance.currentShipId);
+            if (def != null)
+            {
+                shipDefinition = def;
+                return;
+            }
+        }
+
+        // 3. Fallback — первый из ShipLibrary
+        if (shipLibrary != null && shipLibrary.ships != null && shipLibrary.ships.Count > 0)
+        {
+            shipDefinition = shipLibrary.ships[0];
+        }
     }
 
     // ==================== BUILD ALL ====================
@@ -194,12 +211,15 @@ public class FittingWindow : MonoBehaviour
 
     private void BuildShipSelector()
     {
-        if (shipSelectorContainer == null || shipButtonPrefab == null || shipLibrary == null)
+        if (shipSelectorContainer == null || shipButtonPrefab == null)
             return;
+
+        var ships = (shipLibrary != null && shipLibrary.ships != null) ? shipLibrary.ships : null;
+        if (ships == null || ships.Count == 0) return;
 
         ClearContainer(shipSelectorContainer);
 
-        foreach (var ship in shipLibrary.ships)
+        foreach (var ship in ships)
         {
             if (ship == null) continue;
 
@@ -280,9 +300,7 @@ public class FittingWindow : MonoBehaviour
         if (items == null) return;
 
         for (int i = 0; i < slots.Count && i < items.Count; i++)
-        {
             slots[i].SetItem(items[i]);
-        }
     }
 
     private void BuildInventory()
@@ -290,13 +308,10 @@ public class FittingWindow : MonoBehaviour
         ClearContainer(inventoryContainer);
         itemViews.Clear();
 
-        if (currentLoadout == null || currentLoadout.inventory == null)
-            return;
+        if (currentLoadout == null || currentLoadout.inventory == null) return;
 
         foreach (var item in currentLoadout.inventory)
-        {
             CreateItemView(item);
-        }
     }
 
     private void CreateItemView(FittingItem item)
@@ -318,9 +333,7 @@ public class FittingWindow : MonoBehaviour
         if (source.item.allowedGroup != targetSlot.group) return;
 
         if (targetSlot.Item != null)
-        {
             AddToInventory(targetSlot.Item);
-        }
 
         if (currentLoadout != null && currentLoadout.inventory != null)
             currentLoadout.inventory.Remove(source.item);
@@ -392,9 +405,7 @@ public class FittingWindow : MonoBehaviour
         if (list == null) return null;
 
         foreach (var s in list)
-        {
             if (s.Item == null) return s;
-        }
         return null;
     }
 
@@ -474,8 +485,17 @@ public class FittingWindow : MonoBehaviour
 
         if (targetShipHealth.Data != null)
         {
-            targetShipHealth.Data.maxShieldHP = baseShield + totalShieldHP;
-            targetShipHealth.Data.currentShieldHP = Mathf.Min(targetShipHealth.Data.currentShieldHP, targetShipHealth.Data.maxShieldHP);
+            // Щит: изменяем maxShieldHP и корректируем currentShieldHP на дельту
+            float oldMaxShield = targetShipHealth.Data.maxShieldHP;
+            float newMaxShield = baseShield + totalShieldHP;
+            float delta = newMaxShield - oldMaxShield;
+
+            targetShipHealth.Data.maxShieldHP = newMaxShield;
+            targetShipHealth.Data.currentShieldHP = Mathf.Clamp(
+                targetShipHealth.Data.currentShieldHP + delta,
+                0f,
+                newMaxShield);
+
             targetShipHealth.Data.mass = Mathf.Max(0.5f, baseMass + totalMassAdd);
 
             if (targetShipMovement != null)
@@ -490,6 +510,31 @@ public class FittingWindow : MonoBehaviour
         if (newShip == null || newShip == shipDefinition) return;
 
         SaveCurrentLoadout();
+
+        if (PlayerProfile.Instance != null)
+            PlayerProfile.Instance.SetCurrentShip(newShip.shipId);
+
+        if (targetShipHealth != null)
+        {
+            targetShipHealth.shipDefinition = newShip;
+
+            if (targetShipHealth.Data != null)
+            {
+                targetShipHealth.Data.maxHullHP = newShip.maxHullHP;
+                targetShipHealth.Data.currentHullHP = newShip.maxHullHP;
+                targetShipHealth.Data.maxShieldHP = newShip.baseShieldHP;
+                targetShipHealth.Data.currentShieldHP = newShip.baseShieldHP;
+                targetShipHealth.Data.mass = newShip.baseMass;
+            }
+
+            if (targetShipMovement != null)
+            {
+                targetShipMovement.maxSpeed = newShip.baseMaxSpeed;
+                targetShipMovement.acceleration = newShip.baseAcceleration;
+                targetShipMovement.rotationSpeed = newShip.baseRotationSpeed;
+                targetShipMovement.ApplyMassFromData();
+            }
+        }
 
         shipDefinition = newShip;
         BuildAll();
