@@ -26,6 +26,9 @@ public class ShipDefinition : ScriptableObject
     public float baseAcceleration = 14f;
     public float baseRotationSpeed = 300f;
 
+    [Tooltip("Базовое время захвата цели (сек). Меньше — быстрее.")]
+    public float baseLockTime = 0.5f;
+
     [Header("Slots")]
     public int weaponSlots = 4;
     public int shieldSlots = 4;

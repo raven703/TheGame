@@ -33,11 +33,15 @@ public class FittingItem
     public float accelBonus;
     public float massBonus;
 
+    [Tooltip("Бонус к времени захвата цели. Отрицательный = быстрее захват.")]
+    public float lockTimeBonus;
+
     // Визуал выстрела (актуально только для оружия)
     public WeaponVisualType visualType = WeaponVisualType.Laser;
 
     public FittingItem(string id, string name, SlotGroup allowedGroup, Color color, string desc,
                        float damage = 0, float cooldown = 0, float shield = 0, float speed = 0, float accel = 0, float mass = 0,
+                       float lockTime = 0,
                        WeaponVisualType visual = WeaponVisualType.Laser)
     {
         this.id = id;
@@ -51,6 +55,7 @@ public class FittingItem
         this.speedBonus = speed;
         this.accelBonus = accel;
         this.massBonus = mass;
+        this.lockTimeBonus = lockTime;
         this.visualType = visual;
     }
 }

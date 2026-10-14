@@ -1,19 +1,22 @@
 using UnityEngine;
 
 /// <summary>
-/// World-space target locking marker. Tracks PlayerWeapon target and renders a reticle around it.
+/// World-space индикатор захвата.
+/// - Если идёт захват (PendingTarget != null) — рамка вокруг него, МИГАЕТ.
+/// - Если цель захвачена (Target != null) — рамка ПОСТОЯННАЯ.
 /// </summary>
 public class TargetLockIndicator : MonoBehaviour
 {
     [Header("Dependencies")]
-    [Tooltip("Reference to the player's weapon script.")]
     public ShipWeapon playerWeapon;
 
     [Header("Visual Settings")]
     public Sprite targetIconSprite;
-    public Color reticleColor = new Color(1f, 0.2f, 0.2f, 0.85f);
+    public Color lockedColor = new Color(1f, 0.2f, 0.2f, 0.85f);
+    public Color lockingColor = new Color(1f, 0.8f, 0.2f, 0.85f); // жёлтая мигающая
     public Vector3 reticleScale = new Vector3(1.2f, 1.2f, 1f);
     public float rotationSpeed = 90f;
+    public float blinkSpeed = 6f;
 
     private GameObject reticleInstance;
     private SpriteRenderer reticleRenderer;
@@ -29,16 +32,10 @@ public class TargetLockIndicator : MonoBehaviour
         reticleRenderer = reticleInstance.AddComponent<SpriteRenderer>();
 
         if (targetIconSprite != null)
-        {
             reticleRenderer.sprite = targetIconSprite;
-        }
         else
-        {
-            // Автоматически генерируем простой квадратный спрайт-прицел, если никакой не назначен
             reticleRenderer.sprite = CreateFallbackReticleSprite();
-        }
 
-        reticleRenderer.color = reticleColor;
         reticleRenderer.sortingOrder = 10;
         reticleInstance.transform.localScale = reticleScale;
         reticleInstance.SetActive(false);
@@ -46,19 +43,55 @@ public class TargetLockIndicator : MonoBehaviour
 
     private void LateUpdate()
     {
-        if (playerWeapon == null || playerWeapon.Target == null || !playerWeapon.Target.gameObject.activeInHierarchy)
+        if (playerWeapon == null)
         {
-            if (reticleInstance != null && reticleInstance.activeSelf)
-                reticleInstance.SetActive(false);
+            Hide();
             return;
         }
 
+        // 1) Идёт захват — мигаем вокруг PendingTarget
+        if (playerWeapon.PendingTarget != null
+            && playerWeapon.PendingTarget.gameObject.activeInHierarchy)
+        {
+            ShowAt(playerWeapon.PendingTarget.transform.position, lockingColor, true);
+            return;
+        }
+
+        // 2) Цель захвачена — постоянная рамка
+        if (playerWeapon.Target != null
+            && playerWeapon.Target.gameObject.activeInHierarchy)
+        {
+            ShowAt(playerWeapon.Target.transform.position, lockedColor, false);
+            return;
+        }
+
+        // 3) Ничего
+        Hide();
+    }
+
+    private void ShowAt(Vector3 position, Color baseColor, bool blink)
+    {
         if (!reticleInstance.activeSelf)
             reticleInstance.SetActive(true);
 
-        // Следование за захваченной целью и вращение
-        reticleInstance.transform.position = playerWeapon.Target.transform.position;
+        reticleInstance.transform.position = position;
         reticleInstance.transform.Rotate(Vector3.forward, rotationSpeed * Time.deltaTime);
+
+        Color c = baseColor;
+        if (blink)
+        {
+            // Мигание: альфа от 0.2 до 1.0
+            float t = Mathf.PingPong(Time.time * blinkSpeed, 1f);
+            c.a = Mathf.Lerp(0.2f, 1f, t);
+        }
+
+        reticleRenderer.color = c;
+    }
+
+    private void Hide()
+    {
+        if (reticleInstance != null && reticleInstance.activeSelf)
+            reticleInstance.SetActive(false);
     }
 
     private Sprite CreateFallbackReticleSprite()

@@ -29,7 +29,6 @@ public class ShipHealth : MonoBehaviour
 
     private void Awake()
     {
-        // Берём ТТХ из ShipDefinition, если он назначен.
         float hull = shipDefinition != null ? shipDefinition.maxHullHP : maxHullHP;
         Data = new ShipData(hull);
 
@@ -38,6 +37,7 @@ public class ShipHealth : MonoBehaviour
             Data.maxShieldHP = shipDefinition.baseShieldHP;
             Data.currentShieldHP = shipDefinition.baseShieldHP;
             Data.mass = shipDefinition.baseMass;
+            Data.lockTime = shipDefinition.baseLockTime;
         }
     }
 
@@ -54,7 +54,6 @@ public class ShipHealth : MonoBehaviour
         if (Data == null || Data.IsDestroyed || amount <= 0f)
             return;
 
-        // 1. Поглощение урона Щитом
         float remainingDamage = Data.AbsorbDamageWithShield(amount);
 
         if (remainingDamage <= 0f)
@@ -63,7 +62,6 @@ public class ShipHealth : MonoBehaviour
             return;
         }
 
-        // 2. Распределение оставшегося урона (Целевой модуль / Случайный модуль / Корпус)
         if (targetedModule.HasValue)
         {
             ApplyModuleDamage(remainingDamage, targetedModule.Value);

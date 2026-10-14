@@ -10,7 +10,6 @@ using TMPro;
 public class FittingWindow : MonoBehaviour
 {
     [Header("Ship Library (fallback)")]
-    [Tooltip("Справочник всех кораблей. Используется для селектора и fallback, если ShipRegistry не задан.")]
     public ShipLibrary shipLibrary;
 
     [Header("Prefabs")]
@@ -39,12 +38,11 @@ public class FittingWindow : MonoBehaviour
     public Transform dragLayer;
 
     [Header("Player Ship Target")]
-    [Tooltip("Корабль игрока. Если null — ищется по тегу 'Player'.")]
     public ShipHealth targetShipHealth;
 
     // ============ RUNTIME ============
 
-    private ShipDefinition shipDefinition;   // текущий редактируемый корабль (кэш)
+    private ShipDefinition shipDefinition;
     private ShipLoadout currentLoadout;
 
     private List<FittingSlot> weaponSlots = new List<FittingSlot>();
@@ -65,8 +63,6 @@ public class FittingWindow : MonoBehaviour
             closeButton.onClick.AddListener(Close);
     }
 
-    // ==================== TARGET SHIP ====================
-
     private void ResolveTargetShip()
     {
         if (targetShipHealth == null)
@@ -82,8 +78,6 @@ public class FittingWindow : MonoBehaviour
             targetShipWeapon = targetShipHealth.GetComponent<ShipWeapon>();
         }
     }
-
-    // ==================== OPEN / CLOSE ====================
 
     public void Open()
     {
@@ -109,19 +103,14 @@ public class FittingWindow : MonoBehaviour
         else Open();
     }
 
-    /// <summary>
-    /// Определяет текущий корабль игрока.
-    /// </summary>
     private void ResolveCurrentShipDefinition()
     {
-        // 1. Из ShipHealth игрока
         if (targetShipHealth != null && targetShipHealth.shipDefinition != null)
         {
             shipDefinition = targetShipHealth.shipDefinition;
             return;
         }
 
-        // 2. Из PlayerProfile + ShipRegistry
         if (PlayerProfile.Instance != null && ShipRegistry.Instance != null)
         {
             var def = ShipRegistry.Instance.Get(PlayerProfile.Instance.currentShipId);
@@ -132,14 +121,11 @@ public class FittingWindow : MonoBehaviour
             }
         }
 
-        // 3. Fallback — первый из ShipLibrary
         if (shipLibrary != null && shipLibrary.ships != null && shipLibrary.ships.Count > 0)
         {
             shipDefinition = shipLibrary.ships[0];
         }
     }
-
-    // ==================== BUILD ALL ====================
 
     private void BuildAll()
     {
@@ -156,8 +142,6 @@ public class FittingWindow : MonoBehaviour
 
         isBuilding = false;
     }
-
-    // ==================== LOADOUT ====================
 
     private void LoadLoadoutFor(ShipDefinition def)
     {
@@ -201,13 +185,18 @@ public class FittingWindow : MonoBehaviour
         loadout.inventory.Add(new FittingItem("w1", "Лазер T1", SlotGroup.Top_Weapons, new Color(1f, 0.3f, 0.3f), "Оружие: Урон +15", damage: 15f, visual: WeaponVisualType.Laser));
         loadout.inventory.Add(new FittingItem("w2", "Плазма T2", SlotGroup.Top_Weapons, new Color(1f, 0.1f, 0.5f), "Оружие: Урон +30", damage: 30f, visual: WeaponVisualType.Plasma));
         loadout.inventory.Add(new FittingItem("w3", "Рейлган T1", SlotGroup.Top_Weapons, new Color(1f, 0.5f, 0.2f), "Оружие: Урон +20", damage: 20f, visual: WeaponVisualType.Laser));
+
         loadout.inventory.Add(new FittingItem("s1", "Легкий Щит", SlotGroup.Center_Shields, new Color(0.2f, 0.6f, 1f), "Защита: Щит +30 HP", shield: 30f, mass: 0.2f));
         loadout.inventory.Add(new FittingItem("s2", "Тяжелый Щит", SlotGroup.Center_Shields, new Color(0.3f, 0.9f, 0.4f), "Защита: Щит +80 HP", shield: 80f, mass: 1.0f));
+
         loadout.inventory.Add(new FittingItem("e1", "Форсаж M1", SlotGroup.Bottom_Engines, new Color(0.9f, 0.8f, 0.2f), "Двиг: Скорость +3", speed: 3f, accel: 6f));
         loadout.inventory.Add(new FittingItem("e2", "Тяжелый Двиг", SlotGroup.Bottom_Engines, new Color(0.8f, 0.4f, 1f), "Двиг: Ускорение +10", speed: 1f, accel: 10f, mass: 0.5f));
-    }
 
-    // ==================== BUILD UI ====================
+        // === Модуль наведения: ускоряет захват цели ===
+        loadout.inventory.Add(new FittingItem("t1", "Система Наведения", SlotGroup.Center_Shields,
+            new Color(0.8f, 0.9f, 1f), "Захват: -0.2 сек",
+            lockTime: -0.2f, mass: 0.1f));
+    }
 
     private void BuildShipSelector()
     {
@@ -324,8 +313,6 @@ public class FittingWindow : MonoBehaviour
         itemViews.Add(view);
     }
 
-    // ==================== DRAG & DROP HANDLERS ====================
-
     public void HandleDropFromInventory(FittingItemView source, FittingSlot targetSlot)
     {
         if (source == null || targetSlot == null) return;
@@ -434,6 +421,7 @@ public class FittingWindow : MonoBehaviour
         float totalSpeedAdd = 0f;
         float totalAccelAdd = 0f;
         float totalMassAdd = 0f;
+        float totalLockTimeAdd = 0f;
 
         List<FittingItem> installedWeapons = new List<FittingItem>();
 
@@ -446,6 +434,7 @@ public class FittingWindow : MonoBehaviour
                 totalSpeedAdd += s.Item.speedBonus;
                 totalAccelAdd += s.Item.accelBonus;
                 totalMassAdd += s.Item.massBonus;
+                totalLockTimeAdd += s.Item.lockTimeBonus;
             }
         }
         foreach (var s in shieldSlots)
@@ -456,6 +445,7 @@ public class FittingWindow : MonoBehaviour
                 totalSpeedAdd += s.Item.speedBonus;
                 totalAccelAdd += s.Item.accelBonus;
                 totalMassAdd += s.Item.massBonus;
+                totalLockTimeAdd += s.Item.lockTimeBonus;
             }
         }
         foreach (var s in engineSlots)
@@ -466,6 +456,7 @@ public class FittingWindow : MonoBehaviour
                 totalSpeedAdd += s.Item.speedBonus;
                 totalAccelAdd += s.Item.accelBonus;
                 totalMassAdd += s.Item.massBonus;
+                totalLockTimeAdd += s.Item.lockTimeBonus;
             }
         }
 
@@ -476,6 +467,7 @@ public class FittingWindow : MonoBehaviour
         float baseAccel = shipDefinition != null ? shipDefinition.baseAcceleration : 12f;
         float baseShield = shipDefinition != null ? shipDefinition.baseShieldHP : 50f;
         float baseMass = shipDefinition != null ? shipDefinition.baseMass : 2f;
+        float baseLockTime = shipDefinition != null ? shipDefinition.baseLockTime : 0.5f;
 
         if (targetShipMovement != null)
         {
@@ -485,7 +477,6 @@ public class FittingWindow : MonoBehaviour
 
         if (targetShipHealth.Data != null)
         {
-            // Щит: изменяем maxShieldHP и корректируем currentShieldHP на дельту
             float oldMaxShield = targetShipHealth.Data.maxShieldHP;
             float newMaxShield = baseShield + totalShieldHP;
             float delta = newMaxShield - oldMaxShield;
@@ -498,12 +489,13 @@ public class FittingWindow : MonoBehaviour
 
             targetShipHealth.Data.mass = Mathf.Max(0.5f, baseMass + totalMassAdd);
 
+            // Время захвата: база + бонусы, минимум 0.05 сек
+            targetShipHealth.Data.lockTime = Mathf.Max(0.05f, baseLockTime + totalLockTimeAdd);
+
             if (targetShipMovement != null)
                 targetShipMovement.ApplyMassFromData();
         }
     }
-
-    // ==================== SHIP SELECTOR ====================
 
     private void OnShipSelected(ShipDefinition newShip)
     {
@@ -525,6 +517,7 @@ public class FittingWindow : MonoBehaviour
                 targetShipHealth.Data.maxShieldHP = newShip.baseShieldHP;
                 targetShipHealth.Data.currentShieldHP = newShip.baseShieldHP;
                 targetShipHealth.Data.mass = newShip.baseMass;
+                targetShipHealth.Data.lockTime = newShip.baseLockTime;
             }
 
             if (targetShipMovement != null)

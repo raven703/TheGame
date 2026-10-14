@@ -27,6 +27,9 @@ public class ShipData
     public float maxShieldHP = 50f;
     public float currentShieldHP = 50f;
 
+    // Захват цели: время в секундах (база + бонусы модулей)
+    public float lockTime = 0.5f;
+
     // Состояния повреждений отдельных узлов
     public Dictionary<ModuleType, ShipModule> modules = new Dictionary<ModuleType, ShipModule>();
 
