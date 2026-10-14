@@ -6,43 +6,47 @@ public class CombatManager : MonoBehaviour
     [Tooltip("ShipHealth of the player ship.")]
     public ShipHealth playerHealth;
 
-    [Tooltip("ShipHealth of the enemy ship.")]
-    public ShipHealth enemyHealth;
-
     [Header("UI Panels")]
     public GameObject winPanel;
     public GameObject losePanel;
 
     private bool isCombatOver = false;
+    private bool allWavesCleared = false;
 
     private void Start()
     {
         if (winPanel != null) winPanel.SetActive(false);
         if (losePanel != null) losePanel.SetActive(false);
 
-        if (enemyHealth == null)
-            return;
-
-        var enemyWeapon = enemyHealth.GetComponent<ShipWeapon>();
-        if (enemyWeapon != null)
-            enemyWeapon.SetTarget(playerHealth);
-        else
-            Debug.LogWarning("[CombatManager] EnemyShip has no ShipWeapon component to assign a target to.");
+        // Очищаем реестр врагов при старте сцены (на случай перезапуска)
+        // EnemyRegistry.Clear();
     }
 
     private void Update()
     {
-        if (isCombatOver)
-            return;
+        if (isCombatOver) return;
 
+        // Поражение — если игрок уничтожен
         if (playerHealth == null || !playerHealth.gameObject.activeSelf || (playerHealth.Data != null && playerHealth.Data.IsDestroyed))
         {
             EndCombat(false);
+            return;
         }
-        else if (enemyHealth == null || !enemyHealth.gameObject.activeSelf || (enemyHealth.Data != null && enemyHealth.Data.IsDestroyed))
+
+        // Победа — если волны кончились и живых врагов нет
+        if (allWavesCleared && EnemyRegistry.GetAliveEnemies().Count == 0)
         {
             EndCombat(true);
         }
+    }
+
+    /// <summary>
+    /// Вызывается ShipSpawner'ом, когда все волны заспавнены и уничтожены.
+    /// </summary>
+    public void NotifyAllWavesCleared()
+    {
+        allWavesCleared = true;
+        Debug.Log("[CombatManager] Все волны уничтожены — победа!");
     }
 
     private void EndCombat(bool playerWon)
@@ -61,12 +65,10 @@ public class CombatManager : MonoBehaviour
         }
     }
 
-    /// <summary>
-    /// Вызывается при нажатии на кнопку "Restart" в UI.
-    /// </summary>
     public void RestartCombat()
     {
-        Time.timeScale = 1f; // сброс паузы, если была включена
+        Time.timeScale = 1f;
+        EnemyRegistry.Clear();
         SceneManager.LoadScene(SceneManager.GetActiveScene().buildIndex);
     }
 }

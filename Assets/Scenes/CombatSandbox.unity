@@ -2562,7 +2562,6 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::CombatManager
   playerHealth: {fileID: 1898430270}
-  enemyHealth: {fileID: 5875746675633490210}
   winPanel: {fileID: 1555650891}
   losePanel: {fileID: 896526086}
 --- !u!114 &637022980
@@ -8392,6 +8391,56 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1978532090}
   m_CullTransparentMesh: 1
+--- !u!1 &1981079141
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1981079143}
+  - component: {fileID: 1981079142}
+  m_Layer: 0
+  m_Name: Spawner
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!114 &1981079142
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1981079141}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 81025a6024450e941807007f09e07735, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::ShipSpawner
+  enemyPrefab: {fileID: 5865611579440152740, guid: be2cad60f7b33f1458687759bde43394, type: 3}
+  waveSizes: 010000000200000003000000
+  pauseBetweenWaves: 3
+  spawnRadius: 14
+  playerTransform: {fileID: 4491389979883334910}
+  combatManager: {fileID: 637022979}
+--- !u!4 &1981079143
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1981079141}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 900.70764, y: 685.78375, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &2038891825
 GameObject:
   m_ObjectHideFlags: 0
@@ -8983,7 +9032,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::CombatHUDManager
   playerHealth: {fileID: 1898430270}
   playerWeapon: {fileID: 1898430268}
-  defaultEnemyHealth: {fileID: 5875746675633490210}
+  defaultEnemyHealth: {fileID: 0}
   playerTitleLabel: {fileID: 1563588655}
   playerHullText: {fileID: 125860489}
   playerShieldText: {fileID: 1015865952}
@@ -9058,95 +9107,6 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::LoadoutApplier
   targetShipHealth: {fileID: 1898430270}
---- !u!1001 &751005889206501705
-PrefabInstance:
-  m_ObjectHideFlags: 0
-  serializedVersion: 2
-  m_Modification:
-    serializedVersion: 3
-    m_TransformParent: {fileID: 0}
-    m_Modifications:
-    - target: {fileID: 174234594062148408, guid: be2cad60f7b33f1458687759bde43394, type: 3}
-      propertyPath: shipDefinition
-      value: 
-      objectReference: {fileID: 11400000, guid: c346ed5929ae76343a04e9f5c080ea0c, type: 2}
-    - target: {fileID: 197946540115066981, guid: be2cad60f7b33f1458687759bde43394, type: 3}
-      propertyPath: m_BodyType
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 197946540115066981, guid: be2cad60f7b33f1458687759bde43394, type: 3}
-      propertyPath: m_LinearDamping
-      value: 2
-      objectReference: {fileID: 0}
-    - target: {fileID: 2065857558389200724, guid: be2cad60f7b33f1458687759bde43394, type: 3}
-      propertyPath: m_LocalPosition.x
-      value: 5
-      objectReference: {fileID: 0}
-    - target: {fileID: 2065857558389200724, guid: be2cad60f7b33f1458687759bde43394, type: 3}
-      propertyPath: m_LocalPosition.y
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 2065857558389200724, guid: be2cad60f7b33f1458687759bde43394, type: 3}
-      propertyPath: m_LocalPosition.z
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 2065857558389200724, guid: be2cad60f7b33f1458687759bde43394, type: 3}
-      propertyPath: m_LocalRotation.w
-      value: 1
-      objectReference: {fileID: 0}
-    - target: {fileID: 2065857558389200724, guid: be2cad60f7b33f1458687759bde43394, type: 3}
-      propertyPath: m_LocalRotation.x
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 2065857558389200724, guid: be2cad60f7b33f1458687759bde43394, type: 3}
-      propertyPath: m_LocalRotation.y
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 2065857558389200724, guid: be2cad60f7b33f1458687759bde43394, type: 3}
-      propertyPath: m_LocalRotation.z
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 2065857558389200724, guid: be2cad60f7b33f1458687759bde43394, type: 3}
-      propertyPath: m_LocalEulerAnglesHint.x
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 2065857558389200724, guid: be2cad60f7b33f1458687759bde43394, type: 3}
-      propertyPath: m_LocalEulerAnglesHint.y
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 2065857558389200724, guid: be2cad60f7b33f1458687759bde43394, type: 3}
-      propertyPath: m_LocalEulerAnglesHint.z
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 5447885358127292111, guid: be2cad60f7b33f1458687759bde43394, type: 3}
-      propertyPath: playerTarget
-      value: 
-      objectReference: {fileID: 1898430270}
-    - target: {fileID: 5474175375395448484, guid: be2cad60f7b33f1458687759bde43394, type: 3}
-      propertyPath: fallbackColor.b
-      value: 0.09623915
-      objectReference: {fileID: 0}
-    - target: {fileID: 5474175375395448484, guid: be2cad60f7b33f1458687759bde43394, type: 3}
-      propertyPath: fallbackColor.g
-      value: 0.9919137
-      objectReference: {fileID: 0}
-    - target: {fileID: 5474175375395448484, guid: be2cad60f7b33f1458687759bde43394, type: 3}
-      propertyPath: fallbackColor.r
-      value: 0.0013367634
-      objectReference: {fileID: 0}
-    - target: {fileID: 5474175375395448484, guid: be2cad60f7b33f1458687759bde43394, type: 3}
-      propertyPath: useFallbackWeapon
-      value: 1
-      objectReference: {fileID: 0}
-    - target: {fileID: 5865611579440152740, guid: be2cad60f7b33f1458687759bde43394, type: 3}
-      propertyPath: m_Name
-      value: EnemyShip
-      objectReference: {fileID: 0}
-    m_RemovedComponents: []
-    m_RemovedGameObjects: []
-    m_AddedGameObjects: []
-    m_AddedComponents: []
-  m_SourcePrefab: {fileID: 100100000, guid: be2cad60f7b33f1458687759bde43394, type: 3}
 --- !u!224 &2865631502358267556 stripped
 RectTransform:
   m_CorrespondingSourceObject: {fileID: 1802034336077206008, guid: 2c2f225eaa5af7f4a9c7b1492a20a25b, type: 3}
@@ -9345,17 +9305,11 @@ PrefabInstance:
       insertIndex: -1
       addedObject: {fileID: 1898430285}
   m_SourcePrefab: {fileID: 100100000, guid: 86c6c15693c9af74e8d6f223692aaf19, type: 3}
---- !u!114 &5875746675633490210 stripped
-MonoBehaviour:
-  m_CorrespondingSourceObject: {fileID: 174234594062148408, guid: be2cad60f7b33f1458687759bde43394, type: 3}
-  m_PrefabInstance: {fileID: 751005889206501705}
+--- !u!4 &4491389979883334910 stripped
+Transform:
+  m_CorrespondingSourceObject: {fileID: 8503075024867107222, guid: 86c6c15693c9af74e8d6f223692aaf19, type: 3}
+  m_PrefabInstance: {fileID: 4491389979883334909}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 0}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 4ffec3a1de9ee1646af2709da84d55c9, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::ShipHealth
 --- !u!114 &8206591472897884991 stripped
 MonoBehaviour:
   m_CorrespondingSourceObject: {fileID: 7342095738281109782, guid: 2c2f225eaa5af7f4a9c7b1492a20a25b, type: 3}
@@ -9375,7 +9329,7 @@ SceneRoots:
   - {fileID: 977916938}
   - {fileID: 2079441027}
   - {fileID: 4491389979883334909}
-  - {fileID: 751005889206501705}
   - {fileID: 637022982}
   - {fileID: 429408442}
   - {fileID: 1552771998}
+  - {fileID: 1981079143}

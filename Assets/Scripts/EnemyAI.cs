@@ -56,6 +56,20 @@ public class EnemyAI : MonoBehaviour
         if (shipMovement == null || shipWeapon == null)
             return;
 
+        if (playerTarget == null)
+        {
+            Debug.LogWarning($"[EnemyAI {gameObject.name}] playerTarget == null! Игрок не найден по тегу 'Player'.");
+            shipMovement.Stop();
+            return;
+        }
+
+        if (!playerTarget.gameObject.activeSelf || (playerTarget.Data != null && playerTarget.Data.IsDestroyed))
+        {
+            Debug.LogWarning($"[EnemyAI {gameObject.name}] Игрок уничтожен/неактивен.");
+            shipMovement.Stop();
+            return;
+        }
+
         if (playerTarget == null || !playerTarget.gameObject.activeSelf || (playerTarget.Data != null && playerTarget.Data.IsDestroyed))
         {
             shipMovement.Stop();
