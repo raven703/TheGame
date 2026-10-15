@@ -1,0 +1,3913 @@
+fileFormatVersion: 2
+guid: e3fd4bb6a7c97f143a7be6e4b96489f0
+TextureImporter:
+  internalIDToNameTable:
+  - first:
+      213: 2425446411085246281
+    second: star_bg_near_0
+  - first:
+      213: -1157224897204457542
+    second: star_bg_near_1
+  - first:
+      213: -5513786741041224536
+    second: star_bg_near_2
+  - first:
+      213: -7051352942508219605
+    second: star_bg_near_3
+  - first:
+      213: 4256250631471603981
+    second: star_bg_near_4
+  - first:
+      213: -5579605412981812979
+    second: star_bg_near_5
+  - first:
+      213: 5484839916933610044
+    second: star_bg_near_6
+  - first:
+      213: 2796731163985897147
+    second: star_bg_near_7
+  - first:
+      213: -4335318982716363324
+    second: star_bg_near_8
+  - first:
+      213: 9176156995426620541
+    second: star_bg_near_9
+  - first:
+      213: -5907440167134877116
+    second: star_bg_near_10
+  - first:
+      213: 6011145876264267967
+    second: star_bg_near_11
+  - first:
+      213: -1426807739527395075
+    second: star_bg_near_12
+  - first:
+      213: -3691561456492053742
+    second: star_bg_near_13
+  - first:
+      213: -8547181377578583883
+    second: star_bg_near_14
+  - first:
+      213: -4623186798488049001
+    second: star_bg_near_15
+  - first:
+      213: -3068830936820765931
+    second: star_bg_near_16
+  - first:
+      213: -5259316787744890764
+    second: star_bg_near_17
+  - first:
+      213: 6483322072047048536
+    second: star_bg_near_18
+  - first:
+      213: 270450350300569571
+    second: star_bg_near_19
+  - first:
+      213: -7317451852862154341
+    second: star_bg_near_20
+  - first:
+      213: -7996933000227292326
+    second: star_bg_near_21
+  - first:
+      213: -7102642501953930368
+    second: star_bg_near_22
+  - first:
+      213: 5370369936849004672
+    second: star_bg_near_23
+  - first:
+      213: -1335725709224726862
+    second: star_bg_near_24
+  - first:
+      213: -8961187050596261947
+    second: star_bg_near_25
+  - first:
+      213: 8088153431799231643
+    second: star_bg_near_26
+  - first:
+      213: 7638025538733834418
+    second: star_bg_near_27
+  - first:
+      213: 784561055788014929
+    second: star_bg_near_28
+  - first:
+      213: 2939963427799527519
+    second: star_bg_near_29
+  - first:
+      213: -4040359356307452960
+    second: star_bg_near_30
+  - first:
+      213: -2882089907698420105
+    second: star_bg_near_31
+  - first:
+      213: -633412625846500286
+    second: star_bg_near_32
+  - first:
+      213: 3181477538370222914
+    second: star_bg_near_33
+  - first:
+      213: 3637536691885815314
+    second: star_bg_near_34
+  - first:
+      213: 6966861114851650947
+    second: star_bg_near_35
+  - first:
+      213: 2057628146104810082
+    second: star_bg_near_36
+  - first:
+      213: 3467232553000551692
+    second: star_bg_near_37
+  - first:
+      213: -8204278696548045448
+    second: star_bg_near_38
+  - first:
+      213: -8399997964525400563
+    second: star_bg_near_39
+  - first:
+      213: 1166925710142702050
+    second: star_bg_near_40
+  - first:
+      213: -1085407675601113204
+    second: star_bg_near_41
+  - first:
+      213: 1812688208447456926
+    second: star_bg_near_42
+  - first:
+      213: -9049588756476569601
+    second: star_bg_near_43
+  - first:
+      213: -8073839310059245640
+    second: star_bg_near_44
+  - first:
+      213: -8967846291135451592
+    second: star_bg_near_45
+  - first:
+      213: -8027281350560903465
+    second: star_bg_near_46
+  - first:
+      213: 9196360499898682955
+    second: star_bg_near_47
+  - first:
+      213: 6233787001739966098
+    second: star_bg_near_48
+  - first:
+      213: 7548557872110296887
+    second: star_bg_near_49
+  - first:
+      213: 5278031619413888614
+    second: star_bg_near_50
+  - first:
+      213: -6254382032959234838
+    second: star_bg_near_51
+  - first:
+      213: -7113019552227690061
+    second: star_bg_near_52
+  - first:
+      213: -3218555087378102198
+    second: star_bg_near_53
+  - first:
+      213: -5270455652624273749
+    second: star_bg_near_54
+  - first:
+      213: -5785081667461410405
+    second: star_bg_near_55
+  - first:
+      213: 2642926571359605435
+    second: star_bg_near_56
+  - first:
+      213: -614941343911932364
+    second: star_bg_near_57
+  - first:
+      213: -3889452760323731407
+    second: star_bg_near_58
+  - first:
+      213: 3599069268237881745
+    second: star_bg_near_59
+  - first:
+      213: -2295670568204741561
+    second: star_bg_near_60
+  - first:
+      213: 2413610377423973109
+    second: star_bg_near_61
+  - first:
+      213: -8049528995798878341
+    second: star_bg_near_62
+  - first:
+      213: -3326408680241970415
+    second: star_bg_near_63
+  - first:
+      213: -3808888057016880464
+    second: star_bg_near_64
+  - first:
+      213: 6697189338786448078
+    second: star_bg_near_65
+  - first:
+      213: -4656320412423117887
+    second: star_bg_near_66
+  - first:
+      213: -1504264377745558458
+    second: star_bg_near_67
+  - first:
+      213: -3123330611660050946
+    second: star_bg_near_68
+  - first:
+      213: 8729516631797054269
+    second: star_bg_near_69
+  - first:
+      213: -4859836356050509364
+    second: star_bg_near_70
+  - first:
+      213: 4896255492081216785
+    second: star_bg_near_71
+  - first:
+      213: 7854639221340001195
+    second: star_bg_near_72
+  - first:
+      213: 95781447387618980
+    second: star_bg_near_73
+  - first:
+      213: -6412218903955784077
+    second: star_bg_near_74
+  - first:
+      213: 3345393332783871264
+    second: star_bg_near_75
+  - first:
+      213: -4535460246482225201
+    second: star_bg_near_76
+  - first:
+      213: -4981555214218920539
+    second: star_bg_near_77
+  - first:
+      213: -7407435201971164085
+    second: star_bg_near_78
+  - first:
+      213: -2758330821309346602
+    second: star_bg_near_79
+  - first:
+      213: 4391719973684444773
+    second: star_bg_near_80
+  - first:
+      213: 4497819447181931126
+    second: star_bg_near_81
+  - first:
+      213: 6940992681001012499
+    second: star_bg_near_82
+  - first:
+      213: 1699339481567267324
+    second: star_bg_near_83
+  - first:
+      213: -1292081001102611581
+    second: star_bg_near_84
+  - first:
+      213: -655710446481200510
+    second: star_bg_near_85
+  - first:
+      213: 1971315010838793562
+    second: star_bg_near_86
+  - first:
+      213: -3242075761945369107
+    second: star_bg_near_87
+  - first:
+      213: 8402979182423001360
+    second: star_bg_near_88
+  - first:
+      213: -540736510792872726
+    second: star_bg_near_89
+  - first:
+      213: 2609662749708573818
+    second: star_bg_near_90
+  - first:
+      213: -2968887303987657353
+    second: star_bg_near_91
+  - first:
+      213: 5966362567354347985
+    second: star_bg_near_92
+  - first:
+      213: -6445307683706282661
+    second: star_bg_near_93
+  - first:
+      213: 1022085166579058879
+    second: star_bg_near_94
+  - first:
+      213: -1901754309198508992
+    second: star_bg_near_95
+  - first:
+      213: -7641922820776782231
+    second: star_bg_near_96
+  - first:
+      213: -5657027844644668211
+    second: star_bg_near_97
+  - first:
+      213: -5119194778612660810
+    second: star_bg_near_98
+  - first:
+      213: 2664346523889792275
+    second: star_bg_near_99
+  - first:
+      213: -9110548893691857016
+    second: star_bg_near_100
+  - first:
+      213: 4095144021399654666
+    second: star_bg_near_101
+  - first:
+      213: -74520459175199641
+    second: star_bg_near_102
+  - first:
+      213: -6116003265595789245
+    second: star_bg_near_103
+  - first:
+      213: 3343087162729996718
+    second: star_bg_near_104
+  - first:
+      213: -5379725807476672811
+    second: star_bg_near_105
+  - first:
+      213: -8102529492931388163
+    second: star_bg_near_106
+  - first:
+      213: 2685095923591215246
+    second: star_bg_near_107
+  - first:
+      213: 4816087508154599851
+    second: star_bg_near_108
+  - first:
+      213: -4893975490140883244
+    second: star_bg_near_109
+  - first:
+      213: 2222029328506197
+    second: star_bg_near_110
+  - first:
+      213: -6132583196517172910
+    second: star_bg_near_111
+  - first:
+      213: -6000627303794020840
+    second: star_bg_near_112
+  - first:
+      213: 5620071513906639804
+    second: star_bg_near_113
+  - first:
+      213: -5479026323105553644
+    second: star_bg_near_114
+  - first:
+      213: 2204090534169558198
+    second: star_bg_near_115
+  - first:
+      213: -3861251842426863111
+    second: star_bg_near_116
+  - first:
+      213: 7298699341106578670
+    second: star_bg_near_117
+  - first:
+      213: 569329397845490695
+    second: star_bg_near_118
+  - first:
+      213: 3341985329844854751
+    second: star_bg_near_119
+  - first:
+      213: 3576363225898070297
+    second: star_bg_near_120
+  - first:
+      213: 1035065024339029879
+    second: star_bg_near_121
+  - first:
+      213: 1606983155719614245
+    second: star_bg_near_122
+  - first:
+      213: -834547236752366433
+    second: star_bg_near_123
+  - first:
+      213: 7220744881568841129
+    second: star_bg_near_124
+  - first:
+      213: -3637825524559279906
+    second: star_bg_near_125
+  - first:
+      213: 3929437855677657066
+    second: star_bg_near_126
+  - first:
+      213: 7649975305025620966
+    second: star_bg_near_127
+  - first:
+      213: -644986789643907460
+    second: star_bg_near_128
+  - first:
+      213: 2419465258715931494
+    second: star_bg_near_129
+  - first:
+      213: 8654516291853846793
+    second: star_bg_near_130
+  - first:
+      213: 2388193368537825939
+    second: star_bg_near_131
+  - first:
+      213: -6286159507232954258
+    second: star_bg_near_132
+  - first:
+      213: -4088599339018661960
+    second: star_bg_near_133
+  - first:
+      213: 5456911757441876663
+    second: star_bg_near_134
+  - first:
+      213: -4092001773028287283
+    second: star_bg_near_135
+  - first:
+      213: 4446889939373142098
+    second: star_bg_near_136
+  - first:
+      213: -5274349549297180377
+    second: star_bg_near_137
+  - first:
+      213: -468825889761570485
+    second: star_bg_near_138
+  - first:
+      213: 6802853960954242974
+    second: star_bg_near_139
+  - first:
+      213: 8842387641503980112
+    second: star_bg_near_140
+  - first:
+      213: 1976111169038463965
+    second: star_bg_near_141
+  - first:
+      213: 5839117156489698319
+    second: star_bg_near_142
+  - first:
+      213: -4806010969638094994
+    second: star_bg_near_143
+  - first:
+      213: 2483445532711482643
+    second: star_bg_near_144
+  - first:
+      213: -55824707271191521
+    second: star_bg_near_145
+  externalObjects: {}
+  serializedVersion: 13
+  mipmaps:
+    mipMapMode: 0
+    enableMipMap: 1
+    sRGBTexture: 1
+    linearTexture: 0
+    fadeOut: 0
+    borderMipMap: 0
+    mipMapsPreserveCoverage: 0
+    alphaTestReferenceValue: 0.5
+    mipMapFadeDistanceStart: 1
+    mipMapFadeDistanceEnd: 3
+  bumpmap:
+    convertToNormalMap: 0
+    externalNormalMap: 0
+    heightScale: 0.25
+    normalMapFilter: 0
+    flipGreenChannel: 0
+  isReadable: 0
+  streamingMipmaps: 0
+  streamingMipmapsPriority: 0
+  vTOnly: 0
+  ignoreMipmapLimit: 0
+  grayScaleToAlpha: 0
+  generateCubemap: 6
+  cubemapConvolution: 0
+  seamlessCubemap: 0
+  textureFormat: 1
+  maxTextureSize: 2048
+  textureSettings:
+    serializedVersion: 2
+    filterMode: 1
+    aniso: 1
+    mipBias: 0
+    wrapU: 0
+    wrapV: 0
+    wrapW: 0
+  nPOTScale: 0
+  lightmap: 0
+  compressionQuality: 50
+  spriteMode: 2
+  spriteExtrude: 1
+  spriteMeshType: 1
+  alignment: 0
+  spritePivot: {x: 0.5, y: 0.5}
+  spritePixelsToUnits: 100
+  spriteBorder: {x: 0, y: 0, z: 0, w: 0}
+  spriteGenerateFallbackPhysicsShape: 1
+  alphaUsage: 1
+  alphaIsTransparency: 1
+  spriteTessellationDetail: -1
+  textureType: 0
+  textureShape: 1
+  singleChannelComponent: 0
+  flipbookRows: 1
+  flipbookColumns: 1
+  maxTextureSizeSet: 0
+  compressionQualitySet: 0
+  textureFormatSet: 0
+  ignorePngGamma: 0
+  applyGammaDecoding: 0
+  swizzle: 50462976
+  cookieLightType: 0
+  platformSettings:
+  - serializedVersion: 4
+    buildTarget: DefaultTexturePlatform
+    maxTextureSize: 1024
+    resizeAlgorithm: 0
+    textureFormat: -1
+    textureCompression: 1
+    compressionQuality: 50
+    crunchedCompression: 0
+    allowsAlphaSplitting: 0
+    overridden: 0
+    ignorePlatformSupport: 0
+    androidETC2FallbackOverride: 0
+    forceMaximumCompressionQuality_BC6H_BC7: 0
+  - serializedVersion: 4
+    buildTarget: Standalone
+    maxTextureSize: 2048
+    resizeAlgorithm: 0
+    textureFormat: -1
+    textureCompression: 1
+    compressionQuality: 50
+    crunchedCompression: 0
+    allowsAlphaSplitting: 0
+    overridden: 0
+    ignorePlatformSupport: 0
+    androidETC2FallbackOverride: 0
+    forceMaximumCompressionQuality_BC6H_BC7: 0
+  spriteSheet:
+    serializedVersion: 2
+    sprites:
+    - serializedVersion: 2
+      name: star_bg_near_0
+      rect:
+        serializedVersion: 2
+        x: 0
+        y: 0
+        width: 207
+        height: 1024
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 94f6b7a09aae8a120800000000000000
+      internalID: 2425446411085246281
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: star_bg_near_1
+      rect:
+        serializedVersion: 2
+        x: 7
+        y: 1007
+        width: 6
+        height: 6
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: abfe3e45616b0ffe0800000000000000
+      internalID: -1157224897204457542
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: star_bg_near_2
+      rect:
+        serializedVersion: 2
+        x: 21
+        y: 991
+        width: 6
+        height: 6
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 8a4aafc1c281b73b0800000000000000
+      internalID: -5513786741041224536
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: star_bg_near_3
+      rect:
+        serializedVersion: 2
+        x: 112
+        y: 995
+        width: 35
+        height: 28
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: b2364e3cbdf842e90800000000000000
+      internalID: -7051352942508219605
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: star_bg_near_4
+      rect:
+        serializedVersion: 2
+        x: 147
+        y: 59
+        width: 139
+        height: 965
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: d01a5e3166d311b30800000000000000
+      internalID: 4256250631471603981
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: star_bg_near_5
+      rect:
+        serializedVersion: 2
+        x: 160
+        y: 988
+        width: 43
+        height: 35
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: d015f5c50724192b0800000000000000
+      internalID: -5579605412981812979
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: star_bg_near_6
+      rect:
+        serializedVersion: 2
+        x: 211
+        y: 0
+        width: 242
+        height: 1022
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: c3af5b238d01e1c40800000000000000
+      internalID: 5484839916933610044
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: star_bg_near_7
+      rect:
+        serializedVersion: 2
+        x: 442
+        y: 0
+        width: 349
+        height: 1024
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: bb6e4a90d2cffc620800000000000000
+      internalID: 2796731163985897147
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: star_bg_near_8
+      rect:
+        serializedVersion: 2
+        x: 769
+        y: 0
+        width: 255
+        height: 1024
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 4cdee2fca5ad5d3c0800000000000000
+      internalID: -4335318982716363324
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: star_bg_near_9
+      rect:
+        serializedVersion: 2
+        x: 989
+        y: 982
+        width: 35
+        height: 41
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: d749e938b22485f70800000000000000
+      internalID: 9176156995426620541
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: star_bg_near_10
+      rect:
+        serializedVersion: 2
+        x: 27
+        y: 918
+        width: 6
+        height: 6
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 44a2d0a877e840ea0800000000000000
+      internalID: -5907440167134877116
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: star_bg_near_11
+      rect:
+        serializedVersion: 2
+        x: 114
+        y: 923
+        width: 49
+        height: 44
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: fb039c77351eb6350800000000000000
+      internalID: 6011145876264267967
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: star_bg_near_12
+      rect:
+        serializedVersion: 2
+        x: 192
+        y: 931
+        width: 6
+        height: 12
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: df801b2abe5f23ce0800000000000000
+      internalID: -1426807739527395075
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: star_bg_near_13
+      rect:
+        serializedVersion: 2
+        x: 307
+        y: 952
+        width: 6
+        height: 6
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 21b744ff960f4ccc0800000000000000
+      internalID: -3691561456492053742
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: star_bg_near_14
+      rect:
+        serializedVersion: 2
+        x: 918
+        y: 925
+        width: 8
+        height: 8
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 5b8389e62df426980800000000000000
+      internalID: -8547181377578583883
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: star_bg_near_15
+      rect:
+        serializedVersion: 2
+        x: 932
+        y: 939
+        width: 6
+        height: 6
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 79a28d9f91427dfb0800000000000000
+      internalID: -4623186798488049001
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: star_bg_near_16
+      rect:
+        serializedVersion: 2
+        x: 938
+        y: 953
+        width: 7
+        height: 8
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 51ba117b5825965d0800000000000000
+      internalID: -3068830936820765931
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: star_bg_near_17
+      rect:
+        serializedVersion: 2
+        x: 1007
+        y: 927
+        width: 15
+        height: 41
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 470a7312f372307b0800000000000000
+      internalID: -5259316787744890764
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: star_bg_near_18
+      rect:
+        serializedVersion: 2
+        x: 512
+        y: 899
+        width: 6
+        height: 6
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 85750dc031369f950800000000000000
+      internalID: 6483322072047048536
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: star_bg_near_19
+      rect:
+        serializedVersion: 2
+        x: 445
+        y: 884
+        width: 6
+        height: 6
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 3ef9b032925d0c300800000000000000
+      internalID: 270450350300569571
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: star_bg_near_20
+      rect:
+        serializedVersion: 2
+        x: 885
+        y: 889
+        width: 7
+        height: 7
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: b9990213f40337a90800000000000000
+      internalID: -7317451852862154341
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: star_bg_near_21
+      rect:
+        serializedVersion: 2
+        x: 901
+        y: 880
+        width: 7
+        height: 7
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: a5b7adc4ecf250190800000000000000
+      internalID: -7996933000227292326
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: star_bg_near_22
+      rect:
+        serializedVersion: 2
+        x: 17
+        y: 860
+        width: 6
+        height: 6
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 08bb170a6485e6d90800000000000000
+      internalID: -7102642501953930368
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: star_bg_near_23
+      rect:
+        serializedVersion: 2
+        x: 618
+        y: 856
+        width: 7
+        height: 6
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 088625e0103678a40800000000000000
+      internalID: 5370369936849004672
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: star_bg_near_24
+      rect:
+        serializedVersion: 2
+        x: 770
+        y: 854
+        width: 6
+        height: 6
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 2bead406b8c867de0800000000000000
+      internalID: -1335725709224726862
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: star_bg_near_25
+      rect:
+        serializedVersion: 2
+        x: 113
+        y: 827
+        width: 6
+        height: 6
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 5cf116b1bd773a380800000000000000
+      internalID: -8961187050596261947
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: star_bg_near_26
+      rect:
+        serializedVersion: 2
+        x: 251
+        y: 800
+        width: 59
+        height: 59
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: b94ff3f71b4ee3070800000000000000
+      internalID: 8088153431799231643
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: star_bg_near_27
+      rect:
+        serializedVersion: 2
+        x: 857
+        y: 822
+        width: 20
+        height: 18
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 2b0879d62c7bff960800000000000000
+      internalID: 7638025538733834418
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: star_bg_near_28
+      rect:
+        serializedVersion: 2
+        x: 534
+        y: 805
+        width: 16
+        height: 16
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 15d99da9f1253ea00800000000000000
+      internalID: 784561055788014929
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: star_bg_near_29
+      rect:
+        serializedVersion: 2
+        x: 627
+        y: 810
+        width: 8
+        height: 8
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: f5071a63929dcc820800000000000000
+      internalID: 2939963427799527519
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: star_bg_near_30
+      rect:
+        serializedVersion: 2
+        x: 810
+        y: 803
+        width: 7
+        height: 7
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 0eb4e5a7292cde7c0800000000000000
+      internalID: -4040359356307452960
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: star_bg_near_31
+      rect:
+        serializedVersion: 2
+        x: 797
+        y: 780
+        width: 6
+        height: 6
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 776b5e8bf72c008d0800000000000000
+      internalID: -2882089907698420105
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: star_bg_near_32
+      rect:
+        serializedVersion: 2
+        x: 913
+        y: 786
+        width: 6
+        height: 6
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 2440c20a29aa537f0800000000000000
+      internalID: -633412625846500286
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: star_bg_near_33
+      rect:
+        serializedVersion: 2
+        x: 48
+        y: 768
+        width: 7
+        height: 14
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 24bf07707f0e62c20800000000000000
+      internalID: 3181477538370222914
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: star_bg_near_34
+      rect:
+        serializedVersion: 2
+        x: 821
+        y: 768
+        width: 6
+        height: 8
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 216bd4949502b7230800000000000000
+      internalID: 3637536691885815314
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: star_bg_near_35
+      rect:
+        serializedVersion: 2
+        x: 862
+        y: 773
+        width: 8
+        height: 10
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 38de63e95434fa060800000000000000
+      internalID: 6966861114851650947
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: star_bg_near_36
+      rect:
+        serializedVersion: 2
+        x: 921
+        y: 768
+        width: 7
+        height: 8
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 26a3c68a5e92e8c10800000000000000
+      internalID: 2057628146104810082
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: star_bg_near_37
+      rect:
+        serializedVersion: 2
+        x: 909
+        y: 749
+        width: 6
+        height: 6
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: c05c44303a51e1030800000000000000
+      internalID: 3467232553000551692
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: star_bg_near_38
+      rect:
+        serializedVersion: 2
+        x: 562
+        y: 738
+        width: 6
+        height: 6
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 87de2fd5efb842e80800000000000000
+      internalID: -8204278696548045448
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: star_bg_near_39
+      rect:
+        serializedVersion: 2
+        x: 229
+        y: 704
+        width: 24
+        height: 15
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: d0e857a3b563d6b80800000000000000
+      internalID: -8399997964525400563
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: star_bg_near_40
+      rect:
+        serializedVersion: 2
+        x: 706
+        y: 696
+        width: 8
+        height: 6
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 2e1835030c0c13010800000000000000
+      internalID: 1166925710142702050
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: star_bg_near_41
+      rect:
+        serializedVersion: 2
+        x: 891
+        y: 693
+        width: 6
+        height: 6
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: c8f2053487bdfe0f0800000000000000
+      internalID: -1085407675601113204
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: star_bg_near_42
+      rect:
+        serializedVersion: 2
+        x: 358
+        y: 668
+        width: 7
+        height: 8
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: e96cc015256f72910800000000000000
+      internalID: 1812688208447456926
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: star_bg_near_43
+      rect:
+        serializedVersion: 2
+        x: 428
+        y: 665
+        width: 6
+        height: 6
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: ff758d609f6696280800000000000000
+      internalID: -9049588756476569601
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: star_bg_near_44
+      rect:
+        serializedVersion: 2
+        x: 987
+        y: 664
+        width: 6
+        height: 6
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 8bf655eace5f3ff80800000000000000
+      internalID: -8073839310059245640
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: star_bg_near_45
+      rect:
+        serializedVersion: 2
+        x: 513
+        y: 655
+        width: 8
+        height: 8
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 83e2198df4fcb8380800000000000000
+      internalID: -8967846291135451592
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: star_bg_near_46
+      rect:
+        serializedVersion: 2
+        x: 951
+        y: 638
+        width: 24
+        height: 21
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 7de03bb542e599090800000000000000
+      internalID: -8027281350560903465
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: star_bg_near_47
+      rect:
+        serializedVersion: 2
+        x: 662
+        y: 641
+        width: 6
+        height: 7
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: b4e05e6762900af70800000000000000
+      internalID: 9196360499898682955
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: star_bg_near_48
+      rect:
+        serializedVersion: 2
+        x: 829
+        y: 635
+        width: 8
+        height: 6
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 2967824004cd28650800000000000000
+      internalID: 6233787001739966098
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: star_bg_near_49
+      rect:
+        serializedVersion: 2
+        x: 40
+        y: 628
+        width: 7
+        height: 6
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 73fdc95046dd1c860800000000000000
+      internalID: 7548557872110296887
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: star_bg_near_50
+      rect:
+        serializedVersion: 2
+        x: 656
+        y: 619
+        width: 19
+        height: 21
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 66ec17c2bc55f3940800000000000000
+      internalID: 5278031619413888614
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: star_bg_near_51
+      rect:
+        serializedVersion: 2
+        x: 84
+        y: 614
+        width: 6
+        height: 7
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: aec11eb9da8f339a0800000000000000
+      internalID: -6254382032959234838
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: star_bg_near_52
+      rect:
+        serializedVersion: 2
+        x: 444
+        y: 614
+        width: 6
+        height: 6
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 3b97f05576a794d90800000000000000
+      internalID: -7113019552227690061
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: star_bg_near_53
+      rect:
+        serializedVersion: 2
+        x: 994
+        y: 613
+        width: 6
+        height: 6
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: a484dce53356553d0800000000000000
+      internalID: -3218555087378102198
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: star_bg_near_54
+      rect:
+        serializedVersion: 2
+        x: 12
+        y: 605
+        width: 6
+        height: 6
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: bae61ec02849bd6b0800000000000000
+      internalID: -5270455652624273749
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: star_bg_near_55
+      rect:
+        serializedVersion: 2
+        x: 761
+        y: 594
+        width: 6
+        height: 7
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: b919656cfd247bfa0800000000000000
+      internalID: -5785081667461410405
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: star_bg_near_56
+      rect:
+        serializedVersion: 2
+        x: 645
+        y: 583
+        width: 9
+        height: 9
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: bb2945db6bf8da420800000000000000
+      internalID: 2642926571359605435
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: star_bg_near_57
+      rect:
+        serializedVersion: 2
+        x: 788
+        y: 583
+        width: 6
+        height: 7
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 43e8d661b1a4777f0800000000000000
+      internalID: -614941343911932364
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: star_bg_near_58
+      rect:
+        serializedVersion: 2
+        x: 649
+        y: 569
+        width: 6
+        height: 6
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 130dd3a5253e50ac0800000000000000
+      internalID: -3889452760323731407
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: star_bg_near_59
+      rect:
+        serializedVersion: 2
+        x: 195
+        y: 560
+        width: 7
+        height: 6
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 19118574e6672f130800000000000000
+      internalID: 3599069268237881745
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: star_bg_near_60
+      rect:
+        serializedVersion: 2
+        x: 230
+        y: 559
+        width: 7
+        height: 8
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 74456dcf7c32420e0800000000000000
+      internalID: -2295670568204741561
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: star_bg_near_61
+      rect:
+        serializedVersion: 2
+        x: 654
+        y: 558
+        width: 6
+        height: 7
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 5fa6d84b9ddde7120800000000000000
+      internalID: 2413610377423973109
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: star_bg_near_62
+      rect:
+        serializedVersion: 2
+        x: 654
+        y: 554
+        width: 6
+        height: 6
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: b77733cc6045a4090800000000000000
+      internalID: -8049528995798878341
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: star_bg_near_63
+      rect:
+        serializedVersion: 2
+        x: 663
+        y: 556
+        width: 6
+        height: 6
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 113c66cede836d1d0800000000000000
+      internalID: -3326408680241970415
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: star_bg_near_64
+      rect:
+        serializedVersion: 2
+        x: 841
+        y: 549
+        width: 7
+        height: 7
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 0b2f7441e7c142bc0800000000000000
+      internalID: -3808888057016880464
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: star_bg_near_65
+      rect:
+        serializedVersion: 2
+        x: 551
+        y: 535
+        width: 6
+        height: 6
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: ec246eb683231fc50800000000000000
+      internalID: 6697189338786448078
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: star_bg_near_66
+      rect:
+        serializedVersion: 2
+        x: 658
+        y: 530
+        width: 6
+        height: 6
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 1c3ae11514d616fb0800000000000000
+      internalID: -4656320412423117887
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: star_bg_near_67
+      rect:
+        serializedVersion: 2
+        x: 533
+        y: 526
+        width: 6
+        height: 7
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 644b334b487cf1be0800000000000000
+      internalID: -1504264377745558458
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: star_bg_near_68
+      rect:
+        serializedVersion: 2
+        x: 459
+        y: 517
+        width: 6
+        height: 6
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: efd26e75b53b7a4d0800000000000000
+      internalID: -3123330611660050946
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: star_bg_near_69
+      rect:
+        serializedVersion: 2
+        x: 674
+        y: 516
+        width: 7
+        height: 7
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: d3bb02b2029752970800000000000000
+      internalID: 8729516631797054269
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: star_bg_near_70
+      rect:
+        serializedVersion: 2
+        x: 84
+        y: 509
+        width: 6
+        height: 6
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: cc1a41b25946e8cb0800000000000000
+      internalID: -4859836356050509364
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: star_bg_near_71
+      rect:
+        serializedVersion: 2
+        x: 519
+        y: 507
+        width: 6
+        height: 6
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 11d6e07bd6ef2f340800000000000000
+      internalID: 4896255492081216785
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: star_bg_near_72
+      rect:
+        serializedVersion: 2
+        x: 538
+        y: 507
+        width: 7
+        height: 7
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: ba352d291c8410d60800000000000000
+      internalID: 7854639221340001195
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: star_bg_near_73
+      rect:
+        serializedVersion: 2
+        x: 919
+        y: 506
+        width: 6
+        height: 6
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 4ae9c9b08b8445100800000000000000
+      internalID: 95781447387618980
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: star_bg_near_74
+      rect:
+        serializedVersion: 2
+        x: 26
+        y: 492
+        width: 6
+        height: 6
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 37ebba751e83307a0800000000000000
+      internalID: -6412218903955784077
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: star_bg_near_75
+      rect:
+        serializedVersion: 2
+        x: 629
+        y: 485
+        width: 6
+        height: 6
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 025fa82f2893d6e20800000000000000
+      internalID: 3345393332783871264
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: star_bg_near_76
+      rect:
+        serializedVersion: 2
+        x: 652
+        y: 480
+        width: 6
+        height: 6
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: fc7758b8feece01c0800000000000000
+      internalID: -4535460246482225201
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: star_bg_near_77
+      rect:
+        serializedVersion: 2
+        x: 107
+        y: 468
+        width: 7
+        height: 6
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 5ad7c731de5fddab0800000000000000
+      internalID: -4981555214218920539
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: star_bg_near_78
+      rect:
+        serializedVersion: 2
+        x: 467
+        y: 471
+        width: 6
+        height: 7
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: b4ce8c91ee0833990800000000000000
+      internalID: -7407435201971164085
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: star_bg_near_79
+      rect:
+        serializedVersion: 2
+        x: 552
+        y: 471
+        width: 8
+        height: 8
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 6dc48d67bb078b9d0800000000000000
+      internalID: -2758330821309346602
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: star_bg_near_80
+      rect:
+        serializedVersion: 2
+        x: 613
+        y: 466
+        width: 6
+        height: 12
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 56ef2783c0682fc30800000000000000
+      internalID: 4391719973684444773
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: star_bg_near_81
+      rect:
+        serializedVersion: 2
+        x: 711
+        y: 460
+        width: 6
+        height: 6
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 6727f1de4f67b6e30800000000000000
+      internalID: 4497819447181931126
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: star_bg_near_82
+      rect:
+        serializedVersion: 2
+        x: 799
+        y: 459
+        width: 6
+        height: 6
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 31dc6a3811c535060800000000000000
+      internalID: 6940992681001012499
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: star_bg_near_83
+      rect:
+        serializedVersion: 2
+        x: 551
+        y: 428
+        width: 6
+        height: 6
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: cf90d974144459710800000000000000
+      internalID: 1699339481567267324
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: star_bg_near_84
+      rect:
+        serializedVersion: 2
+        x: 688
+        y: 428
+        width: 7
+        height: 6
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 38b6f3cdc2b911ee0800000000000000
+      internalID: -1292081001102611581
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: star_bg_near_85
+      rect:
+        serializedVersion: 2
+        x: 730
+        y: 427
+        width: 7
+        height: 8
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 28aa9f1b2d276e6f0800000000000000
+      internalID: -655710446481200510
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: star_bg_near_86
+      rect:
+        serializedVersion: 2
+        x: 848
+        y: 434
+        width: 6
+        height: 6
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: a5d0171de848b5b10800000000000000
+      internalID: 1971315010838793562
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: star_bg_near_87
+      rect:
+        serializedVersion: 2
+        x: 603
+        y: 422
+        width: 6
+        height: 6
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: de5a7529545d103d0800000000000000
+      internalID: -3242075761945369107
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: star_bg_near_88
+      rect:
+        serializedVersion: 2
+        x: 437
+        y: 403
+        width: 8
+        height: 8
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 0194357ab016d9470800000000000000
+      internalID: 8402979182423001360
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: star_bg_near_89
+      rect:
+        serializedVersion: 2
+        x: 544
+        y: 406
+        width: 7
+        height: 6
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: aec4b15220bee78f0800000000000000
+      internalID: -540736510792872726
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: star_bg_near_90
+      rect:
+        serializedVersion: 2
+        x: 100
+        y: 391
+        width: 6
+        height: 6
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: a7cd2fbb172673420800000000000000
+      internalID: 2609662749708573818
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: star_bg_near_91
+      rect:
+        serializedVersion: 2
+        x: 438
+        y: 393
+        width: 7
+        height: 6
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 77506a31ab46cc6d0800000000000000
+      internalID: -2968887303987657353
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: star_bg_near_92
+      rect:
+        serializedVersion: 2
+        x: 493
+        y: 397
+        width: 6
+        height: 6
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 1d1f754d427ccc250800000000000000
+      internalID: 5966362567354347985
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: star_bg_near_93
+      rect:
+        serializedVersion: 2
+        x: 518
+        y: 391
+        width: 7
+        height: 7
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: b5d57947fcaad86a0800000000000000
+      internalID: -6445307683706282661
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: star_bg_near_94
+      rect:
+        serializedVersion: 2
+        x: 661
+        y: 391
+        width: 6
+        height: 7
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: fb804243b0d2f2e00800000000000000
+      internalID: 1022085166579058879
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: star_bg_near_95
+      rect:
+        serializedVersion: 2
+        x: 95
+        y: 361
+        width: 17
+        height: 18
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 04c872e188c9b95e0800000000000000
+      internalID: -1901754309198508992
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: star_bg_near_96
+      rect:
+        serializedVersion: 2
+        x: 418
+        y: 376
+        width: 6
+        height: 6
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 96616a2eeaf62f590800000000000000
+      internalID: -7641922820776782231
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: star_bg_near_97
+      rect:
+        serializedVersion: 2
+        x: 793
+        y: 377
+        width: 10
+        height: 7
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: dccf573c5233e71b0800000000000000
+      internalID: -5657027844644668211
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: star_bg_near_98
+      rect:
+        serializedVersion: 2
+        x: 262
+        y: 361
+        width: 8
+        height: 7
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 6b502c4b877f4f8b0800000000000000
+      internalID: -5119194778612660810
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: star_bg_near_99
+      rect:
+        serializedVersion: 2
+        x: 302
+        y: 361
+        width: 6
+        height: 6
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 3157ff21c09a9f420800000000000000
+      internalID: 2664346523889792275
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: star_bg_near_100
+      rect:
+        serializedVersion: 2
+        x: 382
+        y: 354
+        width: 6
+        height: 6
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 8873baa0d04d09180800000000000000
+      internalID: -9110548893691857016
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: star_bg_near_101
+      rect:
+        serializedVersion: 2
+        x: 675
+        y: 351
+        width: 7
+        height: 7
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: a01579b5acfd4d830800000000000000
+      internalID: 4095144021399654666
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: star_bg_near_102
+      rect:
+        serializedVersion: 2
+        x: 321
+        y: 335
+        width: 6
+        height: 6
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 76cfc56890047fef0800000000000000
+      internalID: -74520459175199641
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: star_bg_near_103
+      rect:
+        serializedVersion: 2
+        x: 472
+        y: 328
+        width: 6
+        height: 7
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 340b8051f679f1ba0800000000000000
+      internalID: -6116003265595789245
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: star_bg_near_104
+      rect:
+        serializedVersion: 2
+        x: 366
+        y: 323
+        width: 6
+        height: 9
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: ea1a0b3ef08056e20800000000000000
+      internalID: 3343087162729996718
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: star_bg_near_105
+      rect:
+        serializedVersion: 2
+        x: 419
+        y: 320
+        width: 7
+        height: 9
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 5d6f95091ef5755b0800000000000000
+      internalID: -5379725807476672811
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: star_bg_near_106
+      rect:
+        serializedVersion: 2
+        x: 379
+        y: 303
+        width: 6
+        height: 6
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: dfcd2bfea580e8f80800000000000000
+      internalID: -8102529492931388163
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: star_bg_near_107
+      rect:
+        serializedVersion: 2
+        x: 278
+        y: 264
+        width: 10
+        height: 11
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: e88f0892480634520800000000000000
+      internalID: 2685095923591215246
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: star_bg_near_108
+      rect:
+        serializedVersion: 2
+        x: 304
+        y: 275
+        width: 8
+        height: 6
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: ba940ca621e26d240800000000000000
+      internalID: 4816087508154599851
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: star_bg_near_109
+      rect:
+        serializedVersion: 2
+        x: 387
+        y: 267
+        width: 9
+        height: 9
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 4d63faa983b151cb0800000000000000
+      internalID: -4893975490140883244
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: star_bg_near_110
+      rect:
+        serializedVersion: 2
+        x: 826
+        y: 271
+        width: 6
+        height: 6
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 55d5ec48ce4e70000800000000000000
+      internalID: 2222029328506197
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: star_bg_near_111
+      rect:
+        serializedVersion: 2
+        x: 883
+        y: 262
+        width: 6
+        height: 7
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 25970181310b4eaa0800000000000000
+      internalID: -6132583196517172910
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: star_bg_near_112
+      rect:
+        serializedVersion: 2
+        x: 58
+        y: 253
+        width: 7
+        height: 6
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 81ee8d7824d79bca0800000000000000
+      internalID: -6000627303794020840
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: star_bg_near_113
+      rect:
+        serializedVersion: 2
+        x: 295
+        y: 245
+        width: 14
+        height: 13
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: cb372b6f3418efd40800000000000000
+      internalID: 5620071513906639804
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: star_bg_near_114
+      rect:
+        serializedVersion: 2
+        x: 374
+        y: 250
+        width: 9
+        height: 6
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 4136748969696f3b0800000000000000
+      internalID: -5479026323105553644
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: star_bg_near_115
+      rect:
+        serializedVersion: 2
+        x: 523
+        y: 247
+        width: 6
+        height: 7
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 6bc3afdb9a0869e10800000000000000
+      internalID: 2204090534169558198
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: star_bg_near_116
+      rect:
+        serializedVersion: 2
+        x: 430
+        y: 240
+        width: 8
+        height: 6
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 9f103d738e31a6ac0800000000000000
+      internalID: -3861251842426863111
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: star_bg_near_117
+      rect:
+        serializedVersion: 2
+        x: 493
+        y: 234
+        width: 6
+        height: 6
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: ee4090d61603a4560800000000000000
+      internalID: 7298699341106578670
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: star_bg_near_118
+      rect:
+        serializedVersion: 2
+        x: 266
+        y: 229
+        width: 6
+        height: 6
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 70c74c6221aa6e700800000000000000
+      internalID: 569329397845490695
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: star_bg_near_119
+      rect:
+        serializedVersion: 2
+        x: 841
+        y: 216
+        width: 8
+        height: 9
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: fdf18fd63fd116e20800000000000000
+      internalID: 3341985329844854751
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: star_bg_near_120
+      rect:
+        serializedVersion: 2
+        x: 218
+        y: 201
+        width: 6
+        height: 6
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 911bc63d76bc1a130800000000000000
+      internalID: 3576363225898070297
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: star_bg_near_121
+      rect:
+        serializedVersion: 2
+        x: 495
+        y: 206
+        width: 7
+        height: 7
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 77fa827d72a4d5e00800000000000000
+      internalID: 1035065024339029879
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: star_bg_near_122
+      rect:
+        serializedVersion: 2
+        x: 700
+        y: 200
+        width: 6
+        height: 6
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 52f24bc7aa62d4610800000000000000
+      internalID: 1606983155719614245
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: star_bg_near_123
+      rect:
+        serializedVersion: 2
+        x: 383
+        y: 190
+        width: 7
+        height: 7
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: f946715b5b71b64f0800000000000000
+      internalID: -834547236752366433
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: star_bg_near_124
+      rect:
+        serializedVersion: 2
+        x: 393
+        y: 189
+        width: 6
+        height: 6
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 9ad71af663d353460800000000000000
+      internalID: 7220744881568841129
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: star_bg_near_125
+      rect:
+        serializedVersion: 2
+        x: 673
+        y: 188
+        width: 7
+        height: 6
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: ed88bcd95f8d38dc0800000000000000
+      internalID: -3637825524559279906
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: star_bg_near_126
+      rect:
+        serializedVersion: 2
+        x: 444
+        y: 154
+        width: 6
+        height: 6
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: aefa3a229ea288630800000000000000
+      internalID: 3929437855677657066
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: star_bg_near_127
+      rect:
+        serializedVersion: 2
+        x: 951
+        y: 157
+        width: 6
+        height: 7
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 6eb0094320c2a2a60800000000000000
+      internalID: 7649975305025620966
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: star_bg_near_128
+      rect:
+        serializedVersion: 2
+        x: 135
+        y: 148
+        width: 7
+        height: 7
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: c7e847e9eeb8c07f0800000000000000
+      internalID: -644986789643907460
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: star_bg_near_129
+      rect:
+        serializedVersion: 2
+        x: 249
+        y: 146
+        width: 7
+        height: 8
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 663692c75daa39120800000000000000
+      internalID: 2419465258715931494
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: star_bg_near_130
+      rect:
+        serializedVersion: 2
+        x: 610
+        y: 146
+        width: 6
+        height: 6
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 90987ceb6b40b1870800000000000000
+      internalID: 8654516291853846793
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: star_bg_near_131
+      rect:
+        serializedVersion: 2
+        x: 108
+        y: 119
+        width: 6
+        height: 6
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 39204aa2731942120800000000000000
+      internalID: 2388193368537825939
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: star_bg_near_132
+      rect:
+        serializedVersion: 2
+        x: 385
+        y: 82
+        width: 6
+        height: 7
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: e686fe1db3313c8a0800000000000000
+      internalID: -6286159507232954258
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: star_bg_near_133
+      rect:
+        serializedVersion: 2
+        x: 607
+        y: 87
+        width: 8
+        height: 7
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 8bf45e040906247c0800000000000000
+      internalID: -4088599339018661960
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: star_bg_near_134
+      rect:
+        serializedVersion: 2
+        x: 618
+        y: 83
+        width: 6
+        height: 6
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 7b2c9f8d458dabb40800000000000000
+      internalID: 5456911757441876663
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: star_bg_near_135
+      rect:
+        serializedVersion: 2
+        x: 56
+        y: 63
+        width: 6
+        height: 6
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: dcc516a511a4637c0800000000000000
+      internalID: -4092001773028287283
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: star_bg_near_136
+      rect:
+        serializedVersion: 2
+        x: 89
+        y: 59
+        width: 6
+        height: 6
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 2503897d6d686bd30800000000000000
+      internalID: 4446889939373142098
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: star_bg_near_137
+      rect:
+        serializedVersion: 2
+        x: 472
+        y: 59
+        width: 7
+        height: 6
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 72166e4970fbdc6b0800000000000000
+      internalID: -5274349549297180377
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: star_bg_near_138
+      rect:
+        serializedVersion: 2
+        x: 639
+        y: 65
+        width: 6
+        height: 6
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: b41514356556e79f0800000000000000
+      internalID: -468825889761570485
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: star_bg_near_139
+      rect:
+        serializedVersion: 2
+        x: 856
+        y: 60
+        width: 6
+        height: 6
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: e97698962a7986e50800000000000000
+      internalID: 6802853960954242974
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: star_bg_near_140
+      rect:
+        serializedVersion: 2
+        x: 358
+        y: 49
+        width: 10
+        height: 9
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 05a162206b876ba70800000000000000
+      internalID: 8842387641503980112
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: star_bg_near_141
+      rect:
+        serializedVersion: 2
+        x: 579
+        y: 54
+        width: 6
+        height: 8
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: dd3383b63ae8c6b10800000000000000
+      internalID: 1976111169038463965
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: star_bg_near_142
+      rect:
+        serializedVersion: 2
+        x: 59
+        y: 47
+        width: 6
+        height: 6
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: f0c157aed16b80150800000000000000
+      internalID: 5839117156489698319
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: star_bg_near_143
+      rect:
+        serializedVersion: 2
+        x: 107
+        y: 29
+        width: 6
+        height: 7
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: e6737188c7e9d4db0800000000000000
+      internalID: -4806010969638094994
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: star_bg_near_144
+      rect:
+        serializedVersion: 2
+        x: 543
+        y: 29
+        width: 7
+        height: 8
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 3157c4cdd88f67220800000000000000
+      internalID: 2483445532711482643
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: star_bg_near_145
+      rect:
+        serializedVersion: 2
+        x: 299
+        y: 11
+        width: 6
+        height: 6
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: f14196979bba93ff0800000000000000
+      internalID: -55824707271191521
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    outline: []
+    customData: 
+    physicsShape: []
+    bones: []
+    spriteID: 
+    internalID: 0
+    vertices: []
+    indices: 
+    edges: []
+    weights: []
+    secondaryTextures: []
+    spriteCustomMetadata:
+      entries: []
+    nameFileIdTable:
+      star_bg_near_0: 2425446411085246281
+      star_bg_near_1: -1157224897204457542
+      star_bg_near_10: -5907440167134877116
+      star_bg_near_100: -9110548893691857016
+      star_bg_near_101: 4095144021399654666
+      star_bg_near_102: -74520459175199641
+      star_bg_near_103: -6116003265595789245
+      star_bg_near_104: 3343087162729996718
+      star_bg_near_105: -5379725807476672811
+      star_bg_near_106: -8102529492931388163
+      star_bg_near_107: 2685095923591215246
+      star_bg_near_108: 4816087508154599851
+      star_bg_near_109: -4893975490140883244
+      star_bg_near_11: 6011145876264267967
+      star_bg_near_110: 2222029328506197
+      star_bg_near_111: -6132583196517172910
+      star_bg_near_112: -6000627303794020840
+      star_bg_near_113: 5620071513906639804
+      star_bg_near_114: -5479026323105553644
+      star_bg_near_115: 2204090534169558198
+      star_bg_near_116: -3861251842426863111
+      star_bg_near_117: 7298699341106578670
+      star_bg_near_118: 569329397845490695
+      star_bg_near_119: 3341985329844854751
+      star_bg_near_12: -1426807739527395075
+      star_bg_near_120: 3576363225898070297
+      star_bg_near_121: 1035065024339029879
+      star_bg_near_122: 1606983155719614245
+      star_bg_near_123: -834547236752366433
+      star_bg_near_124: 7220744881568841129
+      star_bg_near_125: -3637825524559279906
+      star_bg_near_126: 3929437855677657066
+      star_bg_near_127: 7649975305025620966
+      star_bg_near_128: -644986789643907460
+      star_bg_near_129: 2419465258715931494
+      star_bg_near_13: -3691561456492053742
+      star_bg_near_130: 8654516291853846793
+      star_bg_near_131: 2388193368537825939
+      star_bg_near_132: -6286159507232954258
+      star_bg_near_133: -4088599339018661960
+      star_bg_near_134: 5456911757441876663
+      star_bg_near_135: -4092001773028287283
+      star_bg_near_136: 4446889939373142098
+      star_bg_near_137: -5274349549297180377
+      star_bg_near_138: -468825889761570485
+      star_bg_near_139: 6802853960954242974
+      star_bg_near_14: -8547181377578583883
+      star_bg_near_140: 8842387641503980112
+      star_bg_near_141: 1976111169038463965
+      star_bg_near_142: 5839117156489698319
+      star_bg_near_143: -4806010969638094994
+      star_bg_near_144: 2483445532711482643
+      star_bg_near_145: -55824707271191521
+      star_bg_near_15: -4623186798488049001
+      star_bg_near_16: -3068830936820765931
+      star_bg_near_17: -5259316787744890764
+      star_bg_near_18: 6483322072047048536
+      star_bg_near_19: 270450350300569571
+      star_bg_near_2: -5513786741041224536
+      star_bg_near_20: -7317451852862154341
+      star_bg_near_21: -7996933000227292326
+      star_bg_near_22: -7102642501953930368
+      star_bg_near_23: 5370369936849004672
+      star_bg_near_24: -1335725709224726862
+      star_bg_near_25: -8961187050596261947
+      star_bg_near_26: 8088153431799231643
+      star_bg_near_27: 7638025538733834418
+      star_bg_near_28: 784561055788014929
+      star_bg_near_29: 2939963427799527519
+      star_bg_near_3: -7051352942508219605
+      star_bg_near_30: -4040359356307452960
+      star_bg_near_31: -2882089907698420105
+      star_bg_near_32: -633412625846500286
+      star_bg_near_33: 3181477538370222914
+      star_bg_near_34: 3637536691885815314
+      star_bg_near_35: 6966861114851650947
+      star_bg_near_36: 2057628146104810082
+      star_bg_near_37: 3467232553000551692
+      star_bg_near_38: -8204278696548045448
+      star_bg_near_39: -8399997964525400563
+      star_bg_near_4: 4256250631471603981
+      star_bg_near_40: 1166925710142702050
+      star_bg_near_41: -1085407675601113204
+      star_bg_near_42: 1812688208447456926
+      star_bg_near_43: -9049588756476569601
+      star_bg_near_44: -8073839310059245640
+      star_bg_near_45: -8967846291135451592
+      star_bg_near_46: -8027281350560903465
+      star_bg_near_47: 9196360499898682955
+      star_bg_near_48: 6233787001739966098
+      star_bg_near_49: 7548557872110296887
+      star_bg_near_5: -5579605412981812979
+      star_bg_near_50: 5278031619413888614
+      star_bg_near_51: -6254382032959234838
+      star_bg_near_52: -7113019552227690061
+      star_bg_near_53: -3218555087378102198
+      star_bg_near_54: -5270455652624273749
+      star_bg_near_55: -5785081667461410405
+      star_bg_near_56: 2642926571359605435
+      star_bg_near_57: -614941343911932364
+      star_bg_near_58: -3889452760323731407
+      star_bg_near_59: 3599069268237881745
+      star_bg_near_6: 5484839916933610044
+      star_bg_near_60: -2295670568204741561
+      star_bg_near_61: 2413610377423973109
+      star_bg_near_62: -8049528995798878341
+      star_bg_near_63: -3326408680241970415
+      star_bg_near_64: -3808888057016880464
+      star_bg_near_65: 6697189338786448078
+      star_bg_near_66: -4656320412423117887
+      star_bg_near_67: -1504264377745558458
+      star_bg_near_68: -3123330611660050946
+      star_bg_near_69: 8729516631797054269
+      star_bg_near_7: 2796731163985897147
+      star_bg_near_70: -4859836356050509364
+      star_bg_near_71: 4896255492081216785
+      star_bg_near_72: 7854639221340001195
+      star_bg_near_73: 95781447387618980
+      star_bg_near_74: -6412218903955784077
+      star_bg_near_75: 3345393332783871264
+      star_bg_near_76: -4535460246482225201
+      star_bg_near_77: -4981555214218920539
+      star_bg_near_78: -7407435201971164085
+      star_bg_near_79: -2758330821309346602
+      star_bg_near_8: -4335318982716363324
+      star_bg_near_80: 4391719973684444773
+      star_bg_near_81: 4497819447181931126
+      star_bg_near_82: 6940992681001012499
+      star_bg_near_83: 1699339481567267324
+      star_bg_near_84: -1292081001102611581
+      star_bg_near_85: -655710446481200510
+      star_bg_near_86: 1971315010838793562
+      star_bg_near_87: -3242075761945369107
+      star_bg_near_88: 8402979182423001360
+      star_bg_near_89: -540736510792872726
+      star_bg_near_9: 9176156995426620541
+      star_bg_near_90: 2609662749708573818
+      star_bg_near_91: -2968887303987657353
+      star_bg_near_92: 5966362567354347985
+      star_bg_near_93: -6445307683706282661
+      star_bg_near_94: 1022085166579058879
+      star_bg_near_95: -1901754309198508992
+      star_bg_near_96: -7641922820776782231
+      star_bg_near_97: -5657027844644668211
+      star_bg_near_98: -5119194778612660810
+      star_bg_near_99: 2664346523889792275
+  mipmapLimitGroupName: 
+  pSDRemoveMatte: 0
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
