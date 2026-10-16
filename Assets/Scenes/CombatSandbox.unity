@@ -959,7 +959,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!4 &179859086
 Transform:
   m_ObjectHideFlags: 0
@@ -1640,7 +1640,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!4 &260299963
 Transform:
   m_ObjectHideFlags: 0
@@ -1746,7 +1746,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!4 &271678073
 Transform:
   m_ObjectHideFlags: 0
@@ -5059,6 +5059,7 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 1131791833}
+  - component: {fileID: 1131791834}
   m_Layer: 0
   m_Name: '[Background]'
   m_TagString: Untagged
@@ -5085,6 +5086,56 @@ Transform:
   - {fileID: 260299963}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &1131791834
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1131791832}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: d1c60ee71154440449bd494e97828921, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::Parallax.ParallaxBackgroundGenerator
+  layers:
+  - layerName: far
+    texture: {fileID: 2800000, guid: 5986b4208333efb43af36e4e6de5c7b4, type: 3}
+    starData: {fileID: 0}
+    parallaxFactor: 0.97
+    zPosition: 30
+    quadSize: {x: 80, y: 50}
+    autoScrollSpeed: {x: 0, y: 0}
+    tint: {r: 1, g: 1, b: 1, a: 0}
+    transparent: 0
+  - layerName: mid
+    texture: {fileID: 0}
+    starData: {fileID: 11400000, guid: 09a23a4e816e1ab4aad2bf53dbf5f85d, type: 2}
+    parallaxFactor: 0.8
+    zPosition: 20
+    quadSize: {x: 40, y: 25}
+    autoScrollSpeed: {x: 0, y: 0}
+    tint: {r: 1, g: 1, b: 1, a: 1}
+    transparent: 1
+  - layerName: near
+    texture: {fileID: 0}
+    starData: {fileID: 11400000, guid: 9d5c2783d33f4ce4685d2fddc70ae118, type: 2}
+    parallaxFactor: 0.55
+    zPosition: 10
+    quadSize: {x: 40, y: 25}
+    autoScrollSpeed: {x: 0, y: 0}
+    tint: {r: 1, g: 1, b: 1, a: 1}
+    transparent: 1
+  - layerName: close
+    texture: {fileID: 0}
+    starData: {fileID: 11400000, guid: 9a55a80984305de488c7dafddcb31c69, type: 2}
+    parallaxFactor: 0.25
+    zPosition: 5
+    quadSize: {x: 40, y: 25}
+    autoScrollSpeed: {x: 0, y: 0}
+    tint: {r: 1, g: 1, b: 1, a: 1}
+    transparent: 1
+  unlitShader: {fileID: 0}
 --- !u!1 &1196340307
 GameObject:
   m_ObjectHideFlags: 0
@@ -5103,7 +5154,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!4 &1196340308
 Transform:
   m_ObjectHideFlags: 0

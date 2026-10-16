@@ -1,0 +1,98 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 88f0eafbb9d40e3469257d783bc558e3, type: 3}
+  m_Name: close
+  m_EditorClassIdentifier: Assembly-CSharp::Parallax.StarfieldData
+  textureSize: 1024
+  stars:
+  - x: 0.49723288
+    y: 0.39309117
+    size: 5.7167473
+    brightness: 0.9556489
+    color: {r: 0.97707105, g: 0.98624265, b: 1, a: 1}
+  - x: 0.23647837
+    y: 0.7666543
+    size: 4.5673738
+    brightness: 0.80541337
+    color: {r: 1, g: 0.9936402, b: 0.98012555, a: 1}
+  - x: 0.27337718
+    y: 0.98501056
+    size: 5.4258623
+    brightness: 0.94295716
+    color: {r: 1, g: 0.9997533, b: 0.9992291, a: 1}
+  - x: 0.86883533
+    y: 0.6676254
+    size: 4.3060265
+    brightness: 0.9114562
+    color: {r: 1, g: 0.994258, b: 0.9820562, a: 1}
+  - x: 0.6119345
+    y: 0.6757189
+    size: 4.202556
+    brightness: 0.91282696
+    color: {r: 0.9958122, g: 0.9974873, b: 1, a: 1}
+  - x: 0.08496443
+    y: 0.5989131
+    size: 4.976049
+    brightness: 0.8906971
+    color: {r: 1, g: 0.99309075, b: 0.9784085, a: 1}
+  - x: 0.49553257
+    y: 0.9481863
+    size: 5.726175
+    brightness: 0.9866932
+    color: {r: 0.9952918, g: 0.9971751, b: 1, a: 1}
+  - x: 0.059205253
+    y: 0.7457881
+    size: 5.63781
+    brightness: 0.8489524
+    color: {r: 1, g: 0.9935765, b: 0.9799266, a: 1}
+  - x: 0.8746685
+    y: 0.20904133
+    size: 4.647417
+    brightness: 0.9452412
+    color: {r: 1, g: 0.9977835, b: 0.9930734, a: 1}
+  - x: 0.8540645
+    y: 0.22474806
+    size: 5.5730643
+    brightness: 0.9897217
+    color: {r: 0.9957653, g: 0.9974592, b: 1, a: 1}
+  - x: 0.32011682
+    y: 0.74790186
+    size: 4.029879
+    brightness: 0.8025798
+    color: {r: 0.99543077, g: 0.9972585, b: 1, a: 1}
+  - x: 0.821514
+    y: 0.29181308
+    size: 4.588478
+    brightness: 0.83889765
+    color: {r: 0.9813193, g: 0.9887916, b: 1, a: 1}
+  - x: 0.6375653
+    y: 0.27862978
+    size: 5.6604023
+    brightness: 0.99177927
+    color: {r: 0.9946511, g: 0.99679065, b: 1, a: 1}
+  - x: 0.3251909
+    y: 0.1219231
+    size: 5.5589304
+    brightness: 0.82412434
+    color: {r: 1, g: 0.998806, b: 0.9962688, a: 1}
+  - x: 0.123047255
+    y: 0.84872025
+    size: 5.8165026
+    brightness: 0.89174986
+    color: {r: 1, g: 0.99626327, b: 0.9883228, a: 1}
+  editorSeed: 3468
+  editorCount: 15
+  editorMinSize: 4
+  editorMaxSize: 6
+  editorMinBrightness: 0.8
+  editorMaxBrightness: 1
+  editorColorVariance: 0.1
