@@ -11,6 +11,10 @@ public class ShipDefinition : ScriptableObject
     [Tooltip("Уникальный ключ для сохранения. Не менять после релиза!")]
     public string shipId = "cobra_mk3";
 
+    [Header("Visuals")]
+    [Tooltip("Спрайт корабля в бою (не иконка).")]
+    public Sprite hullSprite;
+
     [Tooltip("Отображаемое имя в UI.")]
     public string displayName = "Cobra MK3";
 
