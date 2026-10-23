@@ -11,6 +11,10 @@ public class ShipDefinition : ScriptableObject
     [Tooltip("Уникальный ключ для сохранения. Не менять после релиза!")]
     public string shipId = "cobra_mk3";
 
+    [Header("Default Loadout")]
+    [Tooltip("Стартовые модули в инвентаре, если у игрока ещё нет сохранения для этого корабля.")]
+    public System.Collections.Generic.List<FittingItem> defaultInventory = new System.Collections.Generic.List<FittingItem>();
+
     [Header("Visuals")]
     [Tooltip("Спрайт корабля в бою (не иконка).")]
     public Sprite hullSprite;

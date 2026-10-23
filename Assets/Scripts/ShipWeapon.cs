@@ -21,15 +21,10 @@ public class ShipWeapon : MonoBehaviour
 {
     [Header("Weapon & Projectile Setup")]
     public GameObject bulletPrefab;
-    public Transform firePoint;
+    [Tooltip("Точки вылета снарядов (по индексу = слот оружия). Если пусто — центр корабля.")]
+    public Transform[] firePoints;
 
-    public Transform weaponPoint
-    {
-        get => firePoint != null ? firePoint : transform;
-        set => firePoint = value;
-    }
-
-    public float bulletSpeed = 15f;
+     public float bulletSpeed = 15f;
     public float range = 8f;
     public float baseCooldown = 0.6f;
     public float firingArcAngle = 60f;
@@ -112,12 +107,7 @@ public class ShipWeapon : MonoBehaviour
         if (shipMovement == null)
             shipMovement = GetComponent<ShipMovement>();
 
-        if (firePoint == null)
-        {
-            var found = transform.Find("WeaponPoint");
-            if (found != null)
-                firePoint = found;
-        }
+
 
         var shader = Shader.Find("Sprites/Default")
                   ?? Shader.Find("Universal Render Pipeline/2D/Sprite-Lit-Default")
@@ -370,32 +360,30 @@ public class ShipWeapon : MonoBehaviour
                 return;
         }
 
-        Transform spawnPoint = firePoint != null ? firePoint : transform;
-
         bool useFitting = activeWeapons != null && activeWeapons.Count > 0;
-
         if (!useFitting && !useFallbackWeapon)
             return;
 
         int weaponCount = useFitting ? activeWeapons.Count : 1;
 
-        float spacing = 0.35f;
-        float startOffset = -(weaponCount - 1) * spacing * 0.5f;
-
         Vector2 forward = shipMovement != null
             ? shipMovement.GetForwardVector()
-            : (Vector2)spawnPoint.up;
+            : (Vector2)transform.up;
 
         for (int i = 0; i < weaponCount; i++)
         {
+            // Используем firePoints[i], если он есть и валиден. Иначе центр корабля.
+            Transform spawnPoint = (firePoints != null && i < firePoints.Length && firePoints[i] != null)
+                ? firePoints[i]
+                : transform;
+
             FittingItem weaponModule = useFitting ? activeWeapons[i] : null;
 
             float currentDamage = weaponModule != null ? weaponModule.damageBonus : fallbackDamage;
             Color shotColor = weaponModule != null ? weaponModule.iconColor : fallbackColor;
             WeaponVisualType visual = weaponModule != null ? weaponModule.visualType : fallbackVisual;
 
-            Vector3 offset = spawnPoint.right * (startOffset + i * spacing);
-            Vector3 spawnPos = spawnPoint.position + offset;
+            Vector3 spawnPos = spawnPoint.position;
 
             Vector3 endPos;
             if (Target != null)

@@ -46,9 +46,21 @@ public class ShipSpawner : MonoBehaviour
             return;
         }
 
-        StartCoroutine(SpawnWavesRoutine());
+        // НЕ запускаем бой автоматически.
+        // Бой стартует по вызову StartCombat() — кнопкой "В бой".
+        Debug.Log("[ShipSpawner] Готов. Ожидание команды StartCombat().");
     }
 
+    /// <summary>
+    /// Запускает бой. Вызывается кнопкой "В бой".
+    /// </summary>
+    public void StartCombat()
+    {
+        if (GameState.Instance != null)
+            GameState.Instance.StartCombat();
+
+        StartCoroutine(SpawnWavesRoutine());
+    }
     private IEnumerator SpawnWavesRoutine()
     {
         for (currentWaveIndex = 0; currentWaveIndex < waveSizes.Length; currentWaveIndex++)

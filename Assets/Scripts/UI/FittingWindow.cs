@@ -182,22 +182,31 @@ public class FittingWindow : MonoBehaviour
         if (loadout.inventory == null)
             loadout.inventory = new List<FittingItem>();
 
+        // 1. Если у корабля задан свой дефолтный набор — используем его
+        if (shipDefinition != null && shipDefinition.defaultInventory != null
+            && shipDefinition.defaultInventory.Count > 0)
+        {
+            foreach (var item in shipDefinition.defaultInventory)
+            {
+                if (item != null)
+                    loadout.inventory.Add(item);
+            }
+            Debug.Log($"[FittingWindow] Загружен дефолтный инвентарь для {shipDefinition.displayName}: {shipDefinition.defaultInventory.Count} модулей.");
+            return;
+        }
+
+        // 2. Fallback: старый универсальный набор
+        Debug.Log("[FittingWindow] У корабля нет defaultInventory, используется fallback.");
+
         loadout.inventory.Add(new FittingItem("w1", "Лазер T1", SlotGroup.Top_Weapons, new Color(1f, 0.3f, 0.3f), "Оружие: Урон +15", damage: 15f, visual: WeaponVisualType.Laser));
         loadout.inventory.Add(new FittingItem("w2", "Плазма T2", SlotGroup.Top_Weapons, new Color(1f, 0.1f, 0.5f), "Оружие: Урон +30", damage: 30f, visual: WeaponVisualType.Plasma));
         loadout.inventory.Add(new FittingItem("w3", "Рейлган T1", SlotGroup.Top_Weapons, new Color(1f, 0.5f, 0.2f), "Оружие: Урон +20", damage: 20f, visual: WeaponVisualType.Laser));
-
         loadout.inventory.Add(new FittingItem("s1", "Легкий Щит", SlotGroup.Center_Shields, new Color(0.2f, 0.6f, 1f), "Защита: Щит +30 HP", shield: 30f, mass: 0.2f));
         loadout.inventory.Add(new FittingItem("s2", "Тяжелый Щит", SlotGroup.Center_Shields, new Color(0.3f, 0.9f, 0.4f), "Защита: Щит +80 HP", shield: 80f, mass: 1.0f));
-
         loadout.inventory.Add(new FittingItem("e1", "Форсаж M1", SlotGroup.Bottom_Engines, new Color(0.9f, 0.8f, 0.2f), "Двиг: Скорость +3", speed: 3f, accel: 6f));
         loadout.inventory.Add(new FittingItem("e2", "Тяжелый Двиг", SlotGroup.Bottom_Engines, new Color(0.8f, 0.4f, 1f), "Двиг: Ускорение +10", speed: 1f, accel: 10f, mass: 0.5f));
-
-        // === Модуль наведения: ускоряет захват цели ===
-        loadout.inventory.Add(new FittingItem("t1", "Система Наведения", SlotGroup.Center_Shields,
-            new Color(0.8f, 0.9f, 1f), "Захват: -0.2 сек",
-            lockTime: -0.2f, mass: 0.1f));
+        loadout.inventory.Add(new FittingItem("t1", "Система Наведения", SlotGroup.Center_Shields, new Color(0.8f, 0.9f, 1f), "Захват: -0.2 сек", lockTime: -0.2f, mass: 0.1f));
     }
-
     private void BuildShipSelector()
     {
         if (shipSelectorContainer == null || shipButtonPrefab == null)
@@ -510,7 +519,16 @@ public class FittingWindow : MonoBehaviour
         {
             targetShipHealth.shipDefinition = newShip;
 
-            if (targetShipHealth.Data != null)
+
+            // 👇 НОВОЕ: смена спрайта
+            var visuals = targetShipHealth.GetComponentInChildren<ShipVisuals>();
+            if (visuals != null)
+                visuals.Apply(newShip);
+
+           
+
+
+                if (targetShipHealth.Data != null)
             {
                 targetShipHealth.Data.maxHullHP = newShip.maxHullHP;
                 targetShipHealth.Data.currentHullHP = newShip.maxHullHP;

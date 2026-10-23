@@ -41,6 +41,12 @@ public class FittingButton : MonoBehaviour
 
     private void OnClick()
     {
+        // Блокировка в бою
+        if (GameState.Instance != null && GameState.Instance.isCombatStarted)
+        {
+            Debug.Log("[FittingButton] Фитинг недоступен во время боя!");
+            return;
+        }
         if (fittingWindow == null) return;
         fittingWindow.Toggle();
     }

@@ -67,6 +67,8 @@ public class CombatManager : MonoBehaviour
 
     public void RestartCombat()
     {
+        if (GameState.Instance != null)
+            GameState.Instance.EndCombat();
         Time.timeScale = 1f;
         EnemyRegistry.Clear();
         SceneManager.LoadScene(SceneManager.GetActiveScene().buildIndex);

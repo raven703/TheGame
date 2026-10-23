@@ -55,6 +55,10 @@ public class LoadoutApplier : MonoBehaviour
         targetShipHealth.shipDefinition = def;
         ApplyBaseStats(targetShipHealth, def);
 
+        var visuals = targetShipHealth.GetComponentInChildren<ShipVisuals>();
+        if (visuals != null)
+            visuals.Apply(def);
+
         // 4. Загружаем loadout
         var loadout = ShipLoadoutManager.GetLoadout(def.shipId);
         if (loadout == null)

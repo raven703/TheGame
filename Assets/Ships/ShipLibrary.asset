@@ -14,3 +14,4 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::ShipLibrary
   ships:
   - {fileID: 11400000, guid: c346ed5929ae76343a04e9f5c080ea0c, type: 2}
+  - {fileID: 11400000, guid: e1bcd225bc761ec42aa9ca75c12ca7a4, type: 2}
