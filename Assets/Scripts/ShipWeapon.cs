@@ -21,6 +21,7 @@ public class ShipWeapon : MonoBehaviour
 {
     [Header("Weapon & Projectile Setup")]
     public GameObject bulletPrefab;
+    [UnityEngine.Serialization.FormerlySerializedAs("weaponPoint")]
     public Transform firePoint;
 
     // Свойство для совместимости с автотестами (Step5Verify) и другими скриптами:
@@ -32,12 +33,14 @@ public class ShipWeapon : MonoBehaviour
 
     public float bulletSpeed = 15f;
     public float range = 8f;
+    [UnityEngine.Serialization.FormerlySerializedAs("cooldown")]
     public float baseCooldown = 0.6f;
     public float firingArcAngle = 60f;
 
     [Header("Fallback Weapon (если фитинг не задан)")]
     [Tooltip("Если true и фитинг не установил ни одного оружия — стреляем fallback-оружием (для врагов без ShipFitting).")]
     public bool useFallbackWeapon = false;
+    [UnityEngine.Serialization.FormerlySerializedAs("damage")]
     public float fallbackDamage = 0.5f;
     public Color fallbackColor = new Color(1f, 0.3f, 0.3f);
     public WeaponVisualType fallbackVisual = WeaponVisualType.Laser;
@@ -62,7 +65,12 @@ public class ShipWeapon : MonoBehaviour
 
     private List<FittingItem> activeWeapons = new List<FittingItem>();
     private float nextFireTime = 0f;
+    private readonly Dictionary<string, float> weaponReadyAt = new Dictionary<string, float>();
+    public float TargetingDisruptionRemaining => Mathf.Max(0f, targetingDisabledUntil - Time.time);
 
+    private float targetingDisabledUntil;
+    public bool IsTargetingDisrupted => Time.time < targetingDisabledUntil;
+    private EnemyAI movementAI;
     private ShipHealth target;
     public ShipHealth Target
     {
@@ -92,6 +100,7 @@ public class ShipWeapon : MonoBehaviour
     private void Awake()
     {
         ownerHealth = GetComponentInParent<ShipHealth>();
+        movementAI = GetComponentInParent<EnemyAI>();
         shipMovement = GetComponentInParent<ShipMovement>();
         if (shipMovement == null)
             shipMovement = GetComponent<ShipMovement>();
@@ -123,6 +132,12 @@ public class ShipWeapon : MonoBehaviour
     public void SetTarget(ShipHealth newTarget) { Target = newTarget; manualMoveOrder = false; }
     public void ClearTarget() => Target = null;
 
+    // Retain the selected target: reacquisition is automatic when suppression expires.
+    public void DisruptTargeting(float duration)
+    {
+        targetingDisabledUntil = Mathf.Max(targetingDisabledUntil, Time.time + Mathf.Max(0f, duration));
+    }
+
     public void SetEquippedWeapons(List<FittingItem> weapons)
     {
         activeWeapons = weapons;
@@ -138,7 +153,7 @@ public class ShipWeapon : MonoBehaviour
             return;
 
         // При паузе оружие не стреляет: Time.time не растёт, следующий выстрел не перезаряжается
-        if (Time.timeScale <= 0f)
+        if (CombatSession.IsPreparing || Time.timeScale <= 0f || IsTargetingDisrupted)
             return;
 
         // Сброс цели при её уничтожении
@@ -148,7 +163,7 @@ public class ShipWeapon : MonoBehaviour
         }
 
         // Автоматический выбор маневра
-        if (Target != null && !manualMoveOrder)
+        if (Target != null && !manualMoveOrder && (movementAI == null || !movementAI.isActiveAndEnabled))
         {
             UpdateCombatTactics();
         }
@@ -156,9 +171,9 @@ public class ShipWeapon : MonoBehaviour
         // Проверка ввода пользователя (автострельба по цели или ручная стрельба)
         bool isManualFiring = false;
 #if ENABLE_INPUT_SYSTEM
-        isManualFiring = Mouse.current != null && Mouse.current.leftButton.isPressed;
+        isManualFiring = Mouse.current != null && Mouse.current.leftButton.isPressed && CompareTag("Player") && !PlayerInputHandler.IsPointerOverUI();
 #else
-        isManualFiring = Input.GetMouseButton(0);
+        isManualFiring = Input.GetMouseButton(0) && CompareTag("Player") && !PlayerInputHandler.IsPointerOverUI();
 #endif
 
         if ((isManualFiring || Target != null) && Time.time >= nextFireTime)
@@ -173,7 +188,7 @@ public class ShipWeapon : MonoBehaviour
                 if (inRange && inArc)
                 {
                     Shoot();
-                    nextFireTime = Time.time + baseCooldown;
+                    nextFireTime = Time.time + .1f;
                 }
                 // Иначе — не стреляем вообще (даже при зажатой ЛКМ).
             }
@@ -181,7 +196,7 @@ public class ShipWeapon : MonoBehaviour
             {
                 // Цели нет — ручной выстрел «вперёд в пустоту» (только визуал, урона нет).
                 Shoot();
-                nextFireTime = Time.time + baseCooldown;
+                nextFireTime = Time.time + .1f;
             }
         }
     }
@@ -306,34 +321,38 @@ public class ShipWeapon : MonoBehaviour
                 endPos = spawnPos + (Vector3)(forward * range);
             }
 
-            // Спавн снаряда (если назначен) или мгновенный урон + визуал
-            if (bulletPrefab != null)
+            // All equipped weapons use the same cover/resource path, including legacy prefabs.
+            WeaponKind kind = weaponModule != null ? weaponModule.weaponKind : WeaponKind.Laser;
+            string key = i.ToString();
+            if (weaponReadyAt.TryGetValue(key, out float ready) && Time.time < ready) continue;
+            float energy = kind == WeaponKind.Plasma ? 16f : kind == WeaponKind.Railgun ? 22f : 7f;
+            float heat = kind == WeaponKind.Plasma ? 22f : kind == WeaponKind.Railgun ? 30f : 9f;
+            var reactor = ownerHealth.GetComponent<ShipReactor>();
+            if (reactor == null || !reactor.TrySpend(energy, heat)) continue;
+            float cooldown = kind == WeaponKind.Plasma ? 1.2f : kind == WeaponKind.Railgun ? 1.8f : baseCooldown;
+            weaponReadyAt[key] = Time.time + Mathf.Max(.1f, cooldown + (weaponModule != null ? weaponModule.cooldownBonus : 0f));
+
+            Asteroid cover = Asteroid.FindCover(spawnPos, endPos, out Vector2 impact);
+            if (cover != null)
             {
-                GameObject bullet = Instantiate(bulletPrefab, spawnPos, spawnPoint.rotation);
-
-                var rb = bullet.GetComponent<Rigidbody2D>();
-                if (rb != null)
-                {
-                    rb.linearVelocity = forward * bulletSpeed;
-                }
-
-                var renderer = bullet.GetComponent<SpriteRenderer>();
-                if (renderer != null)
-                {
-                    renderer.color = shotColor;
-                }
+                endPos = impact;
+                cover.TakeDamage(currentDamage);
+                CombatSession.Log($"{name}: выстрел в укрытие");
             }
-            else
+            else if (Target != null)
             {
-                // Мгновенный урон, если есть цель (уже проверено выше, что цель в конусе)
-                if (Target != null)
+                var targetMovement = Target.GetComponent<ShipMovement>();
+                float speed = targetMovement != null && targetMovement.Rb != null
+                    ? targetMovement.Rb.linearVelocity.magnitude : 0f;
+                float evasion = Target.Data != null ? Target.Data.GetTotalEvasion(speed) : 0f;
+                float accuracyBonus = kind == WeaponKind.Laser ? .1f : kind == WeaponKind.Plasma ? -.1f : 0f;
+                if (UnityEngine.Random.value < Mathf.Clamp01(ownerHealth.Data.accuracy + accuracyBonus - evasion))
                 {
-                    Target.TakeDamage(currentDamage, targetedModule);
+                    Target.TakeWeaponDamage(currentDamage, kind, targetedModule);
                 }
-
-                // Визуальный след
-                DrawShot(spawnPos, endPos, shotColor, visual);
+                else CombatSession.Log($"{name}: промах ({kind})");
             }
+            DrawShot(spawnPos, endPos, shotColor, visual);
         }
     }
 
@@ -341,6 +360,15 @@ public class ShipWeapon : MonoBehaviour
     /// Рисует временный след выстрела через LineRenderer.
     /// Laser — тонкий луч, Plasma — толстый луч-капля.
     /// </summary>
+    private void OnDestroy()
+    {
+        if (lineMaterial != null)
+        {
+            if (Application.isPlaying) Destroy(lineMaterial);
+            else DestroyImmediate(lineMaterial);
+        }
+    }
+
     private void DrawShot(Vector3 from, Vector3 to, Color color, WeaponVisualType visual)
     {
         GameObject go = new GameObject("ShotVisual");

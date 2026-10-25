@@ -6,12 +6,18 @@ public class ShipAbilities : MonoBehaviour
     private ShipMovement shipMovement;
     private ShipHealth shipHealth;
     private ShipWeapon shipWeapon;
+    private bool Spend(float energy, float heat)
+    {
+        var reactor = GetComponent<ShipReactor>();
+        return !CombatSession.IsPreparing && reactor != null && reactor.TrySpend(energy, heat);
+    }
 
     // Таймеры перезарядки
     public float afterburnerCooldown { get; private set; }
     public float shieldBoostCooldown { get; private set; }
     public float emPulseCooldown { get; private set; }
 
+    public float AfterburnerRemaining => isAfterburnerActive ? Mathf.Max(0f, afterburnerCooldown - 8f) : 0f;
     public bool isAfterburnerActive { get; private set; }
 
     private void Awake()
@@ -34,6 +40,8 @@ public class ShipAbilities : MonoBehaviour
         if (afterburnerCooldown > 0f || isAfterburnerActive || shipMovement == null)
             return false;
 
+        if (!Spend(25f, 20f)) return false;
+        CombatSession.Log($"{name}: форсаж на 2 сек.");
         StartCoroutine(AfterburnerRoutine());
         afterburnerCooldown = 10f;
         return true;
@@ -42,18 +50,20 @@ public class ShipAbilities : MonoBehaviour
     private IEnumerator AfterburnerRoutine()
     {
         isAfterburnerActive = true;
-        float originalSpeed = shipMovement.maxSpeed;
-        float originalAccel = shipMovement.acceleration;
-
-        shipMovement.maxSpeed *= 2f;
-        shipMovement.acceleration *= 2f;
+        shipMovement.SpeedMultiplier = 2f;
 
         Debug.Log($"[АКТИВАЦИЯ] {gameObject.name} включил Форсаж!");
 
         yield return new WaitForSeconds(2f);
 
-        shipMovement.maxSpeed = originalSpeed;
-        shipMovement.acceleration = originalAccel;
+        shipMovement.SpeedMultiplier = 1f;
+        isAfterburnerActive = false;
+    }
+
+    private void OnDisable()
+    {
+        StopAllCoroutines();
+        if (shipMovement != null) shipMovement.SpeedMultiplier = 1f;
         isAfterburnerActive = false;
     }
 
@@ -67,6 +77,8 @@ public class ShipAbilities : MonoBehaviour
         if (shieldMod != null && shieldMod.isDestroyed)
             return false;
 
+        if (!Spend(30f, 15f)) return false;
+        CombatSession.Log($"{name}: перегрузка щита");
         shipHealth.Data.currentShieldHP = Mathf.Min(shipHealth.Data.maxShieldHP, shipHealth.Data.currentShieldHP + 30f);
         shipHealth.Data.TakeHullDamage(10f);
 
@@ -82,12 +94,13 @@ public class ShipAbilities : MonoBehaviour
             return false;
 
         var enemyWeapon = shipWeapon.Target.GetComponent<ShipWeapon>();
-        if (enemyWeapon != null)
-        {
-            enemyWeapon.ClearTarget();
-            enemyWeapon.manualMoveOrder = true; // Сбиваем автопилот
-            Debug.Log($"[АКТИВАЦИЯ] {gameObject.name} запустил Импульс Помех! Захват цели у {shipWeapon.Target.name} сбит!");
-        }
+        if (enemyWeapon == null)
+            return false;
+
+        if (!Spend(35f, 25f)) return false;
+        CombatSession.Log($"{name}: РЭБ на 3 сек.");
+        enemyWeapon.DisruptTargeting(3f);
+        Debug.Log($"[АКТИВАЦИЯ] {gameObject.name}: захват цели противника подавлен на 3 секунды.");
 
         emPulseCooldown = 12f;
         return true;

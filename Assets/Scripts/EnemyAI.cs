@@ -8,6 +8,8 @@ using UnityEngine;
 /// The AI only decides *where* to fly - movement is delegated to <see cref="ShipMovement"/>
 /// and target tracking to <see cref="ShipWeapon"/>.
 /// </remarks>
+public enum AIPersonality { Brawler, Sniper, Flanker, Cautious }
+
 public class EnemyAI : MonoBehaviour
 {
     /// <summary>Orbit speed in degrees per second while holding the optimal distance.</summary>
@@ -25,6 +27,7 @@ public class EnemyAI : MonoBehaviour
     [Tooltip("Combat distance the ship tries to hold (kept below the 6 unit weapon range).")]
     public float optimalDistance = 4.5f;
 
+    public AIPersonality personality = AIPersonality.Brawler;
     private float orbitAngle;
 
     private void Awake()
@@ -48,12 +51,15 @@ public class EnemyAI : MonoBehaviour
     private void Start()
     {
         if (shipWeapon != null)
+        {
             shipWeapon.SetTarget(playerTarget);
+            shipWeapon.useFallbackWeapon = true;
+        }
     }
 
     private void Update()
     {
-        if (shipMovement == null || shipWeapon == null)
+        if (CombatSession.IsPreparing || shipMovement == null || shipWeapon == null)
             return;
 
         if (playerTarget == null || !playerTarget.gameObject.activeSelf || (playerTarget.Data != null && playerTarget.Data.IsDestroyed))
@@ -65,6 +71,29 @@ public class EnemyAI : MonoBehaviour
         var targetPosition = playerTarget.transform.position;
         var distance = Vector3.Distance(transform.position, targetPosition);
 
+        Vector3 away = (transform.position - targetPosition).normalized;
+        if (away.sqrMagnitude < .01f) away = Vector3.up;
+        var health = GetComponent<ShipHealth>();
+        if (personality == AIPersonality.Cautious && health != null && health.Data != null &&
+            health.Data.currentHullHP < health.Data.maxHullHP * .35f)
+        {
+            shipMovement.SetTargetPosition(transform.position + away * 4f);
+            return;
+        }
+        if (personality == AIPersonality.Sniper)
+        {
+            float preferred = shipWeapon.range * .85f;
+            shipMovement.SetTargetPosition(distance < preferred - .5f
+                ? transform.position + away * 3f : targetPosition + away * (preferred - 1f));
+            return;
+        }
+        if (personality == AIPersonality.Flanker)
+        {
+            var movement = playerTarget.GetComponent<ShipMovement>();
+            Vector3 forward = movement != null ? (Vector3)movement.GetForwardVector() : playerTarget.transform.up;
+            shipMovement.SetTargetPosition(targetPosition - forward * (shipWeapon.range * .5f));
+            return;
+        }
         if (distance > optimalDistance)
         {
             // Hunt: fly straight at the player until the comfort zone is reached.

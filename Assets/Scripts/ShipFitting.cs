@@ -36,6 +36,66 @@ public class ShipFitting : MonoBehaviour
     private int dragSourceIndex = -1;
 
     private bool showFittingWindow = false;
+    private string fittingMessage = "";
+    private readonly List<FittingItem> catalog = new List<FittingItem>();
+    private const string PresetKey = "TheGame.Loadout.v1.";
+    [System.Serializable] private class SavedLoadout
+    {
+        public string[] weapons = new string[4];
+        public string[] shields = new string[4];
+        public string[] engines = new string[4];
+    }
+    public void CancelDrag()
+    {
+        if (draggedItem == null) return;
+        ReturnItemToSource(draggedItem); draggedItem = null;
+    }
+    public bool CanEdit => CombatSession.IsPreparing;
+
+    private string[] Ids(FittingItem[] slots)
+    {
+        var ids = new string[4];
+        for (int i = 0; i < 4; i++) ids[i] = slots[i]?.id;
+        return ids;
+    }
+    public void SaveLoadout(int slot)
+    {
+        if (draggedItem != null) return;
+        var data = new SavedLoadout { weapons = Ids(topSlots), shields = Ids(centerSlots), engines = Ids(bottomSlots) };
+        PlayerPrefs.SetString(PresetKey + slot, JsonUtility.ToJson(data));
+        PlayerPrefs.Save();
+        fittingMessage = $"Комплект {slot} сохранён";
+    }
+    public bool LoadLoadout(int slot)
+    {
+        if (!CanEdit || draggedItem != null) return false;
+        string json = PlayerPrefs.GetString(PresetKey + slot, "");
+        if (string.IsNullOrEmpty(json)) { fittingMessage = "Нет сохранённого комплекта"; return false; }
+        SavedLoadout data;
+        try { data = JsonUtility.FromJson<SavedLoadout>(json); }
+        catch (System.Exception) { fittingMessage = "Повреждённый комплект"; return false; }
+        if (data == null) return false;
+        var available = new List<FittingItem>(catalog);
+        var newTop = new FittingItem[4]; var newCenter = new FittingItem[4]; var newBottom = new FittingItem[4];
+        if (!Restore(data.weapons, newTop, SlotGroup.Top_Weapons, available) ||
+            !Restore(data.shields, newCenter, SlotGroup.Center_Shields, available) ||
+            !Restore(data.engines, newBottom, SlotGroup.Bottom_Engines, available))
+        { fittingMessage = "Комплект содержит недоступные модули"; return false; }
+        topSlots = newTop; centerSlots = newCenter; bottomSlots = newBottom; inventory = available;
+        RecalculateShipStats(); fittingMessage = $"Комплект {slot} загружен"; return true;
+    }
+    private bool Restore(string[] ids, FittingItem[] slots, SlotGroup group, List<FittingItem> available)
+    {
+        if (ids == null || ids.Length != 4) return false;
+        for (int i = 0; i < 4; i++)
+        {
+            if (string.IsNullOrEmpty(ids[i])) continue;
+            var item = available.Find(x => x.id == ids[i] && x.allowedGroup == group);
+            if (item == null) return false;
+            slots[i] = item; available.Remove(item);
+        }
+        return true;
+    }
     private Texture2D whiteTexture;
     private GUIStyle headerStyle;
     private GUIStyle slotStyle;
@@ -56,18 +116,24 @@ public class ShipFitting : MonoBehaviour
         whiteTexture.Apply();
 
         InitDefaultInventory();
+        catalog.AddRange(inventory);
     }
 
     private void Start()
     {
-        RecalculateShipStats();
+        if (!LoadLoadout(1))
+        {
+            var starter = inventory.Find(x => x.id == "w1");
+            if (starter != null) { topSlots[0] = starter; inventory.Remove(starter); }
+            RecalculateShipStats();
+        }
     }
 
     private void InitDefaultInventory()
     {
-        inventory.Add(new FittingItem("w1", "Лазер T1", SlotGroup.Top_Weapons, new Color(1f, 0.3f, 0.3f), "Оружие: Урон +15", damage: 15f, visual: WeaponVisualType.Laser));
-        inventory.Add(new FittingItem("w2", "Плазма T2", SlotGroup.Top_Weapons, new Color(1f, 0.1f, 0.5f), "Оружие: Урон +30", damage: 30f, visual: WeaponVisualType.Plasma));
-        inventory.Add(new FittingItem("w3", "Рейлган T1", SlotGroup.Top_Weapons, new Color(1f, 0.5f, 0.2f), "Оружие: Урон +20", damage: 20f, visual: WeaponVisualType.Laser));
+        inventory.Add(new FittingItem("w1", "Лазер T1", SlotGroup.Top_Weapons, new Color(1f, 0.3f, 0.3f), "Лазер: 15 урона, +10% точности, 7 энергии", damage: 15f, visual: WeaponVisualType.Laser));
+        inventory.Add(new FittingItem("w2", "Плазма T2", SlotGroup.Top_Weapons, new Color(1f, 0.1f, 0.5f), "Плазма: 30 урона, +50% по щиту, 16 энергии", damage: 30f, visual: WeaponVisualType.Plasma));
+        inventory.Add(new FittingItem("w3", "Рейлган T1", SlotGroup.Top_Weapons, new Color(1f, 0.5f, 0.2f), "Рейлган: 20 урона, 40% мимо щита, 22 энергии", damage: 20f, visual: WeaponVisualType.Laser));
 
         inventory.Add(new FittingItem("s1", "Легкий Щит", SlotGroup.Center_Shields, new Color(0.2f, 0.6f, 1f), "Защита: Щит +30 HP", shield: 30f, mass: 0.2f));
         inventory.Add(new FittingItem("s2", "Тяжелый Щит", SlotGroup.Center_Shields, new Color(0.3f, 0.9f, 0.4f), "Защита: Щит +80 HP", shield: 80f, mass: 1.0f));
@@ -117,6 +183,14 @@ public class ShipFitting : MonoBehaviour
             alignment = TextAnchor.MiddleCenter
         };
         itemStyle.normal.textColor = Color.white;
+    }
+
+    public bool ContainsPointer(Vector2 point)
+    {
+        return isActiveAndEnabled && (
+            new Rect(Screen.width / 2f - 50f, 10, 100, 25).Contains(point) ||
+            (showFittingWindow && new Rect((Screen.width - 720f) * 0.5f,
+                (Screen.height - 480f) * 0.5f, 720f, 480f).Contains(point)));
     }
 
     private void OnGUI()
@@ -178,8 +252,21 @@ public class ShipFitting : MonoBehaviour
         Rect invRect = new Rect(mainRect.x + 465, mainRect.y + 35, 240, 430);
         DrawInventoryPanel(invRect);
 
-        // 3. DRAG & DROP
-        HandleDragAndDrop();
+        GUI.Label(new Rect(mainRect.x + 15, mainRect.y + 395, 430, 22),
+            CanEdit ? "Подготовка: оснащение доступно" : "Бой: смена оснащения запрещена");
+        for (int preset = 1; preset <= 3; preset++)
+        {
+            float x = mainRect.x + 15 + (preset - 1) * 145;
+            if (GUI.Button(new Rect(x, mainRect.y + 420, 65, 24), $"Сохр. {preset}")) SaveLoadout(preset);
+            GUI.enabled = CanEdit;
+            if (GUI.Button(new Rect(x + 67, mainRect.y + 420, 72, 24), $"Загр. {preset}")) LoadLoadout(preset);
+            GUI.enabled = true;
+        }
+        GUI.Label(new Rect(mainRect.x + 15, mainRect.y + 449, 430, 22), fittingMessage);
+        // If combat starts mid-drag, return the item without changing the installed stats.
+        if (!CanEdit && draggedItem != null)
+        { ReturnItemToSource(draggedItem); draggedItem = null; }
+        if (CanEdit) HandleDragAndDrop();
     }
 
     private void DrawSlotRow(float centerX, float startY, FittingItem[] slotArray, SlotGroup group)
@@ -210,7 +297,7 @@ public class ShipFitting : MonoBehaviour
             GUI.Box(rect, item.name, itemStyle);
             GUI.color = oldColor;
 
-            if (evt.type == EventType.MouseDown && rect.Contains(evt.mousePosition) && draggedItem == null)
+            if (CanEdit && evt.type == EventType.MouseDown && rect.Contains(evt.mousePosition) && draggedItem == null)
             {
                 draggedItem = item;
                 dragSourceGroup = group;
@@ -224,7 +311,7 @@ public class ShipFitting : MonoBehaviour
             GUI.Box(rect, $"[Слот {index + 1}]", slotStyle);
         }
 
-        if (evt.type == EventType.MouseUp && rect.Contains(evt.mousePosition) && draggedItem != null)
+        if (CanEdit && evt.type == EventType.MouseUp && rect.Contains(evt.mousePosition) && draggedItem != null)
         {
             if (draggedItem.allowedGroup == group)
             {
@@ -262,7 +349,7 @@ public class ShipFitting : MonoBehaviour
             GUI.Box(itemRect, $"{item.name}\n<size=8>{item.description}</size>", itemStyle);
             GUI.color = oldColor;
 
-            if (evt.type == EventType.MouseDown && itemRect.Contains(evt.mousePosition) && draggedItem == null)
+            if (CanEdit && evt.type == EventType.MouseDown && itemRect.Contains(evt.mousePosition) && draggedItem == null)
             {
                 draggedItem = item;
                 dragSourceGroup = SlotGroup.Inventory;
@@ -273,7 +360,7 @@ public class ShipFitting : MonoBehaviour
             }
         }
 
-        if (evt.type == EventType.MouseUp && invRect.Contains(evt.mousePosition) && draggedItem != null)
+        if (CanEdit && evt.type == EventType.MouseUp && invRect.Contains(evt.mousePosition) && draggedItem != null)
         {
             inventory.Add(draggedItem);
             draggedItem = null;
@@ -378,6 +465,15 @@ public class ShipFitting : MonoBehaviour
                 accel += item.accelBonus;
                 mass += item.massBonus;
             }
+        }
+    }
+
+    private void OnDestroy()
+    {
+        if (whiteTexture != null)
+        {
+            if (Application.isPlaying) Destroy(whiteTexture);
+            else DestroyImmediate(whiteTexture);
         }
     }
 

@@ -1,5 +1,7 @@
 using UnityEngine;
 using UnityEngine.InputSystem;
+using UnityEngine.EventSystems;
+using System.Collections.Generic;
 
 /// <summary>
 /// Translates player input into ship orders: left click on an enemy captures it as a target
@@ -45,8 +47,27 @@ public class PlayerInputHandler : MonoBehaviour
         }
     }
 
+    public static bool IsPointerOverUI()
+    {
+        if (Mouse.current == null) return false;
+        Vector2 screen = Mouse.current.position.ReadValue();
+        Vector2 gui = new Vector2(screen.x, Screen.height - screen.y);
+        if (CombatSession.Instance != null && CombatSession.Panel.Contains(gui)) return true;
+        if (CombatStatusPanel.Panel.Contains(gui) && CombatSession.Instance != null) return true;
+        foreach (var fitting in FindObjectsByType<ShipFitting>(FindObjectsSortMode.None))
+            if (fitting.ContainsPointer(gui)) return true;
+        foreach (var panel in FindObjectsByType<TacticalCommandPanel>(FindObjectsSortMode.None))
+            if (panel.ContainsPointer(gui)) return true;
+        if (EventSystem.current == null) return false;
+        var hits = new List<RaycastResult>();
+        EventSystem.current.RaycastAll(new PointerEventData(EventSystem.current) { position = screen }, hits);
+        // Ignore physics raycasters: world colliders must remain selectable.
+        return hits.Exists(hit => hit.module is UnityEngine.UI.GraphicRaycaster);
+    }
+
     private void OnClick(InputAction.CallbackContext context)
     {
+        if (IsPointerOverUI()) return;
         if (playerMovement == null || playerWeapon == null)
         {
             Debug.LogWarning("[PlayerInputHandler] playerMovement / playerWeapon links are not assigned.");

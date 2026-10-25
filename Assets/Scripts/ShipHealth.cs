@@ -25,6 +25,7 @@ public class ShipHealth : MonoBehaviour
     private void Awake()
     {
         Data = new ShipData(maxHullHP);
+        if (GetComponent<ShipReactor>() == null) gameObject.AddComponent<ShipReactor>();
     }
 
     private void Update()
@@ -35,9 +36,28 @@ public class ShipHealth : MonoBehaviour
         Die();
     }
 
+    public void TakeWeaponDamage(float amount, WeaponKind kind, ModuleType? targetedModule = null)
+    {
+        if (CombatSession.IsPreparing || Data == null || Data.IsDestroyed || amount <= 0f) return;
+        if (kind == WeaponKind.Plasma)
+        {
+            var shield = Data.GetModule(ModuleType.Shield);
+            if (shield != null && !shield.isDestroyed)
+                Data.currentShieldHP -= Mathf.Min(Data.currentShieldHP, amount * .5f);
+        }
+        float bypass = kind == WeaponKind.Railgun ? amount * .4f : 0f;
+        TakeDamage(amount - bypass, targetedModule);
+        if (bypass > 0f)
+        {
+            Data.TakeHullDamage(bypass);
+            CombatSession.Log($"{name}: пробитие корпуса {bypass:F0}");
+            OnDamageTaken?.Invoke();
+        }
+    }
+
     public void TakeDamage(float amount, ModuleType? targetedModule = null)
     {
-        if (Data == null || Data.IsDestroyed || amount <= 0f)
+        if (CombatSession.IsPreparing || Data == null || Data.IsDestroyed || amount <= 0f)
             return;
 
         // 1. Поглощение урона Щитом
@@ -45,6 +65,7 @@ public class ShipHealth : MonoBehaviour
 
         if (remainingDamage <= 0f)
         {
+            CombatSession.Log($"{name}: щит поглотил {amount:F0}");
             OnDamageTaken?.Invoke();
             return;
         }
@@ -63,6 +84,7 @@ public class ShipHealth : MonoBehaviour
             ApplyHullDamage(remainingDamage);
         }
 
+        CombatSession.Log($"{name}: урон {remainingDamage:F0}, корпус {Data.currentHullHP:F0}");
         OnDamageTaken?.Invoke();
     }
 
@@ -86,6 +108,7 @@ public class ShipHealth : MonoBehaviour
         }
         else
         {
+            if (module.isDestroyed) CombatSession.Log($"{name}: модуль {moduleType} выбит");
             Debug.Log($"{gameObject.name}: Попадание в модуль {moduleType} - урон {amount}, HP модуля {module.currentHP}/{module.maxHP}{(module.isDestroyed ? " (МОДУЛЬ ВЫБИТ)" : string.Empty)}");
         }
     }
@@ -102,6 +125,7 @@ public class ShipHealth : MonoBehaviour
             return;
 
         isDead = true;
+        CombatSession.Log($"{name}: уничтожен");
         OnDestroyed?.Invoke();
         Debug.Log($"{gameObject.name} уничтожен!");
         gameObject.SetActive(false);

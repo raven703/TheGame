@@ -41,6 +41,12 @@ public class TacticalCommandPanel : MonoBehaviour
         headerStyle.normal.textColor = new Color(0.8f, 0.9f, 1f);
     }
 
+    public bool ContainsPointer(Vector2 point)
+    {
+        return isActiveAndEnabled && playerWeapon != null &&
+            new Rect((Screen.width - 640f) * 0.5f, Screen.height - 75f, 640f, 65f).Contains(point);
+    }
+
     private void OnGUI()
     {
         if (playerWeapon == null) return;

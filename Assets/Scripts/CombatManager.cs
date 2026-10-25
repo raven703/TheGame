@@ -32,7 +32,7 @@ public class CombatManager : MonoBehaviour
 
     private void Update()
     {
-        if (isCombatOver)
+        if (CombatSession.IsPreparing || isCombatOver)
             return;
 
         if (playerHealth == null || !playerHealth.gameObject.activeSelf || (playerHealth.Data != null && playerHealth.Data.IsDestroyed))
