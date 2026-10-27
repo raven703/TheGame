@@ -1,154 +1,85 @@
 using UnityEngine;
 
-/// <summary>
-/// Drives a ship towards a target position using physics forces and inertia.
-/// </summary>
+/// <summary>Only propulsion writer. Orders are evaluated in this same physics step.</summary>
 [RequireComponent(typeof(Rigidbody2D))]
 public class ShipMovement : MonoBehaviour
 {
-    private const float ArriveDistance = 0.4f;
-
-    [Tooltip("Maximum velocity limit.")]
     public float maxSpeed = 5f;
-
-    [Tooltip("Acceleration power force.")]
     public float acceleration = 12f;
-
-    [Tooltip("Turn speed in degrees per second.")]
     public float rotationSpeed = 300f;
-
-    [Tooltip("Check TRUE if your sprite image points UP (along Y axis). Check FALSE if it points RIGHT (along X axis).")]
     public bool spriteNoseIsUp = true;
-
-    /// <summary>World position the ship is currently flying to.</summary>
     public Vector3 TargetPosition { get; private set; }
-
-    /// <summary>True while the ship has an active move order.</summary>
-    public bool HasTarget { get; private set; } = false;
-
+    public bool HasTarget => Orders != null && Orders.Mode != ShipOrderMode.HoldPosition;
     public Rigidbody2D Rb { get; private set; }
-    private ShipHealth shipHealth;
+    public ShipOrderController Orders { get; private set; }
     public float SpeedMultiplier { get; set; } = 1f;
-
+    private ShipHealth shipHealth;
+    public bool EngineAvailable
+    {
+        get
+        {
+            var engine = shipHealth != null && shipHealth.Data != null ? shipHealth.Data.GetModule(ModuleType.Engine) : null;
+            return (shipHealth == null || shipHealth.Data == null || !shipHealth.Data.IsDestroyed) && (engine == null || !engine.isDestroyed);
+        }
+    }
+    public float AvailableForce => EngineAvailable ? Mathf.Max(0f, acceleration * SpeedMultiplier) : 0f;
+    public float ShipRadius { get; private set; } = .4f;
     private void Awake()
     {
         Rb = GetComponent<Rigidbody2D>();
         shipHealth = GetComponent<ShipHealth>();
-
         Rb.gravityScale = 0f;
         Rb.linearDamping = 1.2f;
         Rb.angularDamping = 3f;
+        Orders = GetComponent<ShipOrderController>();
+        if (Orders == null) Orders = gameObject.AddComponent<ShipOrderController>();
+        if (Application.isPlaying && CompareTag("Player") && GetComponent<ShipOrderVisuals>() == null) gameObject.AddComponent<ShipOrderVisuals>();
+        foreach (var collider in GetComponentsInChildren<Collider2D>())
+            if (!collider.isTrigger) ShipRadius = Mathf.Max(ShipRadius, collider.bounds.extents.magnitude);
     }
-
-    private void Start()
-    {
-        TargetPosition = transform.position;
-        ApplyMassFromData();
-    }
-
+    private void Start() { ApplyMassFromData(); }
     public void ApplyMassFromData()
     {
-        if (shipHealth != null && shipHealth.Data != null)
-        {
-            Rb.mass = shipHealth.Data.mass;
-        }
+        if (shipHealth != null && shipHealth.Data != null) Rb.mass = Mathf.Max(.1f, shipHealth.Data.mass);
     }
-
-    public void SetTargetPosition(Vector3 pos)
-    {
-        TargetPosition = new Vector3(pos.x, pos.y, 0f);
-        HasTarget = true;
-    }
-
-    public void Stop()
-    {
-        HasTarget = false;
-    }
-
+    public void SetTargetPosition(Vector3 position) { Orders.MoveTo(position); }
+    public void Stop() { Orders.Stop(); }
     private void FixedUpdate()
     {
-        if (CombatSession.IsPreparing) return;
-        if (shipHealth != null && shipHealth.Data != null)
+        if (CombatSession.IsPreparing || Rb == null || Orders == null) return;
+        var ai = GetComponent<EnemyAI>();
+        if (ai != null && ai.isActiveAndEnabled) ai.UpdateOrders();
+        bool final;
+        Vector2 destination = Orders.Evaluate(Rb.position, Rb.linearVelocity, out final);
+        TargetPosition = Orders.Destination;
+        if (!EngineAvailable) return;
+        Vector2 delta = destination - Rb.position;
+        float force = AvailableForce;
+        float deceleration = force / Mathf.Max(.01f, Rb.mass);
+        float desiredSpeed = Mathf.Max(0f, maxSpeed * SpeedMultiplier * Orders.SpeedLimit);
+        // A queued corner can be crossed, but its turn radius must fit the remaining leg.
+        if(!final && Orders.Waypoints.Count>1)
         {
-            var engineMod = shipHealth.Data.GetModule(ModuleType.Engine);
-            if (engineMod != null && engineMod.isDestroyed)
-                return;
+            Vector2 next=(Orders.Waypoints[1]-Orders.Waypoints[0]).normalized;
+            float corner=Vector2.Angle(delta,next)*Mathf.Deg2Rad;
+            float cornerSpeed=Mathf.Sqrt(Mathf.Max(.05f,deceleration*.65f/Mathf.Max(.15f,corner)));
+            desiredSpeed=Mathf.Min(desiredSpeed,Mathf.Sqrt(cornerSpeed*cornerSpeed+2f*deceleration*Mathf.Max(0f,delta.magnitude-.5f))*.8f);
         }
-
-        if (!HasTarget || Rb == null)
-            return;
-
-        Vector2 currentPos = Rb.position;
-        Vector2 toTarget = (Vector2)TargetPosition - currentPos;
-        float distance = toTarget.magnitude;
-
-        if (distance < ArriveDistance)
+        if (final) desiredSpeed = Mathf.Min(desiredSpeed, Mathf.Sqrt(2f * deceleration * Mathf.Max(0f, delta.magnitude - .06f)) * .7f);
+        Vector2 direction = delta.normalized;
+        // Lateral velocity also consumes the same finite force budget. Never overwrite velocity.
+        float alignment = Mathf.Clamp01(Vector2.Dot(GetForwardVector(), direction));
+        Vector2 desiredVelocity = delta.magnitude < .08f ? Vector2.zero : direction * desiredSpeed * Mathf.Lerp(.15f, 1f, alignment);
+        if (Orders.IsBraking) desiredVelocity = Vector2.zero;
+        Rb.AddForce(Vector2.ClampMagnitude((desiredVelocity - Rb.linearVelocity) * Rb.mass * 4f, force));
+        Vector2 facing = Orders.FacingDirection(Rb.position, direction);
+        float desiredAngular = 0f;
+        if (facing.sqrMagnitude > .001f && !Orders.IsBraking)
         {
-            Stop();
-            return;
+            float angle = Mathf.Atan2(facing.y, facing.x) * Mathf.Rad2Deg - (spriteNoseIsUp ? 90f : 0f);
+            desiredAngular = Mathf.Clamp(Mathf.DeltaAngle(Rb.rotation, angle) * 5f, -rotationSpeed, rotationSpeed);
         }
-
-        Vector2 desiredDirection = toTarget.normalized;
-
-        // Local obstacle avoidance for both manual orders and AI; not a full path planner.
-        Asteroid obstacle = Asteroid.FindCover(currentPos, currentPos + desiredDirection * 2f, out Vector2 contact);
-        if (obstacle != null)
-        {
-            Vector2 outward = currentPos - (Vector2)obstacle.transform.position;
-            Vector2 tangent = new Vector2(-outward.y, outward.x).normalized;
-            if (Vector2.Dot(tangent, desiredDirection) < 0f) tangent = -tangent;
-            desiredDirection = (tangent + outward.normalized * .6f).normalized;
-        }
-
-        // 1. Поворот корабля в сторону цели
-        RotateTowardsDirection(desiredDirection);
-
-        Vector2 forwardVector = GetForwardVector();
-
-        // 2. Гашение бокового заноса (дрейфа)
-        Vector2 forwardVelocity = forwardVector * Vector2.Dot(Rb.linearVelocity, forwardVector);
-        Vector2 rightVector = new Vector2(-forwardVector.y, forwardVector.x);
-        Vector2 rightVelocity = rightVector * Vector2.Dot(Rb.linearVelocity, rightVector);
-
-        // Активно гасим боковую скорость (0.15f вместо 0.9f) для точного вхождения в повороты
-        Rb.linearVelocity = forwardVelocity + rightVelocity * 0.15f;
-
-        // 3. Вычисление alignment (насколько нос сориентирован на цель)
-        float alignment = Vector2.Dot(forwardVector, desiredDirection);
-
-        // Импульс даем ТОЛЬКО если сориентированы в сторону цели (alignment > 0)
-        if (alignment > 0f)
-        {
-            // Чем точнее повернут нос к цели, тем больше тяги применяем
-            float thrustFactor = Mathf.Pow(alignment, 2f);
-            Rb.AddForce(forwardVector * (acceleration * SpeedMultiplier * thrustFactor), ForceMode2D.Force);
-        }
-
-        // Ограничение максимальной скорости
-        if (Rb.linearVelocity.magnitude > maxSpeed * SpeedMultiplier)
-        {
-            Rb.linearVelocity = Rb.linearVelocity.normalized * maxSpeed * SpeedMultiplier;
-        }
+        Rb.AddTorque(Mathf.Clamp((desiredAngular - Rb.angularVelocity) * Mathf.Deg2Rad * Rb.inertia * 6f, -force, force));
     }
-
-    private void RotateTowardsDirection(Vector2 dir)
-    {
-        if (dir == Vector2.zero) return;
-
-        float targetAngle = Mathf.Atan2(dir.y, dir.x) * Mathf.Rad2Deg;
-
-        if (spriteNoseIsUp)
-        {
-            targetAngle -= 90f;
-        }
-
-        float currentAngle = Rb.rotation;
-        float newAngle = Mathf.MoveTowardsAngle(currentAngle, targetAngle, rotationSpeed * Time.fixedDeltaTime);
-        Rb.MoveRotation(newAngle);
-    }
-
-    public Vector2 GetForwardVector()
-    {
-        return spriteNoseIsUp ? (Vector2)transform.up : (Vector2)transform.right;
-    }
+    public Vector2 GetForwardVector() { return spriteNoseIsUp ? (Vector2)transform.up : (Vector2)transform.right; }
 }

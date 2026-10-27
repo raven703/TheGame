@@ -34,6 +34,14 @@ public class TacticalCommandPanel : MonoBehaviour
     public Color activeColor = new Color(1f, 0.85f, 0.2f, 1f);
     private TextMeshProUGUI tooltip;
     private GameObject tooltipPopup;
+    private Button stopButton;
+    private readonly Button[] speedButtons = new Button[4];
+    private TextMeshProUGUI movementStatus;
+    public bool PointerInsideTooltip(Vector2 screen)
+    {
+        var canvas=GetComponentInParent<Canvas>();
+        return tooltipPopup!=null && tooltipPopup.activeInHierarchy && RectTransformUtility.RectangleContainsScreenPoint((RectTransform)tooltipPopup.transform,screen,canvas!=null&&canvas.renderMode!=RenderMode.ScreenSpaceOverlay?canvas.worldCamera:null);
+    }
     public void ShowTooltip(string text, RectTransform source = null)
     {
         if(tooltip==null || tooltipPopup==null)return;
@@ -52,17 +60,31 @@ public class TacticalCommandPanel : MonoBehaviour
     private void OnDisable() { ShowTooltip(null); }
     public void ConfigureLayout()
     {
-        CombatUIStyle.Rect(transform,Vector2.one,Vector2.one,new Vector2(-288,-618),new Vector2(-16,-394));
-        var background=CombatUIStyle.Ensure<Image>(gameObject);background.sprite=null;background.color=CombatUIStyle.Surface;background.raycastTarget=false;
+        CombatUIStyle.Rect(transform,Vector2.one,Vector2.one,new Vector2(-288,-698),new Vector2(-16,-394));
+        var background=CombatUIStyle.Ensure<Image>(gameObject);background.sprite=null;background.color=CombatUIStyle.Surface;background.raycastTarget=true;
         foreach(var layout in GetComponentsInChildren<LayoutGroup>(true))layout.enabled=false;
         foreach(var fitter in GetComponentsInChildren<ContentSizeFitter>(true))fitter.enabled=false;
         foreach(var text in GetComponentsInChildren<TextMeshProUGUI>(true))text.gameObject.SetActive(false);
-        Group("BehaviorHeading","ПОВЕДЕНИЕ",8);
+        Group("BehaviorHeading","ПРИКАЗ ДВИЖЕНИЯ",8);
         Group("PriorityHeading","ПРИОРИТЕТ ЦЕЛИ",78);
         Group("AbilitiesHeading","СПОСОБНОСТИ",148);
         Setup(orbitButton,"orbit","Орбита","Орбита — движение вокруг захваченной цели.",0,28);
         Setup(keepDistanceButton,"distance","Дистанция","Дистанция — удерживать дистанцию до цели.",1,28);
-        Setup(flankButton,"flank","Фланг","Фланг — заходить к цели сбоку.",2,28);
+        Setup(flankButton,"flank","Корма","Заход с кормы — отдельный приказ относительно выбранной цели.",2,28);
+        stopButton=CombatUIStyle.Button("StopOrder",transform,"Стоп",()=>PlayerOrders()?.Stop());
+        CombatUIStyle.Box(stopButton.transform,206,28,58,48);
+        var stopCaption=stopButton.GetComponentInChildren<TextMeshProUGUI>(true);stopCaption.gameObject.SetActive(true);stopCaption.fontSize=12;
+        var stopTip=CombatUIStyle.Ensure<TacticalTooltip>(stopButton.gameObject);stopTip.panel=this;stopTip.description="Стоп [S] — очистить маршрут и активно затормозить. При выбитом двигателе остаётся только пассивное замедление.";
+        for(int i=0;i<4;i++)
+        {
+            float limit=(i+1)*.25f;
+            var button=CombatUIStyle.Button("SpeedLimit"+(i+1),transform,((i+1)*25)+"%",()=>PlayerOrders()?.SetSpeedLimit(limit));
+            speedButtons[i]=button;CombatUIStyle.Box(button.transform,8+i*65,222,61,25);
+            var caption=button.GetComponentInChildren<TextMeshProUGUI>(true);caption.gameObject.SetActive(true);caption.fontSize=12;
+            var tip=CombatUIStyle.Ensure<TacticalTooltip>(button.gameObject);tip.panel=this;tip.description="Предел желаемой скорости "+((i+1)*25)+"%. Не меняет оборудование и скорость игры; снижение вызывает плавное торможение.";
+        }
+        movementStatus=CombatUIStyle.Text("MovementStatus",transform,"",12);movementStatus.gameObject.SetActive(true);
+        CombatUIStyle.Box(movementStatus.transform,8,252,256,48);
         Setup(autoTargetButton,"auto","Авто","Авто — автоматически распределять попадания по модулям.",0,98);
         Setup(weaponTargetButton,"weapon","Оружие","Оружие — приоритет поражения оружейного модуля.",1,98);
         Setup(shieldTargetButton,"shield","Щит","Щит — приоритет поражения модуля щита.",2,98);
@@ -133,6 +155,13 @@ public class TacticalCommandPanel : MonoBehaviour
         playerWeapon=player!=null?player.GetComponent<ShipWeapon>():null;
         playerAbilities=player!=null?player.GetComponent<ShipAbilities>():null;
         if (playerWeapon == null) return;
+        var orders=PlayerOrders();
+        if(orders!=null)
+        {
+            var movement=orders.GetComponent<ShipMovement>();
+            if(movementStatus!=null)movementStatus.text=$"{orders.Status}\nСкорость {movement.Rb.linearVelocity.magnitude:F1} / {movement.maxSpeed*movement.SpeedMultiplier*orders.SpeedLimit:F1} ({orders.SpeedLimit:P0})"+(movement.EngineAvailable?"":"\nДвигатель выбит: активное торможение недоступно");
+            for(int i=0;i<4;i++)if(speedButtons[i]!=null)SetButtonColor(speedButtons[i],Mathf.Abs(orders.SpeedLimit-(i+1)*.25f)<.01f?activeColor:normalColor);
+        }
 
         HighlightBehavior(orbitButton, CombatBehavior.Orbit);
         HighlightBehavior(keepDistanceButton, CombatBehavior.KeepDistance);
@@ -151,7 +180,11 @@ public class TacticalCommandPanel : MonoBehaviour
     private void HighlightBehavior(Button btn, CombatBehavior behavior)
     {
         if (btn == null) return;
-        bool isActive = playerWeapon.behavior == behavior;
+        var orders=PlayerOrders();
+        var selected=playerWeapon.PendingTarget!=null?playerWeapon.PendingTarget:playerWeapon.Target;
+        btn.interactable=ShipOrderController.Available(selected);
+        var mode=behavior==CombatBehavior.Orbit?ShipOrderMode.Orbit:behavior==CombatBehavior.KeepDistance?ShipOrderMode.KeepDistance:ShipOrderMode.Flank;
+        bool isActive = orders!=null && orders.Mode==mode;
         SetButtonColor(btn, isActive ? activeColor : normalColor);
     }
 
@@ -160,6 +193,11 @@ public class TacticalCommandPanel : MonoBehaviour
         if (btn == null) return;
         bool isActive = playerWeapon.targetedModule == module;
         SetButtonColor(btn, isActive ? activeColor : normalColor);
+    }
+    private ShipOrderController PlayerOrders()
+    {
+        var movement=playerWeapon!=null?playerWeapon.GetComponentInParent<ShipMovement>():null;
+        return movement!=null?movement.Orders:null;
     }
 
     private void SetButtonColor(Button btn, Color color)

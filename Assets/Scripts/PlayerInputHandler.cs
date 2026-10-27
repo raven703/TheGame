@@ -3,9 +3,7 @@ using UnityEngine.EventSystems;
 using UnityEngine.InputSystem;
 
 /// <summary>
-/// Translates player input into ship orders: left click on an enemy captures it as a target
-/// and enables automatic approach/orbiting, left click on empty space keeps the active target
-/// but forces a manual movement order (allowing strafe runs and retreat while firing).
+/// Selection and movement orders are independent. UI raycasts are resolved before world input.
 /// </summary>
 public class PlayerInputHandler : MonoBehaviour
 {
@@ -29,7 +27,10 @@ public class PlayerInputHandler : MonoBehaviour
     // вернёт состояние прошлого кадра, и клик по UI «провалится» в игровое поле.
     private void LateUpdate()
     {
-        if (Mouse.current == null || !Mouse.current.leftButton.wasPressedThisFrame)
+        if (FittingWindow.OpenWindow != null) return;
+        if (Keyboard.current != null && Keyboard.current.sKey.wasPressedThisFrame && !IsPointerOverUI())
+            playerMovement?.Stop();
+        if (Mouse.current == null || (!Mouse.current.leftButton.wasPressedThisFrame && !Mouse.current.rightButton.wasPressedThisFrame))
             return;
 
         // Клик по UI (UGUI) — игнорируем.
@@ -44,6 +45,14 @@ public class PlayerInputHandler : MonoBehaviour
         if (FittingWindow.OpenWindow != null) return true;
         if (Mouse.current == null) return false;
         Vector2 screen = Mouse.current.position.ReadValue();
+        return IsScreenPointOverUI(screen);
+    }
+
+    public static bool IsScreenPointOverUI(Vector2 screen)
+    {
+        if(FittingWindow.OpenWindow!=null)return true;
+        foreach(var panel in Object.FindObjectsByType<TacticalCommandPanel>(FindObjectsSortMode.None))
+            if(panel.PointerInsideTooltip(screen))return true;
         if (EventSystem.current == null) return false;
         var hits = new System.Collections.Generic.List<RaycastResult>();
         EventSystem.current.RaycastAll(new PointerEventData(EventSystem.current) { position = screen }, hits);
@@ -71,31 +80,23 @@ public class PlayerInputHandler : MonoBehaviour
         var worldPosition = mainCamera.ScreenToWorldPoint(mousePosition);
         worldPosition.z = 0f;
 
-        var hit = Physics2D.Raycast(worldPosition, Vector2.zero);
-
-        if (hit.collider != null && hit.collider.CompareTag(EnemyTag))
+        ShipHealth enemy = null;
+        foreach (var hit in Physics2D.OverlapPointAll(worldPosition))
         {
-            var enemyHealth = hit.collider.GetComponentInParent<ShipHealth>();
-            if (enemyHealth != null)
-            {
-                playerWeapon.SetTarget(enemyHealth);
-                playerWeapon.manualMoveOrder = false;
-                Debug.Log($"[PlayerInputHandler] Захват цели и авто-маневрирование: {enemyHealth.name}");
-            }
+            var health = hit.GetComponentInParent<ShipHealth>();
+            if (health != null && health.CompareTag(EnemyTag)) { enemy = health; break; }
         }
-        else
-        {
-            playerWeapon.manualMoveOrder = true;
-            playerMovement.SetTargetPosition(worldPosition);
+        bool append = Keyboard.current != null && (Keyboard.current.leftShiftKey.isPressed || Keyboard.current.rightShiftKey.isPressed);
+        IssueClick(Mouse.current.leftButton.wasPressedThisFrame, worldPosition, enemy, append, false);
+    }
 
-            if (playerWeapon.Target != null)
-            {
-                Debug.Log($"[PlayerInputHandler] Ручной приказ в {worldPosition}. Ведётся прикрывающий огонь по: {playerWeapon.Target.name}");
-            }
-            else
-            {
-                Debug.Log($"[PlayerInputHandler] Приказ двигаться в {worldPosition} (цель не захвачена)");
-            }
-        }
+    public void IssueClick(bool left, Vector2 position, ShipHealth enemy, bool append, bool overUI)
+    {
+        if (overUI || FittingWindow.OpenWindow != null || playerMovement == null || playerWeapon == null) return;
+        if (left) { if (enemy != null) playerWeapon.SetTarget(enemy); return; }
+        var selected = playerWeapon.PendingTarget != null ? playerWeapon.PendingTarget : playerWeapon.Target;
+        if (!append && enemy != null && selected == enemy)
+            playerMovement.Orders.Tactical(ShipOrderMode.EngageTarget, enemy);
+        else playerMovement.Orders.MoveTo(enemy != null ? (Vector2)enemy.transform.position : position, append);
     }
 }

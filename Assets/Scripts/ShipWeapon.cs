@@ -63,7 +63,7 @@ public class ShipWeapon : MonoBehaviour
 
     private float targetingDisabledUntil;
     public bool IsTargetingDisrupted => Time.time < targetingDisabledUntil;
-    private EnemyAI movementAI;
+
     private ShipHealth target;
     public ShipHealth Target
     {
@@ -102,15 +102,14 @@ public class ShipWeapon : MonoBehaviour
     public ShipHealth OwnerHealth => ownerHealth;
     private ShipMovement shipMovement;
 
-    private float orbitChangeTimer = 0f;
-    private float randomRadiusOffset = 0f;
+
 
     private Material lineMaterial;
 
     private void Awake()
     {
         ownerHealth = GetComponentInParent<ShipHealth>();
-        movementAI = GetComponentInParent<EnemyAI>();
+
         shipMovement = GetComponentInParent<ShipMovement>();
         if (shipMovement == null)
             shipMovement = GetComponent<ShipMovement>();
@@ -145,9 +144,9 @@ public class ShipWeapon : MonoBehaviour
     public void SetBehavior(CombatBehavior newBehavior)
     {
         behavior = newBehavior;
-
-        if (Target != null)
-            manualMoveOrder = false;
+        var selected = PendingTarget != null ? PendingTarget : Target;
+        if (shipMovement != null && shipMovement.Orders != null)
+            shipMovement.Orders.Tactical(newBehavior == CombatBehavior.Orbit ? ShipOrderMode.Orbit : newBehavior == CombatBehavior.KeepDistance ? ShipOrderMode.KeepDistance : ShipOrderMode.Flank, selected);
     }
 
     public void SetTargetModule(ModuleType? module) => targetedModule = module;
@@ -158,11 +157,10 @@ public class ShipWeapon : MonoBehaviour
         {
             CancelLock();
             Target = null;
-            manualMoveOrder = false;
             return;
         }
 
-        if (newTarget == Target && pendingTarget == null)
+        if (newTarget == pendingTarget || (newTarget == Target && pendingTarget == null))
             return;
 
         pendingTarget = newTarget;
@@ -178,7 +176,6 @@ public class ShipWeapon : MonoBehaviour
         pendingTarget = null;
         lockProgress = 0f;
         Target = newTarget;
-        manualMoveOrder = false;
     }
 
     public void ClearTarget()
@@ -212,59 +209,15 @@ public class ShipWeapon : MonoBehaviour
 
     private void Update()
     {
-        if (ownerHealth == null || ownerHealth.Data == null)
-            return;
-
+        if (ownerHealth == null || ownerHealth.Data == null) return;
         var weaponModule = ownerHealth.Data.GetModule(ModuleType.Weapon);
-        if (ownerHealth.Data.IsDestroyed || weaponModule == null || weaponModule.isDestroyed)
-            return;
-
-        // При паузе оружие не стреляет: Time.time не растёт, следующий выстрел не перезаряжается
-        if (CombatSession.IsPreparing || Time.timeScale <= 0f || IsTargetingDisrupted)
-            return;
-
+        if (ownerHealth.Data.IsDestroyed || weaponModule == null || weaponModule.isDestroyed) return;
+        if (CombatSession.IsPreparing || Time.timeScale <= 0f || IsTargetingDisrupted) return;
         UpdateLock();
-
-        if (Target != null && (Target.Data == null || Target.Data.IsDestroyed))
-        {
-            Target = null;
-        }
-
-        if (Target != null && pendingTarget == null && !manualMoveOrder && (movementAI == null || !movementAI.isActiveAndEnabled))
-        {
-            UpdateCombatTactics();
-        }
-
-        if (pendingTarget != null)
-            return;
-
-        bool isManualFiring = false;
-#if ENABLE_INPUT_SYSTEM
-        isManualFiring = Mouse.current != null && Mouse.current.leftButton.isPressed && CompareTag("Player") && !PlayerInputHandler.IsPointerOverUI();
-#else
-        isManualFiring = Input.GetMouseButton(0) && CompareTag("Player") && !PlayerInputHandler.IsPointerOverUI();
-#endif
-
-        if ((isManualFiring || Target != null) && Time.time >= nextFireTime)
-        {
-            if (Target != null)
-            {
-                float dist = Vector2.Distance(transform.position, Target.transform.position);
-                bool inRange = dist <= range;
-                bool inArc = IsTargetInFiringArc(Target.transform.position);
-
-                if (inRange && inArc)
-                {
-                    Shoot();
-                    nextFireTime = Time.time + .1f;
-                }
-            }
-            else if (isManualFiring)
-            {
-                Shoot();
-                nextFireTime = Time.time + .1f;
-            }
-        }
+        if (Target != null && !ShipOrderController.Available(Target)) Target = null;
+        if (pendingTarget != null || Target == null || Time.time < nextFireTime) return;
+        if (Vector2.Distance(transform.position, Target.transform.position) <= range && IsTargetInFiringArc(Target.transform.position))
+        { Shoot(); nextFireTime = Time.time + .1f; }
     }
 
     private void UpdateLock()
@@ -288,7 +241,7 @@ public class ShipWeapon : MonoBehaviour
             Target = pendingTarget;
             pendingTarget = null;
             lockProgress = 0f;
-            manualMoveOrder = false;
+
 
             Debug.Log($"[ShipWeapon] Захват завершён: {Target.name}");
             OnLockCompleted?.Invoke(Target);
@@ -297,63 +250,7 @@ public class ShipWeapon : MonoBehaviour
 
     // ============ COMBAT TACTICS ============
 
-    private void UpdateCombatTactics()
-    {
-        if (shipMovement == null || Target == null) return;
 
-        Vector3 enemyPos = Target.transform.position;
-        Vector3 myPos = transform.position;
-        Vector3 dirToEnemy = (enemyPos - myPos).normalized;
-        float currentDistance = Vector2.Distance(myPos, enemyPos);
-
-        orbitChangeTimer -= Time.deltaTime;
-        if (orbitChangeTimer <= 0f)
-        {
-            orbitChangeTimer = UnityEngine.Random.Range(3f, 6f);
-            randomRadiusOffset = UnityEngine.Random.Range(-1.2f, 1.2f);
-
-            if (UnityEngine.Random.value < 0.3f)
-                orbitClockwise = !orbitClockwise;
-        }
-
-        float optimalDistance = Mathf.Clamp(range * 0.65f + randomRadiusOffset, 2f, range * 0.9f);
-
-        switch (behavior)
-        {
-            case CombatBehavior.Orbit:
-                Vector3 tangent = orbitClockwise
-                    ? new Vector3(-dirToEnemy.y, dirToEnemy.x, 0f)
-                    : new Vector3(dirToEnemy.y, -dirToEnemy.x, 0f);
-
-                float radialCorrection = (currentDistance - optimalDistance);
-                Vector3 orbitDestination = myPos + tangent * 4f + dirToEnemy * radialCorrection;
-
-                shipMovement.SetTargetPosition(orbitDestination);
-                break;
-
-            case CombatBehavior.KeepDistance:
-                if (currentDistance < optimalDistance)
-                {
-                    Vector3 retreatPoint = myPos - dirToEnemy * 4f;
-                    shipMovement.SetTargetPosition(retreatPoint);
-                }
-                else
-                {
-                    shipMovement.SetTargetPosition(enemyPos);
-                }
-                break;
-
-            case CombatBehavior.Flank:
-                Vector3 enemyForward = Target.transform.right;
-                var targetMovement = Target.GetComponent<ShipMovement>();
-                if (targetMovement != null)
-                    enemyForward = targetMovement.GetForwardVector();
-
-                Vector3 rearPosition = enemyPos - enemyForward * optimalDistance;
-                shipMovement.SetTargetPosition(rearPosition);
-                break;
-        }
-    }
 
     private bool IsTargetInFiringArc(Vector3 targetPos)
     {

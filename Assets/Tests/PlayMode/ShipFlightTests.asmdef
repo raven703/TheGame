@@ -1,0 +1,5 @@
+{
+  "name": "ShipFlightTests",
+  "optionalUnityReferences": ["TestAssemblies"],
+  "references": ["Unity.ugui"]
+}

@@ -50,6 +50,7 @@
   <Project Path="Unity.CollabProxy.Editor.csproj" />
   <Project Path="Unity.InputSystem.DocCodeSamples.csproj" />
   <Project Path="Unity.VisualScripting.DocCodeExamples.csproj" />
+  <Project Path="ShipFlightTests.csproj" />
   <Project Path="Unity.PlasticSCM.Editor.Entities.csproj" />
   <Project Path="Unity.2D.Triangulation.Runtime.csproj" />
 </Solution>

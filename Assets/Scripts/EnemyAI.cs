@@ -58,70 +58,21 @@ public class EnemyAI : MonoBehaviour
         }
     }
 
-    private void Update()
+    public void UpdateOrders()
     {
-        if (CombatSession.IsPreparing || shipMovement == null || shipWeapon == null)
-            return;
-
-        if (playerTarget == null)
+        if (CombatSession.IsPreparing || shipMovement == null || shipWeapon == null) return;
+        var orders = shipMovement.Orders;
+        if (!ShipOrderController.Available(playerTarget))
         {
-            Debug.LogWarning($"[EnemyAI {gameObject.name}] playerTarget == null! Игрок не найден по тегу 'Player'.");
-            shipMovement.Stop();
+            if (orders.Mode != ShipOrderMode.HoldPosition) orders.Stop();
             return;
         }
-
-        if (!playerTarget.gameObject.activeSelf || (playerTarget.Data != null && playerTarget.Data.IsDestroyed))
-        {
-            Debug.LogWarning($"[EnemyAI {gameObject.name}] Игрок уничтожен/неактивен.");
-            shipMovement.Stop();
-            return;
-        }
-
-        if (playerTarget == null || !playerTarget.gameObject.activeSelf || (playerTarget.Data != null && playerTarget.Data.IsDestroyed))
-        {
-            shipMovement.Stop();
-            return;
-        }
-
-        var targetPosition = playerTarget.transform.position;
-        var distance = Vector3.Distance(transform.position, targetPosition);
-
-        Vector3 away = (transform.position - targetPosition).normalized;
-        if (away.sqrMagnitude < .01f) away = Vector3.up;
+        if (shipWeapon.Target != playerTarget && shipWeapon.PendingTarget != playerTarget) shipWeapon.SetTarget(playerTarget);
         var health = GetComponent<ShipHealth>();
-        if (personality == AIPersonality.Cautious && health != null && health.Data != null &&
-            health.Data.currentHullHP < health.Data.maxHullHP * .35f)
-        {
-            shipMovement.SetTargetPosition(transform.position + away * 4f);
-            return;
-        }
-        if (personality == AIPersonality.Sniper)
-        {
-            float preferred = shipWeapon.range * .85f;
-            shipMovement.SetTargetPosition(distance < preferred - .5f
-                ? transform.position + away * 3f : targetPosition + away * (preferred - 1f));
-            return;
-        }
-        if (personality == AIPersonality.Flanker)
-        {
-            var movement = playerTarget.GetComponent<ShipMovement>();
-            Vector3 forward = movement != null ? (Vector3)movement.GetForwardVector() : playerTarget.transform.up;
-            shipMovement.SetTargetPosition(targetPosition - forward * (shipWeapon.range * .5f));
-            return;
-        }
-        if (distance > optimalDistance)
-        {
-            // Hunt: fly straight at the player until the comfort zone is reached.
-            orbitAngle = BearingFromTarget();
-            shipMovement.SetTargetPosition(targetPosition);
-            return;
-        }
-
-        // Comfort zone: keep circling the player at the optimal distance instead of ramming it.
-        orbitAngle += OrbitSpeedDegrees * Time.deltaTime;
-        var radians = orbitAngle * Mathf.Deg2Rad;
-        var offset = new Vector3(Mathf.Cos(radians), Mathf.Sin(radians), 0f) * optimalDistance;
-        shipMovement.SetTargetPosition(targetPosition + offset);
+        bool retreat = personality == AIPersonality.Cautious && health != null && health.Data != null && health.Data.currentHullHP < health.Data.maxHullHP * .35f;
+        orders.PreferredDistance = retreat ? shipWeapon.range * 1.4f : personality == AIPersonality.Sniper ? shipWeapon.range * .85f : personality == AIPersonality.Flanker ? shipWeapon.range * .5f : optimalDistance;
+        var mode=personality == AIPersonality.Flanker ? ShipOrderMode.Flank : personality == AIPersonality.Sniper || retreat ? ShipOrderMode.KeepDistance : ShipOrderMode.Orbit;
+        if(orders.Mode!=mode || orders.OrderTarget!=playerTarget)orders.Tactical(mode,playerTarget);
     }
 
     /// <summary>Bearing in degrees from the player towards this ship.</summary>
