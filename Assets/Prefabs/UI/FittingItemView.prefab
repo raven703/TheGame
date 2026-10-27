@@ -59,7 +59,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Unity.TextMeshPro::TMPro.TextMeshProUGUI
   m_Material: {fileID: 0}
   m_Color: {r: 1, g: 1, b: 1, a: 1}
-  m_RaycastTarget: 1
+  m_RaycastTarget: 0
   m_RaycastPadding: {x: 0, y: 0, z: 0, w: 0}
   m_Maskable: 1
   m_OnCullStateChanged:
@@ -196,7 +196,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Unity.TextMeshPro::TMPro.TextMeshProUGUI
   m_Material: {fileID: 0}
   m_Color: {r: 1, g: 1, b: 1, a: 1}
-  m_RaycastTarget: 1
+  m_RaycastTarget: 0
   m_RaycastPadding: {x: 0, y: 0, z: 0, w: 0}
   m_Maskable: 1
   m_OnCullStateChanged:
@@ -369,6 +369,7 @@ MonoBehaviour:
   nameLabel: {fileID: 7520057080184156701}
   descriptionLabel: {fileID: 5266992965496454995}
   item:
+    weaponKind: 0
     id: 
     name: 
     allowedGroup: 0
@@ -380,6 +381,7 @@ MonoBehaviour:
     speedBonus: 0
     accelBonus: 0
     massBonus: 0
+    lockTimeBonus: 0
     visualType: 0
   window: {fileID: 0}
 --- !u!114 &8131944760002266126

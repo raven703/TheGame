@@ -57,26 +57,88 @@ public class FittingWindow : MonoBehaviour
     public static Rect PresetsPanel => new Rect((Screen.width - 480f) * .5f, Screen.height - 45f, 480f, 40f);
     public bool CanEdit => CombatSession.IsPreparing && (GameState.Instance == null || !GameState.Instance.isCombatStarted);
     private string presetMessage = "";
-    private void OnGUI()
+    private TMPro.TextMeshProUGUI detailsLabel;
+    private Canvas modalCanvas;
+    public static FittingWindow OpenWindow { get; private set; }
+    private readonly Dictionary<CanvasGroup, bool[]> backgroundStates = new Dictionary<CanvasGroup, bool[]>();
+    public void ShowDescription(FittingItem item) { if (detailsLabel != null) detailsLabel.text = item == null ? "Перетащите модуль в слот своей категории. ПКМ — снять." : item.name + "\n" + item.description; }
+    public void ConfigureLayout()
     {
-        if (!isBuilt || currentLoadout == null) return;
-        GUILayout.BeginArea(PresetsPanel, GUI.skin.box);
-        GUILayout.BeginHorizontal();
+        var root = (RectTransform)transform;
+        CombatUIStyle.Rect(root,new Vector2(.5f,.5f),new Vector2(.5f,.5f),new Vector2(-590,-310),new Vector2(590,310));
+        var image = GetComponent<Image>(); image.sprite=null; image.color=new Color(.055f,.075f,.105f,1f); image.raycastTarget=true;
+        modalCanvas = CombatUIStyle.Ensure<Canvas>(gameObject);
+        modalCanvas.overrideSorting=true; modalCanvas.sortingOrder=100;
+        if(GetComponent<GraphicRaycaster>()==null)gameObject.AddComponent<GraphicRaycaster>();
+        CombatUIStyle.Box(titleLabel.transform,24,16,1060,34); titleLabel.fontSize=22; titleLabel.color=Color.white;
+        CombatUIStyle.Box(closeButton.transform,1120,16,36,34);
+        CombatUIStyle.Box(shipSelectorContainer,24,62,1132,38);
+        var selectorImage=shipSelectorContainer.GetComponent<Image>(); if(selectorImage!=null){selectorImage.color=Color.clear;selectorImage.raycastTarget=false;}
+        ConfigureGroup(weaponSlotsContainer,"ОРУЖИЕ",24,122);
+        ConfigureGroup(shieldSlotsContainer,"ЩИТЫ",24,254);
+        ConfigureGroup(engineSlotsContainer,"ДВИГАТЕЛИ",24,386);
+        var scroll=inventoryContainer.GetComponentInParent<ScrollRect>(true);
+        if(scroll!=null)
+        {
+            CombatUIStyle.Box(scroll.transform,744,150,412,350);
+            var bg=scroll.GetComponent<Image>();if(bg!=null){bg.sprite=null;bg.color=CombatUIStyle.Card;}
+            CombatUIStyle.Rect(scroll.viewport,Vector2.zero,Vector2.one,new Vector2(8,8),new Vector2(-8,-8));
+            var viewportImage=scroll.viewport.GetComponent<Image>();if(viewportImage!=null){viewportImage.sprite=null;viewportImage.color=new Color(.08f,.11f,.15f);}
+            var vertical=inventoryContainer.GetComponent<VerticalLayoutGroup>();if(vertical!=null){vertical.spacing=10;vertical.padding=new RectOffset(6,6,6,6);vertical.childControlHeight=true;vertical.childControlWidth=true;vertical.childForceExpandHeight=false;vertical.childForceExpandWidth=true;}
+            var grid=inventoryContainer.GetComponent<GridLayoutGroup>();
+            if(grid!=null){grid.cellSize=new Vector2(184,64);grid.spacing=new Vector2(10,10);grid.constraint=GridLayoutGroup.Constraint.FixedColumnCount;grid.constraintCount=2;grid.padding=new RectOffset(4,4,4,4);}
+            var drop=CombatUIStyle.Ensure<InventoryDropZone>(scroll.viewport.gameObject);drop.window=this;
+        }
+        var inventoryTitle=CombatUIStyle.Text("InventoryHeading",transform,"ИНВЕНТАРЬ",17);CombatUIStyle.Box(inventoryTitle.transform,744,122,412,25);
+        foreach(var text in GetComponentsInChildren<TextMeshProUGUI>(true))
+            if(text!=titleLabel && (text.text.Contains("ГРУППА")||text.text.Contains("ГРУППЫ")||text.text.Contains("ИНВЕНТАРЬ МОДУЛЕЙ")))text.gameObject.SetActive(false);
+        detailsLabel=CombatUIStyle.Text("ModuleDescription",transform,"",14);CombatUIStyle.Box(detailsLabel.transform,744,510,412,84);ShowDescription(null);
+        var presets=CombatUIStyle.Node("PresetButtons",transform);CombatUIStyle.Box(presets.transform,24,548,690,42);
         for (int slot = 1; slot <= 3; slot++)
         {
-            if (GUILayout.Button($"Сохр. {slot}"))
-            {
-                SyncSlotsToLoadout();
-                LoadoutPresets.Save(currentLoadout, slot);
-                presetMessage = $"Комплект {slot} сохранён";
-            }
-            GUI.enabled = CanEdit;
-            if (GUILayout.Button($"Загр. {slot}")) LoadPreset(slot);
-            GUI.enabled = true;
+            int captured=slot;
+            var save=CombatUIStyle.Button("Save"+slot,presets.transform,"Сохр. "+slot,()=>{if(!CanEdit||currentLoadout==null)return;SyncSlotsToLoadout();LoadoutPresets.Save(currentLoadout,captured);ShowDescription(null);});
+            var load=CombatUIStyle.Button("Load"+slot,presets.transform,"Загр. "+slot,()=>{LoadPreset(captured);if(detailsLabel!=null)detailsLabel.text=presetMessage;});
+            CombatUIStyle.Box(save.transform,(slot-1)*230,0,106,36);CombatUIStyle.Box(load.transform,(slot-1)*230+112,0,106,36);
         }
-        GUILayout.EndHorizontal(); GUILayout.EndArea();
-        if (!string.IsNullOrEmpty(presetMessage))
-            GUI.Label(new Rect(PresetsPanel.x, PresetsPanel.y - 25, 480, 25), presetMessage);
+        var layer=CombatUIStyle.Node("ModalDragLayer",transform);
+        CombatUIStyle.Rect(layer.transform,Vector2.zero,Vector2.one,Vector2.zero,Vector2.zero);
+        var layerCanvas=CombatUIStyle.Ensure<Canvas>(layer);layerCanvas.overrideSorting=true;layerCanvas.sortingOrder=110;
+        dragLayer=layer.transform;dragLayer.SetAsLastSibling();
+    }
+    private void ConfigureGroup(Transform container,string caption,float x,float y)
+    {
+        var heading=CombatUIStyle.Text(container.name+"Heading",transform,caption,17);CombatUIStyle.Box(heading.transform,x,y,690,25);
+        CombatUIStyle.Box(container,x,y+30,690,74);
+        var image=container.GetComponent<Image>();if(image!=null){image.sprite=null;image.color=new Color(.08f,.11f,.15f);image.raycastTarget=false;}
+        var layout=container.GetComponent<HorizontalLayoutGroup>();if(layout!=null){layout.spacing=12;layout.padding=new RectOffset(4,4,4,4);layout.childControlWidth=true;layout.childControlHeight=true;layout.childForceExpandWidth=true;layout.childForceExpandHeight=true;}
+    }
+    private void OnDisable()
+    {
+        CancelDrags();
+        foreach(var entry in backgroundStates)if(entry.Key!=null){entry.Key.interactable=entry.Value[0];entry.Key.blocksRaycasts=entry.Value[1];}
+        backgroundStates.Clear();if(OpenWindow==this)OpenWindow=null;
+        var blocker=transform.parent==null?null:transform.parent.Find("LoadoutBlocker");if(blocker!=null)blocker.gameObject.SetActive(false);
+    }
+    private void CancelDrags()
+    {
+        foreach(var view in GetComponentsInChildren<FittingItemView>(true))view.CancelDrag();
+        foreach(var slot in GetComponentsInChildren<FittingSlot>(true))slot.CancelDrag();
+    }
+    private void MakeModal()
+    {
+        OpenWindow=this;
+        var blocker=CombatUIStyle.Panel("LoadoutBlocker",transform.parent,new Color(0,0,0,.72f));
+        CombatUIStyle.Rect(blocker.transform,Vector2.zero,Vector2.one,Vector2.zero,Vector2.zero);
+        var canvas=CombatUIStyle.Ensure<Canvas>(blocker.gameObject);canvas.overrideSorting=true;canvas.sortingOrder=99;
+        if(blocker.GetComponent<GraphicRaycaster>()==null)blocker.gameObject.AddComponent<GraphicRaycaster>();blocker.gameObject.SetActive(true);
+        foreach(Transform child in transform.parent)
+        {
+            if(child==transform||child==blocker.transform)continue;
+            var group=CombatUIStyle.Ensure<CanvasGroup>(child.gameObject);
+            if(!backgroundStates.ContainsKey(group))backgroundStates.Add(group,new[]{group.interactable,group.blocksRaycasts});
+            group.interactable=false;group.blocksRaycasts=false;
+        }
     }
     private void LoadPreset(int slot)
     {
@@ -118,6 +180,8 @@ public class FittingWindow : MonoBehaviour
 
     public void Open()
     {
+        if (!CanEdit) return;
+        ConfigureLayout();
         if (targetShipHealth == null)
             ResolveTargetShip();
 
@@ -130,9 +194,14 @@ public class FittingWindow : MonoBehaviour
         }
 
         gameObject.SetActive(true);
+        MakeModal();
+        modalCanvas.overrideSorting=true;
+        modalCanvas.sortingOrder=100;
+        dragLayer.GetComponent<Canvas>().overrideSorting=true;
+        dragLayer.GetComponent<Canvas>().sortingOrder=110;
     }
 
-    public void Close() => gameObject.SetActive(false);
+    public void Close() { CancelDrags(); gameObject.SetActive(false); }
 
     public void Toggle()
     {

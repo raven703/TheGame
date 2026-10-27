@@ -9,7 +9,7 @@ using TMPro;
 /// При перетаскивании подсвечивает слоты нужной группы.
 /// </summary>
 [RequireComponent(typeof(Image))]
-public class FittingItemView : MonoBehaviour, IBeginDragHandler, IDragHandler, IEndDragHandler, IPointerClickHandler
+public class FittingItemView : MonoBehaviour, IBeginDragHandler, IDragHandler, IEndDragHandler, IPointerClickHandler, IPointerEnterHandler
 {
     [Header("UI References")]
     public Image background;
@@ -26,6 +26,10 @@ public class FittingItemView : MonoBehaviour, IBeginDragHandler, IDragHandler, I
     private RectTransform rectTransform;
     private Transform originalParent;
     private Vector2 originalAnchoredPosition;
+    private int originalIndex;
+    private GameObject placeholder;
+    private bool dragging;
+    private Vector3 pointerOffset;
 
     // Текущий подсвеченный слот (чтобы снять подсветку при перемещении)
     private FittingSlot lastHighlightedSlot;
@@ -53,22 +57,31 @@ public class FittingItemView : MonoBehaviour, IBeginDragHandler, IDragHandler, I
     {
         if (item == null) return;
 
-        if (background != null) background.color = item.iconColor;
-        if (nameLabel != null) nameLabel.text = item.name;
-        if (descriptionLabel != null) descriptionLabel.text = item.description;
+        CombatUIStyle.CardVisual(background, nameLabel, item.allowedGroup, item.name, false);
+        var layout=CombatUIStyle.Ensure<LayoutElement>(gameObject);layout.preferredHeight=64;layout.minHeight=64;layout.preferredWidth=184;
+        if (descriptionLabel != null) { descriptionLabel.text = ""; descriptionLabel.raycastTarget=false; }
     }
 
     // ==================== DRAG ====================
 
     public void OnBeginDrag(PointerEventData eventData)
     {
-        if (item == null) return;
+        if (item == null || window == null || !window.CanEdit) return;
 
         originalParent = transform.parent;
+        originalIndex=transform.GetSiblingIndex(); dragging=true;
         originalAnchoredPosition = rectTransform.anchoredPosition;
+        placeholder=new GameObject("DragPlaceholder",typeof(RectTransform),typeof(LayoutElement));
+        placeholder.transform.SetParent(originalParent,false);placeholder.transform.SetSiblingIndex(originalIndex);
+        var layout=placeholder.GetComponent<LayoutElement>();layout.preferredWidth=rectTransform.rect.width;layout.preferredHeight=rectTransform.rect.height;
+        var size=rectTransform.rect.size;
+        Vector3 pointer; RectTransformUtility.ScreenPointToWorldPointInRectangle((RectTransform)window.dragLayer,eventData.position,eventData.pressEventCamera,out pointer);
+        pointerOffset=rectTransform.position-pointer;
 
         // Переносим в DragLayer, чтобы был поверх всего
-        transform.SetParent(window != null ? window.dragLayer : originalParent, false);
+        transform.SetParent(window.dragLayer, true);
+        rectTransform.anchorMin=rectTransform.anchorMax=new Vector2(.5f,.5f);
+        rectTransform.sizeDelta=size;
         transform.SetAsLastSibling();
 
         canvasGroup.blocksRaycasts = false; // чтобы drop прошёл под элементом
@@ -77,9 +90,10 @@ public class FittingItemView : MonoBehaviour, IBeginDragHandler, IDragHandler, I
 
     public void OnDrag(PointerEventData eventData)
     {
-        if (item == null) return;
+        if (!dragging) return;
 
-        rectTransform.position = eventData.position;
+        Vector3 pointer;RectTransformUtility.ScreenPointToWorldPointInRectangle((RectTransform)window.dragLayer,eventData.position,eventData.pressEventCamera,out pointer);
+        rectTransform.position = pointer+pointerOffset;
 
         // Подсветка слота под курсором
         HighlightSlotUnderPointer(eventData);
@@ -87,7 +101,12 @@ public class FittingItemView : MonoBehaviour, IBeginDragHandler, IDragHandler, I
 
     public void OnEndDrag(PointerEventData eventData)
     {
-        if (item == null) return;
+        CancelDrag();
+    }
+    public void CancelDrag()
+    {
+        if(!dragging)return;dragging=false;
+        if(placeholder!=null){Destroy(placeholder);placeholder=null;}
 
         canvasGroup.blocksRaycasts = true;
         canvasGroup.alpha = 1f;
@@ -103,9 +122,12 @@ public class FittingItemView : MonoBehaviour, IBeginDragHandler, IDragHandler, I
         if (transform.parent == (window != null ? window.dragLayer : null))
         {
             transform.SetParent(originalParent, false);
+            transform.SetSiblingIndex(originalIndex);
             rectTransform.anchoredPosition = originalAnchoredPosition;
         }
     }
+    private void OnDestroy(){if(placeholder!=null)Destroy(placeholder);}
+    public void OnPointerEnter(PointerEventData eventData){if(window!=null)window.ShowDescription(item);}
 
     public void OnPointerClick(PointerEventData eventData)
     {

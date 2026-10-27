@@ -10,7 +10,7 @@ using TMPro;
 /// </summary>
 [RequireComponent(typeof(Image))]
 public class FittingSlot : MonoBehaviour, IDropHandler, IPointerClickHandler,
-    IBeginDragHandler, IDragHandler, IEndDragHandler
+    IBeginDragHandler, IDragHandler, IEndDragHandler, IPointerEnterHandler
 {
     [Header("UI References")]
     public Image background;
@@ -33,6 +33,7 @@ public class FittingSlot : MonoBehaviour, IDropHandler, IPointerClickHandler,
     private bool isDragging = false;
     private bool isHighlighted = false;
     private FittingSlot lastHighlightedSlot;
+    private Vector3 dragOffset;
 
     private void Awake()
     {
@@ -55,16 +56,7 @@ public class FittingSlot : MonoBehaviour, IDropHandler, IPointerClickHandler,
         if (background == null) background = GetComponent<Image>();
         if (label == null) label = GetComponentInChildren<TextMeshProUGUI>();
 
-        if (item != null)
-        {
-            background.color = item.iconColor;
-            if (label != null) label.text = item.name;
-        }
-        else
-        {
-            background.color = isHighlighted ? validDropColor : emptyColor;
-            if (label != null) label.text = $"[Слот {index + 1}]";
-        }
+        CombatUIStyle.CardVisual(background,label,group,item==null?"Пустой слот "+(index+1):item.name,isHighlighted);
     }
 
     // ==================== DROP ====================
@@ -106,7 +98,7 @@ public class FittingSlot : MonoBehaviour, IDropHandler, IPointerClickHandler,
 
     public void OnBeginDrag(PointerEventData eventData)
     {
-        if (item == null) return;
+        if (item == null || window == null || !window.CanEdit) return;
         if (window == null) return;
 
         if (window.itemViewPrefab != null && window.dragLayer != null)
@@ -121,11 +113,15 @@ public class FittingSlot : MonoBehaviour, IDropHandler, IPointerClickHandler,
             cg.blocksRaycasts = false;
 
             dragVisual = view.gameObject;
-            dragVisual.transform.position = eventData.position;
+            var rect=(RectTransform)dragVisual.transform;
+            rect.anchorMin=rect.anchorMax=new Vector2(.5f,.5f);
+            rect.sizeDelta=((RectTransform)transform).rect.size;
+            Vector3 pointer;RectTransformUtility.ScreenPointToWorldPointInRectangle((RectTransform)window.dragLayer,eventData.position,eventData.pressEventCamera,out pointer);
+            dragOffset=transform.position-pointer;
+            dragVisual.transform.position=pointer+dragOffset;
         }
 
-        if (background != null) background.enabled = false;
-        if (label != null) label.enabled = false;
+        if (label != null) label.color = new Color(1,1,1,.35f);
 
         canvasGroup.blocksRaycasts = false;
         isDragging = true;
@@ -134,12 +130,19 @@ public class FittingSlot : MonoBehaviour, IDropHandler, IPointerClickHandler,
     public void OnDrag(PointerEventData eventData)
     {
         if (dragVisual != null)
-            dragVisual.transform.position = eventData.position;
+        {
+            Vector3 pointer;RectTransformUtility.ScreenPointToWorldPointInRectangle((RectTransform)window.dragLayer,eventData.position,eventData.pressEventCamera,out pointer);
+            dragVisual.transform.position=pointer+dragOffset;
+        }
 
         HighlightSlotUnderPointer(eventData);
     }
 
     public void OnEndDrag(PointerEventData eventData)
+    {
+        CancelDrag();
+    }
+    public void CancelDrag()
     {
         if (!isDragging) return;
 
@@ -148,6 +151,7 @@ public class FittingSlot : MonoBehaviour, IDropHandler, IPointerClickHandler,
 
         if (background != null) background.enabled = true;
         if (label != null) label.enabled = true;
+        RefreshVisual();
 
         if (dragVisual != null)
         {
@@ -170,11 +174,10 @@ public class FittingSlot : MonoBehaviour, IDropHandler, IPointerClickHandler,
 
         if (background == null) background = GetComponent<Image>();
 
-        if (item == null)
-        {
-            background.color = on ? validDropColor : emptyColor;
-        }
+        RefreshVisual();
     }
+    private void OnDisable(){CancelDrag();}
+    public void OnPointerEnter(PointerEventData eventData){if(window!=null)window.ShowDescription(item);}
 
     private void HighlightSlotUnderPointer(PointerEventData eventData)
     {

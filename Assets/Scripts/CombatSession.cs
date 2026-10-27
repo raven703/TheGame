@@ -44,27 +44,24 @@ public class CombatSession : MonoBehaviour
     }
 
     public static Rect Panel => new Rect(15, Screen.height - 265, 350, 175);
-    private void OnGUI()
+    private TMPro.TextMeshProUGUI journal;
+    private UnityEngine.UI.Button personalityButton;
+    private void Update()
     {
-        GUILayout.BeginArea(Panel, GUI.skin.box);
-        if (!Started)
+        if (journal == null)
         {
-            GUILayout.Label("Подготовка: установите оборудование (I)");
-            if (GUILayout.Button($"Противники: {EnemyPersonality} (сменить)"))
-                EnemyPersonality = (AIPersonality)(((int)EnemyPersonality + 1) % 4);
-            // Existing UGUI button starts the spawner. Only show a fallback without it.
-            if (FindFirstObjectByType<PreCombatPanel>() == null && GUILayout.Button("Начать бой"))
-            {
-                var spawner = FindFirstObjectByType<ShipSpawner>();
-                if (spawner != null) spawner.StartCombat();
-                else if (GameState.Instance != null) GameState.Instance.StartCombat();
-                else Started = true;
-                CombatLogStart();
-            }
+            var canvas = FindFirstObjectByType<CombatInterfaceLayout>();
+            if (canvas == null) return;
+            var panel = CombatUIStyle.Panel("CombatJournal", canvas.transform, CombatUIStyle.Surface);
+            CombatUIStyle.Rect(panel.transform, Vector2.zero,Vector2.zero,new Vector2(16,228),new Vector2(366,366));
+            journal = CombatUIStyle.Text("Journal",panel.transform,"",14);
+            CombatUIStyle.Box(journal.transform,12,10,326,86);
+            personalityButton = CombatUIStyle.Button("Personality",panel.transform,"",()=>EnemyPersonality=(AIPersonality)(((int)EnemyPersonality+1)%4));
+            CombatUIStyle.Box(personalityButton.transform,12,102,326,28);
         }
-        else GUILayout.Label("Журнал боя");
-        foreach (string entry in entries) GUILayout.Label(entry);
-        GUILayout.EndArea();
+        journal.text = Started ? string.Join("\n", entries) : "ПОДГОТОВКА\nОснастите корабль перед началом боя.";
+        personalityButton.gameObject.SetActive(!Started);
+        personalityButton.GetComponentInChildren<TMPro.TextMeshProUGUI>().text = "Противники: " + EnemyPersonality;
     }
 
     private void CombatLogStart() { Log("Бой начат. Оснащение заблокировано."); }
