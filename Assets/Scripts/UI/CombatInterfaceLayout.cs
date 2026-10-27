@@ -25,7 +25,7 @@ public class CombatInterfaceLayout : MonoBehaviour
         var fittingButton = GetComponentInChildren<FittingButton>(true);
         if (fittingButton != null) CombatUIStyle.Rect(fittingButton.transform, Vector2.zero,Vector2.zero,new Vector2(16,76),new Vector2(174,100));
         var tactical = GetComponentInChildren<TacticalCommandPanel>(true);
-        if (tactical != null) CombatUIStyle.Rect(tactical.transform,Vector2.zero,Vector2.right,new Vector2(12,8),new Vector2(-12,72));
+        if (tactical != null) tactical.ConfigureLayout();
         var radar = transform.Find("Radar");
         if (radar != null) CombatUIStyle.Rect(radar, Vector2.one,Vector2.one,new Vector2(-224,-382),new Vector2(-16,-174));
         var window = GetComponentInChildren<FittingWindow>(true);

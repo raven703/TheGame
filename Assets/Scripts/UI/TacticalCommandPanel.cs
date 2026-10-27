@@ -32,6 +32,74 @@ public class TacticalCommandPanel : MonoBehaviour
     [Header("Colors")]
     public Color normalColor = Color.white;
     public Color activeColor = new Color(1f, 0.85f, 0.2f, 1f);
+    private TextMeshProUGUI tooltip;
+    private GameObject tooltipPopup;
+    public void ShowTooltip(string text, RectTransform source = null)
+    {
+        if(tooltip==null || tooltipPopup==null)return;
+        bool visible=!string.IsNullOrEmpty(text) && FittingWindow.OpenWindow==null;
+        tooltipPopup.SetActive(visible);
+        if(!visible)return;
+        tooltip.text=text;
+        var root=(RectTransform)transform;
+        float y=source!=null?root.InverseTransformPoint(source.position).y:0f;
+        var popup=(RectTransform)tooltipPopup.transform;
+        popup.anchorMin=popup.anchorMax=new Vector2(0,.5f);
+        popup.pivot=new Vector2(1,.5f);
+        popup.sizeDelta=new Vector2(260,82);
+        popup.anchoredPosition=new Vector2(-10,Mathf.Clamp(y,-root.rect.height*.5f+41,root.rect.height*.5f-41));
+    }
+    private void OnDisable() { ShowTooltip(null); }
+    public void ConfigureLayout()
+    {
+        CombatUIStyle.Rect(transform,Vector2.one,Vector2.one,new Vector2(-288,-618),new Vector2(-16,-394));
+        var background=CombatUIStyle.Ensure<Image>(gameObject);background.sprite=null;background.color=CombatUIStyle.Surface;background.raycastTarget=false;
+        foreach(var layout in GetComponentsInChildren<LayoutGroup>(true))layout.enabled=false;
+        foreach(var fitter in GetComponentsInChildren<ContentSizeFitter>(true))fitter.enabled=false;
+        foreach(var text in GetComponentsInChildren<TextMeshProUGUI>(true))text.gameObject.SetActive(false);
+        Group("BehaviorHeading","ПОВЕДЕНИЕ",8);
+        Group("PriorityHeading","ПРИОРИТЕТ ЦЕЛИ",78);
+        Group("AbilitiesHeading","СПОСОБНОСТИ",148);
+        Setup(orbitButton,"orbit","Орбита","Орбита — движение вокруг захваченной цели.",0,28);
+        Setup(keepDistanceButton,"distance","Дистанция","Дистанция — удерживать дистанцию до цели.",1,28);
+        Setup(flankButton,"flank","Фланг","Фланг — заходить к цели сбоку.",2,28);
+        Setup(autoTargetButton,"auto","Авто","Авто — автоматически распределять попадания по модулям.",0,98);
+        Setup(weaponTargetButton,"weapon","Оружие","Оружие — приоритет поражения оружейного модуля.",1,98);
+        Setup(shieldTargetButton,"shield","Щит","Щит — приоритет поражения модуля щита.",2,98);
+        Setup(engineTargetButton,"engine","Двигатель","Двигатель — приоритет поражения двигателя.",3,98);
+        afterburnerLabel=Setup(afterburnerButton,"boost","Форсаж","Форсаж — скорость ×2 на 2 с. Энергия 25, нагрев 20, КД 10 с.",0,168);
+        shieldBoostLabel=Setup(shieldBoostButton,"shieldboost","Щит+","Щит+ — +30 щита, −10 корпуса. Энергия 30, нагрев 15, КД 8 с.",1,168);
+        empLabel=Setup(empButton,"emp","РЭБ","РЭБ — подавить захват цели на 3 с. Нужна цель. Энергия 35, нагрев 25, КД 12 с.",2,168);
+        var oldTooltip=transform.Find("CommandTooltip");
+        if(oldTooltip!=null)oldTooltip.gameObject.SetActive(false);
+        var popup=CombatUIStyle.Panel("CommandTooltipPopup",transform,CombatUIStyle.Surface);
+        popup.raycastTarget=false;tooltipPopup=popup.gameObject;
+        var border=CombatUIStyle.Ensure<Outline>(tooltipPopup);border.effectColor=new Color(.3f,.45f,.6f);border.effectDistance=Vector2.one;
+        tooltip=CombatUIStyle.Text("Text",popup.transform,"",13);
+        tooltip.gameObject.SetActive(true);
+        CombatUIStyle.Rect(tooltip.transform,Vector2.zero,Vector2.one,new Vector2(10,8),new Vector2(-10,-8));
+        tooltipPopup.transform.SetAsLastSibling();tooltipPopup.SetActive(false);
+    }
+    private void Group(string name,string title,float y)
+    {
+        var label=CombatUIStyle.Text(name,transform,title,12);label.gameObject.SetActive(true);
+        CombatUIStyle.Box(label.transform,10,y,252,18);
+    }
+    private TextMeshProUGUI Setup(Button button,string icon,string title,string hint,int column,float y)
+    {
+        if(button==null)return null;
+        button.transform.SetParent(transform,false);button.gameObject.SetActive(true);
+        CombatUIStyle.Box(button.transform,10+column*64,y,60,46);
+        var image=CombatUIStyle.Ensure<Image>(button.gameObject);image.sprite=null;image.color=CombatUIStyle.Card;image.raycastTarget=true;button.targetGraphic=image;
+        var border=CombatUIStyle.Ensure<Outline>(button.gameObject);border.effectDistance=new Vector2(1.5f,1.5f);
+        var picture=CombatUIStyle.Panel("CommandIcon",button.transform,Color.white);picture.raycastTarget=false;
+        picture.sprite=Resources.Load<Sprite>("TacticalIcons/"+icon);picture.preserveAspect=true;
+        CombatUIStyle.Box(picture.transform,19,3,22,22);
+        var label=CombatUIStyle.Text("CommandLabel",button.transform,title,10);label.gameObject.SetActive(true);
+        label.alignment=TextAlignmentOptions.Center;CombatUIStyle.Box(label.transform,1,26,58,18);
+        var hover=CombatUIStyle.Ensure<TacticalTooltip>(button.gameObject);hover.panel=this;hover.description=hint;
+        return label;
+    }
 
     private void Start()
     {
@@ -60,6 +128,10 @@ public class TacticalCommandPanel : MonoBehaviour
 
     private void Update()
     {
+        if(FittingWindow.OpenWindow!=null)ShowTooltip(null);
+        var player=GameObject.FindGameObjectWithTag("Player");
+        playerWeapon=player!=null?player.GetComponent<ShipWeapon>():null;
+        playerAbilities=player!=null?player.GetComponent<ShipAbilities>():null;
         if (playerWeapon == null) return;
 
         HighlightBehavior(orbitButton, CombatBehavior.Orbit);
@@ -97,16 +169,24 @@ public class TacticalCommandPanel : MonoBehaviour
         cb.selectedColor = color;
         cb.highlightedColor = color * 1.1f;
         btn.colors = cb;
+        var border=btn.GetComponent<Outline>();
+        if(border!=null)border.effectColor=color==activeColor?activeColor:new Color(.22f,.29f,.36f);
     }
 
     private void UpdateAbilityButton(Button btn, TextMeshProUGUI label, string baseLabel, float cooldown)
     {
         if (btn == null) return;
 
-        bool ready = cooldown <= 0f;
-        btn.interactable = ready;
-
-        if (label != null)
-            label.text = ready ? baseLabel : $"{baseLabel}\n({Mathf.CeilToInt(cooldown)}s)";
+        var reactor=playerAbilities!=null?playerAbilities.GetComponent<ShipReactor>():null;
+        float cost=btn==afterburnerButton?25f:btn==shieldBoostButton?30f:35f;
+        string state=playerAbilities==null||reactor==null?"Нет корабля":CombatSession.IsPreparing?"Подготовка":
+            cooldown>0f?$"{Mathf.CeilToInt(cooldown)} с":reactor.Overheated?"Перегрев":reactor.Energy<cost?"Нет энергии":
+            btn==empButton&&(playerWeapon==null||playerWeapon.Target==null)?"Нет цели":"";
+        btn.interactable=state=="";
+        if(label!=null){label.text=state==""?baseLabel:state;label.fontSize=state.Length>9?8:10;}
+        var icon=btn.transform.Find("CommandIcon");
+        if(icon!=null)icon.GetComponent<Image>().color=state==""?Color.white:new Color(.42f,.48f,.54f);
+        var border=btn.GetComponent<Outline>();
+        if(border!=null)border.effectColor=state=="Перегрев"?new Color(.9f,.22f,.12f):state=="Нет энергии"?new Color(.85f,.62f,.2f):new Color(.22f,.29f,.36f);
     }
 }
