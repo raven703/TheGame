@@ -24,7 +24,8 @@ public class CombatManager : MonoBehaviour
 
     private void Update()
     {
-        if (isCombatOver) return;
+        if (CombatSession.IsPreparing || isCombatOver)
+            return;
 
         // Поражение — если игрок уничтожен
         if (playerHealth == null || !playerHealth.gameObject.activeSelf || (playerHealth.Data != null && playerHealth.Data.IsDestroyed))

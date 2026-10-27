@@ -1,0 +1,5 @@
+{
+  "name": "CombatFeatureTests",
+  "optionalUnityReferences": ["TestAssemblies"],
+  "includePlatforms": ["Editor"]
+}

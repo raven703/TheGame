@@ -18,6 +18,7 @@ public class LoadoutApplier : MonoBehaviour
 
     private void ApplySavedLoadout()
     {
+        if (!CombatSession.IsPreparing) return;
         // 1. Находим корабль игрока
         if (targetShipHealth == null)
         {

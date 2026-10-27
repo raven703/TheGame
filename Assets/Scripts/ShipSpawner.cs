@@ -29,6 +29,7 @@ public class ShipSpawner : MonoBehaviour
     [Header("References")]
     public CombatManager combatManager;
 
+    private bool wavesStarted;
     private int currentWaveIndex = 0;
     private readonly List<ShipHealth> spawnedEnemies = new List<ShipHealth>();
 
@@ -56,6 +57,9 @@ public class ShipSpawner : MonoBehaviour
     /// </summary>
     public void StartCombat()
     {
+        if (wavesStarted) return;
+        wavesStarted = true;
+        CombatSession.Log("Бой начат: оснащение заблокировано");
         if (GameState.Instance != null)
             GameState.Instance.StartCombat();
 

@@ -3,6 +3,8 @@ using UnityEngine;
 /// <summary>
 /// Тип визуализации выстрела, зависит от установленного оружия.
 /// </summary>
+public enum WeaponKind { Laser, Plasma, Railgun }
+
 public enum WeaponVisualType
 {
     /// <summary>Тонкий луч лазера.</summary>
@@ -19,6 +21,10 @@ public enum WeaponVisualType
 [System.Serializable]
 public class FittingItem
 {
+    public WeaponKind weaponKind = WeaponKind.Laser;
+    public WeaponKind EffectiveWeaponKind => weaponKind != WeaponKind.Laser ? weaponKind
+        : id == "w3" ? WeaponKind.Railgun
+        : id == "w2" || visualType == WeaponVisualType.Plasma ? WeaponKind.Plasma : WeaponKind.Laser;
     public string id;
     public string name;
     public SlotGroup allowedGroup;
@@ -44,6 +50,7 @@ public class FittingItem
                        float lockTime = 0,
                        WeaponVisualType visual = WeaponVisualType.Laser)
     {
+        weaponKind = id == "w2" ? WeaponKind.Plasma : id == "w3" ? WeaponKind.Railgun : WeaponKind.Laser;
         this.id = id;
         this.name = name;
         this.allowedGroup = allowedGroup;

@@ -54,6 +54,43 @@ public class FittingWindow : MonoBehaviour
     private ShipMovement targetShipMovement;
     private ShipWeapon targetShipWeapon;
 
+    public static Rect PresetsPanel => new Rect((Screen.width - 480f) * .5f, Screen.height - 45f, 480f, 40f);
+    public bool CanEdit => CombatSession.IsPreparing && (GameState.Instance == null || !GameState.Instance.isCombatStarted);
+    private string presetMessage = "";
+    private void OnGUI()
+    {
+        if (!isBuilt || currentLoadout == null) return;
+        GUILayout.BeginArea(PresetsPanel, GUI.skin.box);
+        GUILayout.BeginHorizontal();
+        for (int slot = 1; slot <= 3; slot++)
+        {
+            if (GUILayout.Button($"Сохр. {slot}"))
+            {
+                SyncSlotsToLoadout();
+                LoadoutPresets.Save(currentLoadout, slot);
+                presetMessage = $"Комплект {slot} сохранён";
+            }
+            GUI.enabled = CanEdit;
+            if (GUILayout.Button($"Загр. {slot}")) LoadPreset(slot);
+            GUI.enabled = true;
+        }
+        GUILayout.EndHorizontal(); GUILayout.EndArea();
+        if (!string.IsNullOrEmpty(presetMessage))
+            GUI.Label(new Rect(PresetsPanel.x, PresetsPanel.y - 25, 480, 25), presetMessage);
+    }
+    private void LoadPreset(int slot)
+    {
+        if (!CanEdit || shipDefinition == null) return;
+        SyncSlotsToLoadout();
+        var restored = LoadoutPresets.Load(currentLoadout, slot);
+        if (restored == null || restored.weaponSlots.Count > shipDefinition.weaponSlots ||
+            restored.shieldSlots.Count > shipDefinition.shieldSlots || restored.engineSlots.Count > shipDefinition.engineSlots)
+        { presetMessage = "Комплект отсутствует или недоступен"; return; }
+        currentLoadout = restored;
+        BuildSlots(); BuildInventory(); ApplyLoadoutToShip(); SaveCurrentLoadout();
+        presetMessage = $"Комплект {slot} загружен";
+    }
+
     private bool isBuilding = false;
     private bool isBuilt = false;
 
@@ -324,6 +361,7 @@ public class FittingWindow : MonoBehaviour
 
     public void HandleDropFromInventory(FittingItemView source, FittingSlot targetSlot)
     {
+        if (!CanEdit) return;
         if (source == null || targetSlot == null) return;
         if (source.item == null) return;
         if (source.item.allowedGroup != targetSlot.group) return;
@@ -345,6 +383,7 @@ public class FittingWindow : MonoBehaviour
 
     public void HandleDropFromSlot(FittingSlot sourceSlot, FittingSlot targetSlot)
     {
+        if (!CanEdit) return;
         if (sourceSlot == null || targetSlot == null) return;
         if (sourceSlot == targetSlot) return;
         if (sourceSlot.Item == null) return;
@@ -362,6 +401,7 @@ public class FittingWindow : MonoBehaviour
 
     public void HandleUnequip(FittingSlot slot)
     {
+        if (!CanEdit) return;
         if (slot == null || slot.Item == null) return;
 
         AddToInventory(slot.Item);
@@ -373,6 +413,7 @@ public class FittingWindow : MonoBehaviour
 
     public void HandleAutoEquip(FittingItemView view)
     {
+        if (!CanEdit) return;
         if (view == null || view.item == null) return;
 
         var item = view.item;
@@ -420,6 +461,7 @@ public class FittingWindow : MonoBehaviour
 
     private void ApplyLoadoutToShip()
     {
+        if (!CanEdit) return;
         if (targetShipHealth == null) ResolveTargetShip();
         if (targetShipHealth == null) return;
 
@@ -508,6 +550,7 @@ public class FittingWindow : MonoBehaviour
 
     private void OnShipSelected(ShipDefinition newShip)
     {
+        if (!CanEdit) return;
         if (newShip == null || newShip == shipDefinition) return;
 
         SaveCurrentLoadout();

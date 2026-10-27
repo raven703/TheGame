@@ -28,6 +28,7 @@ public class ShipMovement : MonoBehaviour
 
     public Rigidbody2D Rb { get; private set; }
     private ShipHealth shipHealth;
+    public float SpeedMultiplier { get; set; } = 1f;
 
     private void Awake()
     {
@@ -66,6 +67,7 @@ public class ShipMovement : MonoBehaviour
 
     private void FixedUpdate()
     {
+        if (CombatSession.IsPreparing) return;
         if (shipHealth != null && shipHealth.Data != null)
         {
             var engineMod = shipHealth.Data.GetModule(ModuleType.Engine);
@@ -88,6 +90,16 @@ public class ShipMovement : MonoBehaviour
 
         Vector2 desiredDirection = toTarget.normalized;
 
+        // Local obstacle avoidance for both manual orders and AI; not a full path planner.
+        Asteroid obstacle = Asteroid.FindCover(currentPos, currentPos + desiredDirection * 2f, out Vector2 contact);
+        if (obstacle != null)
+        {
+            Vector2 outward = currentPos - (Vector2)obstacle.transform.position;
+            Vector2 tangent = new Vector2(-outward.y, outward.x).normalized;
+            if (Vector2.Dot(tangent, desiredDirection) < 0f) tangent = -tangent;
+            desiredDirection = (tangent + outward.normalized * .6f).normalized;
+        }
+
         // 1. Поворот корабля в сторону цели
         RotateTowardsDirection(desiredDirection);
 
@@ -109,13 +121,13 @@ public class ShipMovement : MonoBehaviour
         {
             // Чем точнее повернут нос к цели, тем больше тяги применяем
             float thrustFactor = Mathf.Pow(alignment, 2f);
-            Rb.AddForce(forwardVector * (acceleration * thrustFactor), ForceMode2D.Force);
+            Rb.AddForce(forwardVector * (acceleration * SpeedMultiplier * thrustFactor), ForceMode2D.Force);
         }
 
         // Ограничение максимальной скорости
-        if (Rb.linearVelocity.magnitude > maxSpeed)
+        if (Rb.linearVelocity.magnitude > maxSpeed * SpeedMultiplier)
         {
-            Rb.linearVelocity = Rb.linearVelocity.normalized * maxSpeed;
+            Rb.linearVelocity = Rb.linearVelocity.normalized * maxSpeed * SpeedMultiplier;
         }
     }
 

@@ -36,7 +36,20 @@ public class PlayerInputHandler : MonoBehaviour
         if (EventSystem.current != null && EventSystem.current.IsPointerOverGameObject())
             return;
 
-        HandleClick();
+        if (!IsPointerOverUI()) HandleClick();
+    }
+
+    public static bool IsPointerOverUI()
+    {
+        if (Mouse.current == null) return false;
+        Vector2 screen = Mouse.current.position.ReadValue();
+        Vector2 gui = new Vector2(screen.x, Screen.height - screen.y);
+        if (CombatSession.Instance != null && (CombatSession.Panel.Contains(gui) || CombatStatusPanel.Panel.Contains(gui))) return true;
+        if (FittingWindow.PresetsPanel.Contains(gui) && FindFirstObjectByType<FittingWindow>() != null) return true;
+        if (EventSystem.current == null) return false;
+        var hits = new System.Collections.Generic.List<RaycastResult>();
+        EventSystem.current.RaycastAll(new PointerEventData(EventSystem.current) { position = screen }, hits);
+        return hits.Exists(hit => hit.module is UnityEngine.UI.GraphicRaycaster);
     }
 
     private void HandleClick()
