@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
@@ -23,6 +23,56 @@ public class ShipWeapon : MonoBehaviour
     public GameObject bulletPrefab;
     [Tooltip("Точки вылета снарядов (по индексу = слот оружия). Если пусто — центр корабля.")]
     public Transform[] firePoints;
+    [Serializable] public class Mount
+    {
+        public float directionOffset;
+        [Range(0f,360f)] public float sector = 60f;
+    }
+    public Mount[] mounts;
+    private readonly Dictionary<int,float> mountAngles = new Dictionary<int,float>();
+    private readonly Dictionary<int,LineRenderer> turretVisuals = new Dictionary<int,LineRenderer>();
+    public float MountAngle(int index) => mountAngles.TryGetValue(index, out float angle) ? angle : 0f;
+    public float MountSector(int index) => mounts != null && index < mounts.Length && mounts[index] != null ? mounts[index].sector : firingArcAngle;
+    public bool CanAim(int index, FittingItem item, Vector2 targetPosition, float dt)
+    {
+        Transform point = firePoints != null && index < firePoints.Length && firePoints[index] != null ? firePoints[index] : transform;
+        Vector2 forward = shipMovement != null ? shipMovement.GetForwardVector() : (Vector2)transform.up;
+        // firePoint local rotation is the authored mounting direction; old identity points remain forward.
+        float offset = Mathf.DeltaAngle(transform.eulerAngles.z, point.eulerAngles.z);
+        if (mounts != null && index < mounts.Length && mounts[index] != null) offset += mounts[index].directionOffset;
+        Vector2 axis = Quaternion.Euler(0,0,offset) * forward;
+        Vector2 delta = targetPosition - (Vector2)point.position;
+        float desired = Vector2.SignedAngle(axis, delta);
+        float half = Mathf.Clamp(MountSector(index),0f,360f)*.5f;
+        bool inside = Mathf.Abs(desired) <= half;
+        if (item == null || item.mountType == WeaponMountType.Fixed) return inside && delta.magnitude <= range;
+        float current = MountAngle(index);
+        float goal = Mathf.Clamp(desired,-half,half);
+        // Partial sectors are a bounded interval, not a circle: never cross the forbidden rear arc.
+        current = half >= 180f ? Mathf.MoveTowardsAngle(current,goal,Mathf.Max(0f,item.trackingSpeed)*dt)
+            : Mathf.MoveTowards(current,goal,Mathf.Max(0f,item.trackingSpeed)*dt);
+        mountAngles[index] = Mathf.DeltaAngle(0f,current);
+        if (Application.isPlaying)
+        {
+            if (!turretVisuals.TryGetValue(index, out var barrel) || barrel == null)
+            {
+                var visual = new GameObject("TurretBarrel_" + index);
+                visual.transform.SetParent(transform, false);
+                barrel = visual.AddComponent<LineRenderer>();
+                barrel.sharedMaterial = lineMaterial;
+                barrel.positionCount = 3;
+                barrel.startWidth = .15f; barrel.endWidth = .055f;
+                barrel.startColor = Color.gray; barrel.endColor = Color.cyan;
+                barrel.sortingOrder = 6;
+                turretVisuals[index] = barrel;
+            }
+            Vector3 direction = Quaternion.Euler(0,0,current) * axis;
+            barrel.SetPosition(0, point.position - direction * .06f);
+            barrel.SetPosition(1, point.position);
+            barrel.SetPosition(2, point.position + direction * .3f);
+        }
+        return inside && delta.magnitude <= range && Mathf.Abs(Mathf.DeltaAngle(current,desired)) <= Mathf.Clamp(item.aimTolerance,0f,15f);
+    }
 
      public float bulletSpeed = 15f;
     public float range = 8f;
@@ -96,7 +146,6 @@ public class ShipWeapon : MonoBehaviour
     // ============ RUNTIME ============
 
     private List<FittingItem> activeWeapons = new List<FittingItem>();
-    private float nextFireTime = 0f;
 
     private ShipHealth ownerHealth;
     public ShipHealth OwnerHealth => ownerHealth;
@@ -215,9 +264,8 @@ public class ShipWeapon : MonoBehaviour
         if (CombatSession.IsPreparing || Time.timeScale <= 0f || IsTargetingDisrupted) return;
         UpdateLock();
         if (Target != null && !ShipOrderController.Available(Target)) Target = null;
-        if (pendingTarget != null || Target == null || Time.time < nextFireTime) return;
-        if (Vector2.Distance(transform.position, Target.transform.position) <= range && IsTargetInFiringArc(Target.transform.position))
-        { Shoot(); nextFireTime = Time.time + .1f; }
+        if (pendingTarget != null || Target == null) return;
+        Shoot();
     }
 
     private void UpdateLock()
@@ -265,13 +313,7 @@ public class ShipWeapon : MonoBehaviour
 
     private void Shoot()
     {
-        if (Target != null)
-        {
-            float dist = Vector2.Distance(transform.position, Target.transform.position);
-            if (dist > range || !IsTargetInFiringArc(Target.transform.position))
-                return;
-        }
-
+        if (Target == null || pendingTarget != null || IsTargetingDisrupted) return;
         bool useFitting = activeWeapons != null && activeWeapons.Count > 0;
         if (!useFitting && !useFallbackWeapon)
             return;
@@ -291,6 +333,7 @@ public class ShipWeapon : MonoBehaviour
 
             FittingItem weaponModule = useFitting ? activeWeapons[i] : null;
 
+            if (!CanAim(i, weaponModule, Target.transform.position, Time.deltaTime)) continue;
             var stats = WeaponStatsCalculator.Calculate(weaponModule, baseCooldown, fallbackDamage);
             float currentDamage = stats.damage;
             Color shotColor = weaponModule != null ? weaponModule.iconColor : fallbackColor;

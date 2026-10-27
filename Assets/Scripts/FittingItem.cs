@@ -1,8 +1,10 @@
-using UnityEngine;
+﻿using UnityEngine;
 
 /// <summary>
 /// Тип визуализации выстрела, зависит от установленного оружия.
 /// </summary>
+public enum WeaponMountType { Fixed, Turret }
+
 public enum WeaponKind { Laser, Plasma, Railgun }
 
 public enum WeaponVisualType
@@ -21,6 +23,9 @@ public enum WeaponVisualType
 [System.Serializable]
 public class FittingItem
 {
+    public WeaponMountType mountType = WeaponMountType.Fixed;
+    public float trackingSpeed = 90f;
+    public float aimTolerance = 3f;
     public WeaponKind weaponKind = WeaponKind.Laser;
     public WeaponKind EffectiveWeaponKind => weaponKind != WeaponKind.Laser ? weaponKind
         : id == "w3" ? WeaponKind.Railgun

@@ -1,4 +1,4 @@
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using UnityEngine;
 
 /// <summary>Equipment-only snapshot. Never reads temporary combat multipliers.</summary>
@@ -63,6 +63,8 @@ public static class ShipStatsCalculator
         if (movement != null)
         {
             movement.maxSpeed = s.speed; movement.acceleration = s.thrust; movement.rotationSpeed = s.turn;
+            movement.reverseThrustRatio = definition != null && definition.baseReverseThrust > 0f ? definition.baseReverseThrust / Mathf.Max(.01f, definition.baseAcceleration) : .5f;
+            movement.lateralThrustRatio = definition != null && definition.baseLateralThrust > 0f ? definition.baseLateralThrust / Mathf.Max(.01f, definition.baseAcceleration) : .35f;
             movement.ApplyMassFromData();
         }
         var reactor = health.GetComponent<ShipReactor>();

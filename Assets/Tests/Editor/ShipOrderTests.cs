@@ -23,6 +23,64 @@ public class ShipOrderTests
         var go=Node(name);Add(go,"ShipHealth");Add(go,"ShipMovement");return Add(go,"ShipWeapon");
     }
     [TearDown] public void Cleanup(){foreach(var go in objects)if(go!=null)UnityEngine.Object.DestroyImmediate(go);objects.Clear();}
+    [Test] public void DirectionalForce_UsesSharedBudget_AndBoost()
+    {
+        var movement=Ship("thrust").GetComponent(T("ShipMovement"));
+        float force=(float)Get(movement,"AvailableForce");
+        Vector2 forward=(Vector2)Call(movement,"LimitThrust",Vector2.up*10000f);
+        Vector2 reverse=(Vector2)Call(movement,"LimitThrust",Vector2.down*10000f);
+        Vector2 side=(Vector2)Call(movement,"LimitThrust",Vector2.right*10000f);
+        Assert.That(forward.magnitude,Is.EqualTo(force).Within(.001f));
+        Assert.That(reverse.magnitude,Is.EqualTo(force*.5f).Within(.001f));
+        Assert.That(side.magnitude,Is.EqualTo(force*.35f).Within(.001f));
+        Vector2 diagonal=(Vector2)Call(movement,"LimitThrust",Vector2.one*10000f);
+        Assert.That(Mathf.Pow(diagonal.y/force,2)+Mathf.Pow(diagonal.x/(force*.35f),2),Is.EqualTo(1f).Within(.001f));
+        T("ShipMovement").GetProperty("SpeedMultiplier").SetValue(movement,2f);
+        Assert.That((float)Call(movement,"ForceAlong",Vector2.down),Is.EqualTo(force).Within(.001f));
+    }
+    [Test] public void Mounts_FixedSector_AndTurretRate_AreIndependent()
+    {
+        var weapon=Ship("mounts");
+        T("ShipWeapon").GetField("firingArcAngle").SetValue(weapon,360f);
+        var item=Activator.CreateInstance(T("FittingItem"), new object[]{"test","test",Enum.ToObject(T("SlotGroup"),0),Color.white,"",0f,0f,0f,0f,0f,0f,0f,Enum.ToObject(T("WeaponVisualType"),0)});
+        T("ShipWeapon").GetField("firingArcAngle").SetValue(weapon,60f);
+        Assert.False((bool)Call(weapon,"CanAim",0,item,Vector2.right*3f,.1f));
+        T("ShipWeapon").GetField("firingArcAngle").SetValue(weapon,360f);
+        T("FittingItem").GetField("mountType").SetValue(item,Enum.Parse(T("WeaponMountType"),"Turret"));
+        T("FittingItem").GetField("trackingSpeed").SetValue(item,90f);
+        Assert.False((bool)Call(weapon,"CanAim",0,item,Vector2.right*3f,.1f));
+        Assert.That(Mathf.Abs((float)Call(weapon,"MountAngle",0)),Is.EqualTo(9f).Within(.001f));
+        Assert.That((float)Call(weapon,"MountAngle",1),Is.EqualTo(0f));
+        Assert.True((bool)Call(weapon,"CanAim",0,item,Vector2.right*3f,1f));
+    }
+    [Test] public void Turret_WrapsFullCircle_ButNeverCrossesForbiddenSector()
+    {
+        var weapon=Ship("wrap");
+        var item=JsonUtility.FromJson("{\"id\":\"turret\",\"mountType\":1,\"trackingSpeed\":90,\"aimTolerance\":3}",T("FittingItem"));
+        T("ShipWeapon").GetField("firingArcAngle").SetValue(weapon,360f);
+        Vector2 leftRear=new Vector2(-.05f,-3f), rightRear=new Vector2(.05f,-3f);
+        Call(weapon,"CanAim",0,item,leftRear,3f);
+        float before=(float)Call(weapon,"MountAngle",0);
+        Call(weapon,"CanAim",0,item,rightRear,.1f);
+        float after=(float)Call(weapon,"MountAngle",0);
+        Assert.LessOrEqual(Mathf.Abs(Mathf.DeltaAngle(before,after)),9.001f);
+        T("ShipWeapon").GetField("firingArcAngle").SetValue(weapon,300f);
+        Call(weapon,"CanAim",1,item,leftRear,3f);
+        before=(float)Call(weapon,"MountAngle",1);
+        Assert.False((bool)Call(weapon,"CanAim",1,item,rightRear,.1f));
+        after=(float)Call(weapon,"MountAngle",1);
+        Assert.That(after,Is.EqualTo(before-9f).Within(.001f));
+    }
+    [Test] public void LegacyWeaponSnapshot_RemainsFixed_AndLegacyPointsRemainReferenced()
+    {
+        var legacy=JsonUtility.FromJson("{\"id\":\"w1\",\"damageBonus\":15}",T("FittingItem"));
+        Assert.AreEqual("Fixed",T("FittingItem").GetField("mountType").GetValue(legacy).ToString());
+        var weapon=Ship("legacy");var point=Node("point");point.transform.SetParent(weapon.transform);point.transform.localPosition=Vector3.right;
+        T("ShipWeapon").GetField("firePoints").SetValue(weapon,new[]{point.transform});
+        Assert.False((bool)Call(weapon,"CanAim",0,legacy,new Vector2(-1,1),.1f));
+        Assert.AreSame(point.transform,((Transform[])T("ShipWeapon").GetField("firePoints").GetValue(weapon))[0]);
+        Assert.AreEqual(60f,Call(weapon,"MountSector",0));
+    }
     [Test] public void Selection_IsIndependent_AndRepeatedPendingLockDoesNotReset()
     {
         var weapon=Ship("player");var enemy=Ship("enemy").GetComponent(T("ShipHealth"));

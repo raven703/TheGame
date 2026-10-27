@@ -60,7 +60,7 @@ public class TacticalCommandPanel : MonoBehaviour
     private void OnDisable() { ShowTooltip(null); }
     public void ConfigureLayout()
     {
-        CombatUIStyle.Rect(transform,Vector2.one,Vector2.one,new Vector2(-288,-698),new Vector2(-16,-394));
+        CombatUIStyle.Rect(transform,Vector2.one,Vector2.one,new Vector2(-288,-714),new Vector2(-16,-394));
         var background=CombatUIStyle.Ensure<Image>(gameObject);background.sprite=null;background.color=CombatUIStyle.Surface;background.raycastTarget=true;
         foreach(var layout in GetComponentsInChildren<LayoutGroup>(true))layout.enabled=false;
         foreach(var fitter in GetComponentsInChildren<ContentSizeFitter>(true))fitter.enabled=false;
@@ -148,6 +148,29 @@ public class TacticalCommandPanel : MonoBehaviour
         empButton.onClick.AddListener(() => playerAbilities?.UseEMPulse());
     }
 
+    private Button courseButton, targetFacingButton;
+    private void EnsureOrientationButtons()
+    {
+        if (courseButton != null) return;
+        for (int i = 0; i < 2; i++)
+        {
+            int index = i;
+            var panel = CombatUIStyle.Panel(i == 0 ? "FaceCourse" : "FaceOrderTarget", transform, CombatUIStyle.Card);
+            CombatUIStyle.Box(panel.transform, 10 + i * 128, 290, 124, 25);
+            var button = CombatUIStyle.Ensure<Button>(panel.gameObject);
+            button.targetGraphic = panel;
+            var label = CombatUIStyle.Text("Label", panel.transform, i == 0 ? "По курсу" : "На цель приказа", 11);
+            label.gameObject.SetActive(true);
+            label.raycastTarget = false;
+            label.alignment = TextAlignmentOptions.Center;
+            CombatUIStyle.Rect(label.transform, Vector2.zero, Vector2.one, Vector2.zero, Vector2.zero);
+            button.onClick.AddListener(() => PlayerOrders()?.SetOrientation(index == 0 ? HullOrientation.Course : HullOrientation.OrderTarget));
+            var tip = CombatUIStyle.Ensure<TacticalTooltip>(panel.gameObject);
+            tip.panel = this;
+            tip.description = i == 0 ? "Нос по траектории. Торможение имеет приоритет." : "Нос на цель текущего приказа, не выбранную оружейную цель. Боковая сила ограничена.";
+            if (i == 0) courseButton = button; else targetFacingButton = button;
+        }
+    }
     private void Update()
     {
         if(FittingWindow.OpenWindow!=null)ShowTooltip(null);
@@ -155,9 +178,13 @@ public class TacticalCommandPanel : MonoBehaviour
         playerWeapon=player!=null?player.GetComponent<ShipWeapon>():null;
         playerAbilities=player!=null?player.GetComponent<ShipAbilities>():null;
         if (playerWeapon == null) return;
+        EnsureOrientationButtons();
         var orders=PlayerOrders();
         if(orders!=null)
         {
+            targetFacingButton.interactable = ShipOrderController.Available(orders.OrderTarget);
+            SetButtonColor(courseButton, orders.Orientation == HullOrientation.Course ? activeColor : normalColor);
+            SetButtonColor(targetFacingButton, orders.Orientation == HullOrientation.OrderTarget ? activeColor : normalColor);
             var movement=orders.GetComponent<ShipMovement>();
             if(movementStatus!=null)movementStatus.text=$"{orders.Status}\nСкорость {movement.Rb.linearVelocity.magnitude:F1} / {movement.maxSpeed*movement.SpeedMultiplier*orders.SpeedLimit:F1} ({orders.SpeedLimit:P0})"+(movement.EngineAvailable?"":"\nДвигатель выбит: активное торможение недоступно");
             for(int i=0;i<4;i++)if(speedButtons[i]!=null)SetButtonColor(speedButtons[i],Mathf.Abs(orders.SpeedLimit-(i+1)*.25f)<.01f?activeColor:normalColor);

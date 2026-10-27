@@ -1,4 +1,4 @@
-using UnityEngine;
+﻿using UnityEngine;
 
 /// <summary>
 /// ScriptableObject: паспорт типа корабля. Базовые ТТХ и количество слотов.
@@ -32,6 +32,10 @@ public class ShipDefinition : ScriptableObject
 
     public float baseMaxSpeed = 6f;
     public float baseAcceleration = 14f;
+    [Tooltip("Reverse force; zero migrates to 50% of forward force.")]
+    public float baseReverseThrust;
+    [Tooltip("Lateral force; zero migrates to 35% of forward force.")]
+    public float baseLateralThrust;
     public float baseRotationSpeed = 300f;
     public float baseMaxEnergy = 100f;
     public float baseEnergyRegeneration = 12f;

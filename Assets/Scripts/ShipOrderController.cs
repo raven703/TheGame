@@ -1,5 +1,7 @@
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using UnityEngine;
+
+public enum HullOrientation { Course, OrderTarget }
 
 public enum ShipOrderMode { HoldPosition, MoveToPoint, EngageTarget, Orbit, KeepDistance, Flank }
 
@@ -7,6 +9,15 @@ public enum ShipOrderMode { HoldPosition, MoveToPoint, EngageTarget, Orbit, Keep
 [RequireComponent(typeof(ShipMovement))]
 public class ShipOrderController : MonoBehaviour
 {
+    private HullOrientation? orientationOverride;
+    private bool flankAttacking;
+    public HullOrientation Orientation => orientationOverride ?? ((Mode == ShipOrderMode.EngageTarget || Mode == ShipOrderMode.KeepDistance || (Mode == ShipOrderMode.Flank && flankAttacking)) ? HullOrientation.OrderTarget : HullOrientation.Course);
+    public bool SetOrientation(HullOrientation value)
+    {
+        if (value == HullOrientation.OrderTarget && !Available(OrderTarget)) return false;
+        orientationOverride = value;
+        return true;
+    }
     public ShipOrderMode Mode { get; private set; }
     public ShipHealth OrderTarget { get; private set; }
     public float SpeedLimit { get; private set; } = 1f;
@@ -23,13 +34,13 @@ public class ShipOrderController : MonoBehaviour
     private float Radius => GetComponent<ShipMovement>().ShipRadius;
     public Vector2 FacingDirection(Vector2 position, Vector2 fallback)
     {
-        return Available(OrderTarget) ? (Vector2)OrderTarget.transform.position - position : fallback;
+        return Orientation == HullOrientation.OrderTarget && Available(OrderTarget) ? (Vector2)OrderTarget.transform.position - position : fallback;
     }
     public void SetSpeedLimit(float value) { SpeedLimit = Mathf.Clamp(value,.25f,1f); }
     public void MoveTo(Vector2 point, bool append = false)
     {
         if(!append || Mode!=ShipOrderMode.MoveToPoint)Waypoints.Clear();
-        OrderTarget=null;Error=null;Mode=ShipOrderMode.MoveToPoint;IsBraking=false;
+        orientationOverride=null;flankAttacking=false;OrderTarget=null;Error=null;Mode=ShipOrderMode.MoveToPoint;IsBraking=false;
         Vector2 actual = ShipLocalNavigator.AccessiblePoint(point, transform.position, Radius);
         if ((actual-point).sqrMagnitude>.01f) CombatSession.Log("Точка внутри препятствия — назначена доступная точка рядом");
         Waypoints.Add(actual);Destination=Waypoints[0];initialized=true;
@@ -38,11 +49,12 @@ public class ShipOrderController : MonoBehaviour
     public void Tactical(ShipOrderMode mode, ShipHealth target)
     {
         if(!Available(target))return;
+        if (Mode != mode || OrderTarget != target) { orientationOverride=null;flankAttacking=false; }
         Waypoints.Clear();OrderTarget=target;Mode=mode;Error=null;initialized=true;IsBraking=false;navigator.Reset();
     }
     public void Stop()
     {
-        Waypoints.Clear();OrderTarget=null;Mode=ShipOrderMode.HoldPosition;
+        orientationOverride=null;flankAttacking=false;Waypoints.Clear();OrderTarget=null;Mode=ShipOrderMode.HoldPosition;
         hold=transform.position;Destination=hold;initialized=true;IsBraking=true;Error=null;Detouring=false;navigator.Reset();
     }
     public static bool Available(ShipHealth target) => target!=null && target.isActiveAndEnabled && target.Data!=null && !target.Data.IsDestroyed;
@@ -77,6 +89,9 @@ public class ShipOrderController : MonoBehaviour
         {
             var movement=OrderTarget.GetComponent<ShipMovement>();
             Destination=target-(movement!=null?movement.GetForwardVector():(Vector2)OrderTarget.transform.up)*distance;
+            float flankError=Vector2.Distance(position,Destination);
+            if(flankError < .65f) flankAttacking=true;
+            else if(flankError > 1.4f) flankAttacking=false;
         }
         else if(Mode==ShipOrderMode.Orbit)
         {
@@ -91,7 +106,7 @@ public class ShipOrderController : MonoBehaviour
         var movement=GetComponent<ShipMovement>();
         if(!movement.EngineAvailable)return destination;
         bool detour;
-        Vector2 steering=navigator.Steer(position,destination,velocity,Radius,movement.AvailableForce/Mathf.Max(.1f,movement.Rb.mass),Time.fixedDeltaTime,Mode==ShipOrderMode.MoveToPoint,out detour);
+        Vector2 steering=navigator.Steer(position,destination,velocity,Radius,movement.ForceAlong(-velocity)/Mathf.Max(.1f,movement.Rb.mass),Time.fixedDeltaTime,Mode==ShipOrderMode.MoveToPoint,out detour);
         Detouring=detour;
         if(detour)final=true;
         if(navigator.Failed)

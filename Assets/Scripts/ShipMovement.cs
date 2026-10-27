@@ -1,4 +1,4 @@
-using UnityEngine;
+﻿using UnityEngine;
 
 /// <summary>Only propulsion writer. Orders are evaluated in this same physics step.</summary>
 [RequireComponent(typeof(Rigidbody2D))]
@@ -6,6 +6,8 @@ public class ShipMovement : MonoBehaviour
 {
     public float maxSpeed = 5f;
     public float acceleration = 12f;
+    public float reverseThrustRatio = .5f;
+    public float lateralThrustRatio = .35f;
     public float rotationSpeed = 300f;
     public bool spriteNoseIsUp = true;
     public Vector3 TargetPosition { get; private set; }
@@ -23,6 +25,31 @@ public class ShipMovement : MonoBehaviour
         }
     }
     public float AvailableForce => EngineAvailable ? Mathf.Max(0f, acceleration * SpeedMultiplier) : 0f;
+    // Elliptic engine budget: simultaneous axes share one normalized effort.
+    public Vector2 LimitThrust(Vector2 requested)
+    {
+        Vector2 forward = GetForwardVector();
+        Vector2 side = new Vector2(forward.y, -forward.x);
+        float longitudinal = Vector2.Dot(requested, forward);
+        float lateral = Vector2.Dot(requested, side);
+        float main = AvailableForce;
+        float a = main * (longitudinal >= 0f ? 1f : reverseThrustRatio);
+        float b = main * lateralThrustRatio;
+        Vector2 effort = new Vector2(a > 0f ? longitudinal / a : 0f, b > 0f ? lateral / b : 0f);
+        effort = Vector2.ClampMagnitude(effort, 1f);
+        return forward * effort.x * a + side * effort.y * b;
+    }
+    public float ForceAlong(Vector2 direction)
+    {
+        if (direction.sqrMagnitude < .0001f) return AvailableForce * Mathf.Min(reverseThrustRatio, lateralThrustRatio);
+        Vector2 f = GetForwardVector();
+        float x = Vector2.Dot(direction.normalized, f);
+        float y = Vector2.Dot(direction.normalized, new Vector2(f.y, -f.x));
+        float a = AvailableForce * (x >= 0f ? 1f : reverseThrustRatio);
+        float b = AvailableForce * lateralThrustRatio;
+        if (a <= 0f || b <= 0f) return 0f;
+        return 1f / Mathf.Sqrt(x*x/(a*a) + y*y/(b*b));
+    }
     public float ShipRadius { get; private set; } = .4f;
     private void Awake()
     {
@@ -55,7 +82,7 @@ public class ShipMovement : MonoBehaviour
         if (!EngineAvailable) return;
         Vector2 delta = destination - Rb.position;
         float force = AvailableForce;
-        float deceleration = force / Mathf.Max(.01f, Rb.mass);
+        float deceleration = ForceAlong(Rb.linearVelocity.sqrMagnitude > .01f ? -Rb.linearVelocity : -delta) / Mathf.Max(.01f, Rb.mass);
         float desiredSpeed = Mathf.Max(0f, maxSpeed * SpeedMultiplier * Orders.SpeedLimit);
         // A queued corner can be crossed, but its turn radius must fit the remaining leg.
         if(!final && Orders.Waypoints.Count>1)
@@ -71,7 +98,7 @@ public class ShipMovement : MonoBehaviour
         float alignment = Mathf.Clamp01(Vector2.Dot(GetForwardVector(), direction));
         Vector2 desiredVelocity = delta.magnitude < .08f ? Vector2.zero : direction * desiredSpeed * Mathf.Lerp(.15f, 1f, alignment);
         if (Orders.IsBraking) desiredVelocity = Vector2.zero;
-        Rb.AddForce(Vector2.ClampMagnitude((desiredVelocity - Rb.linearVelocity) * Rb.mass * 4f, force));
+        Rb.AddForce(LimitThrust((desiredVelocity - Rb.linearVelocity) * Rb.mass * 4f));
         Vector2 facing = Orders.FacingDirection(Rb.position, direction);
         float desiredAngular = 0f;
         if (facing.sqrMagnitude > .001f && !Orders.IsBraking)

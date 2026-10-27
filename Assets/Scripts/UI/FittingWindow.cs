@@ -67,7 +67,7 @@ public class FittingWindow : MonoBehaviour
         statsLabel.text = "ХАРАКТЕРИСТИКИ КОРАБЛЯ\nБаза → оснащение (без боевых эффектов)\n" +
             $"Корпус: {b.hull:0.#} → {s.hull:0.#}\nЩит: {b.shield:0.#} → {s.shield:0.#}\n" +
             $"Масса: {b.mass:0.##} → {s.mass:0.##}\nСкорость: {b.speed:0.#} → {s.speed:0.#}\n" +
-            $"Тяга: {b.thrust:0.#} → {s.thrust:0.#}\nПоворот: {b.turn:0.#} → {s.turn:0.#} °/с\n" +
+            $"Маршевая сила: {b.thrust:0.#} → {s.thrust:0.#}\nНазад: {s.thrust * (targetShipMovement != null ? targetShipMovement.reverseThrustRatio : .5f):0.#}; вбок: {s.thrust * (targetShipMovement != null ? targetShipMovement.lateralThrustRatio : .35f):0.#}\nПоворот: {b.turn:0.#} → {s.turn:0.#} °/с\n" +
             $"Захват: {b.lockTime:0.##} → {s.lockTime:0.##} с\nЭнергия макс.: {b.energy:0.#} → {s.energy:0.#}\n" +
             $"Восстановление: {b.regeneration:0.#} → {s.regeneration:0.#}/с\nУстойчивость: {b.resistance:P0} → {s.resistance:P0}\n" +
             $"Охлаждение: {b.cooling:0.#} → {s.cooling:0.#}/с\n\nОРУЖИЕ (каждый слот отдельно)\n";
@@ -76,7 +76,11 @@ public class FittingWindow : MonoBehaviour
             {
                 if (item == null || string.IsNullOrEmpty(item.id)) continue;
                 var w = WeaponStatsCalculator.Calculate(item, targetShipWeapon != null ? targetShipWeapon.baseCooldown : .6f);
-                statsLabel.text += $"{item.name} / {w.kind}\nУрон {w.damage:0.#}; DPS* {w.NominalDps:0.#}; КД {w.cooldown:0.##} с\nЭнергия {w.energy:0.#}; нагрев {ShipReactor.CalculateHeat(w.heat,s.resistance):0.#} (база {w.heat:0.#})\n";
+                int index = currentLoadout.weaponSlots.IndexOf(item);
+                float sector = targetShipWeapon != null ? targetShipWeapon.MountSector(index) : 60f;
+                statsLabel.text += $"{item.name} / {w.kind} / {(item.mountType == WeaponMountType.Turret ? "Турель" : "Курсовая")}\nКрепление {index + 1}: сектор {sector:0}°" +
+                    (item.mountType == WeaponMountType.Turret ? $"; {item.trackingSpeed:0} °/с; допуск {item.aimTolerance:0}°" : "; без вращения") +
+                    $"\nУрон {w.damage:0.#}; DPS* {w.NominalDps:0.#}; КД {w.cooldown:0.##} с\nЭнергия {w.energy:0.#}; нагрев {ShipReactor.CalculateHeat(w.heat,s.resistance):0.#} (база {w.heat:0.#})\n";
             }
         statsLabel.text += "\n* Номинальный DPS без ограничений энергии,\nперегрева, точности и защиты цели.\nОбщий DPS не суммируется.";
     }
@@ -285,6 +289,14 @@ public class FittingWindow : MonoBehaviour
             PopulateDefaultInventory(currentLoadout);
         }
 
+        if (!currentLoadout.inventory.Exists(item => item != null && item.id == "w_laser_turret_demo") &&
+            !currentLoadout.weaponSlots.Exists(item => item != null && item.id == "w_laser_turret_demo"))
+        {
+            currentLoadout.inventory.Add(new FittingItem("w_laser_turret_demo", "Лазер T1 — турель", SlotGroup.Top_Weapons, Color.cyan,
+                "Турель: урон 11 вместо 15; наведение 90 °/с. Сектор задаётся креплением.", damage: 11f)
+                { mountType = WeaponMountType.Turret, trackingSpeed = 90f, aimTolerance = 3f });
+            ShipLoadoutManager.SaveLoadout(currentLoadout);
+        }
         if (titleLabel != null)
             titleLabel.text = $"ПОСТРОЙКА И КОНФИГУРАЦИЯ: {def.displayName}";
     }
