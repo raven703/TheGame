@@ -74,86 +74,10 @@ public class LoadoutApplier : MonoBehaviour
 
     private void ApplyBaseStats(ShipHealth health, ShipDefinition def)
     {
-        if (health.Data == null) return;
-
-        health.Data.maxHullHP = def.maxHullHP;
-        health.Data.currentHullHP = def.maxHullHP;
-        health.Data.maxShieldHP = def.baseShieldHP;
-        health.Data.currentShieldHP = def.baseShieldHP;
-        health.Data.mass = def.baseMass;
-        health.Data.lockTime = def.baseLockTime;
-
-        var movement = health.GetComponent<ShipMovement>();
-        if (movement != null)
-        {
-            movement.maxSpeed = def.baseMaxSpeed;
-            movement.acceleration = def.baseAcceleration;
-            movement.rotationSpeed = def.baseRotationSpeed;
-            movement.ApplyMassFromData();
-        }
+        ShipStatsCalculator.Apply(health, def, null);
     }
-
     private void ApplyLoadout(ShipHealth health, ShipDefinition def, ShipLoadout loadout)
     {
-        var shipWeapon = health.GetComponent<ShipWeapon>();
-        var shipMovement = health.GetComponent<ShipMovement>();
-
-        // Оружие
-        if (shipWeapon != null)
-        {
-            var installedWeapons = new List<FittingItem>();
-            if (loadout.weaponSlots != null)
-                foreach (var w in loadout.weaponSlots)
-                    if (w != null) installedWeapons.Add(w);
-
-            shipWeapon.SetEquippedWeapons(installedWeapons);
-        }
-
-        // Бонусы от установленных модулей
-        float shieldBonus = 0f, speedBonus = 0f, accelBonus = 0f, massBonus = 0f, lockTimeBonus = 0f;
-        ApplyBonuses(loadout.weaponSlots, ref shieldBonus, ref speedBonus, ref accelBonus, ref massBonus, ref lockTimeBonus);
-        ApplyBonuses(loadout.shieldSlots, ref shieldBonus, ref speedBonus, ref accelBonus, ref massBonus, ref lockTimeBonus);
-        ApplyBonuses(loadout.engineSlots, ref shieldBonus, ref speedBonus, ref accelBonus, ref massBonus, ref lockTimeBonus);
-
-        if (health.Data != null)
-        {
-            // Щит с учётом дельты
-            float oldMaxShield = health.Data.maxShieldHP;
-            float newMaxShield = def.baseShieldHP + shieldBonus;
-            float delta = newMaxShield - oldMaxShield;
-
-            health.Data.maxShieldHP = newMaxShield;
-            health.Data.currentShieldHP = Mathf.Clamp(
-                health.Data.currentShieldHP + delta,
-                0f,
-                newMaxShield);
-
-            health.Data.mass = Mathf.Max(0.5f, def.baseMass + massBonus);
-
-            // Захват цели: база + бонусы, минимум 0.05 сек
-            health.Data.lockTime = Mathf.Max(0.05f, def.baseLockTime + lockTimeBonus);
-        }
-
-        if (shipMovement != null)
-        {
-            shipMovement.maxSpeed = def.baseMaxSpeed + speedBonus;
-            shipMovement.acceleration = def.baseAcceleration + accelBonus;
-            shipMovement.ApplyMassFromData();
-        }
-    }
-
-    private void ApplyBonuses(List<FittingItem> list,
-        ref float shield, ref float speed, ref float accel, ref float mass, ref float lockTime)
-    {
-        if (list == null) return;
-        foreach (var item in list)
-        {
-            if (item == null) continue;
-            shield += item.shieldBonus;
-            speed += item.speedBonus;
-            accel += item.accelBonus;
-            mass += item.massBonus;
-            lockTime += item.lockTimeBonus;
-        }
+        ShipStatsCalculator.Apply(health, def, loadout);
     }
 }

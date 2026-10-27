@@ -126,11 +126,12 @@ MonoBehaviour:
     lockTimeBonus: 0
     visualType: 0
   - id: e2
+    heatResistanceBonus: 0.1
     name: "\u0422\u044F\u0436\u0435\u043B\u044B\u0439 \u0414\u0432\u0438\u0433"
     allowedGroup: 2
     iconColor: {r: 0.8, g: 0.4, b: 1, a: 1}
     description: "\u0414\u0432\u0438\u0433: \u0423\u0441\u043A\u043E\u0440\u0435\u043D\u0438\u0435
-      +10"
+      +10; Heat resistance +10%"
     damageBonus: 0
     cooldownBonus: 0
     shieldBonus: 0

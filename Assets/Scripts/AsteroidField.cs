@@ -40,9 +40,16 @@ public class AsteroidField : MonoBehaviour
             var rock = new GameObject("Asteroid");
             rock.transform.SetParent(transform);
             rock.transform.position = point;
+            float size = .65f + index * .23f;
+            rock.transform.localScale = Vector3.one * size;
             rock.AddComponent<SpriteRenderer>().sprite = sprites[index++%sprites.Count];
             rock.AddComponent<CircleCollider2D>().radius = .9f;
-            rock.AddComponent<Asteroid>();
+            rock.AddComponent<Asteroid>().hitPoints = 120f * size * size;
+            var body = rock.AddComponent<Rigidbody2D>();
+            body.gravityScale = 0f; body.mass = 8f * size * size;
+            body.linearDamping = 0f; body.angularDamping = 0f;
+            body.collisionDetectionMode = CollisionDetectionMode2D.Continuous;
+            rock.AddComponent<AsteroidDrift>().Initialize(new Vector2(Mathf.Cos(index*2.4f),Mathf.Sin(index*2.4f)) * (.15f+.07f*index), (index%2==0?1:-1)*(3f+index));
         }
     }
     private void OnDestroy()

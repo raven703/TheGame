@@ -394,7 +394,8 @@ public class ShipWeapon : MonoBehaviour
 
             FittingItem weaponModule = useFitting ? activeWeapons[i] : null;
 
-            float currentDamage = weaponModule != null ? weaponModule.damageBonus : fallbackDamage;
+            var stats = WeaponStatsCalculator.Calculate(weaponModule, baseCooldown, fallbackDamage);
+            float currentDamage = stats.damage;
             Color shotColor = weaponModule != null ? weaponModule.iconColor : fallbackColor;
             WeaponVisualType visual = weaponModule != null ? weaponModule.visualType : fallbackVisual;
 
@@ -410,12 +411,9 @@ public class ShipWeapon : MonoBehaviour
             WeaponKind kind = weaponModule != null ? weaponModule.EffectiveWeaponKind : WeaponKind.Laser;
             string key = i.ToString();
             if (weaponReadyAt.TryGetValue(key, out float ready) && Time.time < ready) continue;
-            float energy = kind == WeaponKind.Plasma ? 16f : kind == WeaponKind.Railgun ? 22f : 7f;
-            float heat = kind == WeaponKind.Plasma ? 22f : kind == WeaponKind.Railgun ? 30f : 9f;
             var reactor = ownerHealth.GetComponent<ShipReactor>();
-            if (reactor == null || !reactor.TrySpend(energy, heat)) continue;
-            float cooldown = kind == WeaponKind.Plasma ? 1.2f : kind == WeaponKind.Railgun ? 1.8f : baseCooldown;
-            weaponReadyAt[key] = Time.time + Mathf.Max(.1f, cooldown + (weaponModule != null ? weaponModule.cooldownBonus : 0f));
+            if (reactor == null || !reactor.TrySpend(stats.energy, stats.heat)) continue;
+            weaponReadyAt[key] = Time.time + stats.cooldown;
 
             Asteroid cover = Asteroid.FindCover(spawnPos, endPos, out Vector2 impact);
             if (cover != null)

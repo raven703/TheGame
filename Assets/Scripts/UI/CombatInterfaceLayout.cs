@@ -29,6 +29,8 @@ public class CombatInterfaceLayout : MonoBehaviour
         var radar = transform.Find("Radar");
         if (radar != null) CombatUIStyle.Rect(radar, Vector2.one,Vector2.one,new Vector2(-224,-382),new Vector2(-16,-174));
         var window = GetComponentInChildren<FittingWindow>(true);
+        var hud = GetComponentInChildren<CombatHUDManager>(true);
+        if (hud != null) hud.ConfigurePlayerPanel();
         if (window != null) window.ConfigureLayout();
     }
 }

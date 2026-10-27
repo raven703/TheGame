@@ -24,6 +24,62 @@ public class CombatHUDManager : MonoBehaviour
     [Header("Player HUD — Bars")]
     public Image playerHullBarFill;
     public Image playerShieldBarFill;
+    private Image energyFill, heatFill;
+    private TextMeshProUGUI energyText, heatText, effectsText;
+    public void ConfigurePlayerPanel()
+    {
+        if (playerTitleLabel == null) return;
+        var panel = playerTitleLabel.transform.parent;
+        CombatUIStyle.Rect(panel, Vector2.up, Vector2.up, new Vector2(16,-292), new Vector2(336,-16));
+        // Keep all original module indicators, only reposition the existing resource rows.
+        CombatUIStyle.Box(playerTitleLabel.transform,12,8,296,22);
+        CombatUIStyle.Box(playerHullText.transform,12,30,296,20);
+        CombatUIStyle.Box(playerHullBarFill.transform.parent,12,51,296,8);
+        CombatUIStyle.Box(playerShieldText.transform,12,62,296,20);
+        CombatUIStyle.Box(playerShieldBarFill.transform.parent,12,83,296,8);
+        energyText=CombatUIStyle.Text("EnergyText",panel,"Энергия: —",15);
+        heatText=CombatUIStyle.Text("HeatText",panel,"Нагрев: —",15);
+        CombatUIStyle.Box(energyText.transform,12,94,296,20);
+        CombatUIStyle.Box(heatText.transform,12,126,296,20);
+        energyFill=ResourceBar(panel,"Energy",115);
+        heatFill=ResourceBar(panel,"Heat",147);
+        var moduleRow=panel.Find("PlayerModulesRow");
+        if(moduleRow!=null)CombatUIStyle.Box(moduleRow,12,174,120,20);
+        var moduleLabel=panel.Find("PlayerModulesLabel");
+        if(moduleLabel!=null)CombatUIStyle.Box(moduleLabel,140,174,140,20);
+        if(playerWeaponBoxImage!=null) CombatUIStyle.Box(playerWeaponBoxImage.transform,12,162,24,20);
+        if(playerShieldBoxImage!=null) CombatUIStyle.Box(playerShieldBoxImage.transform,42,162,24,20);
+        if(playerEngineBoxImage!=null) CombatUIStyle.Box(playerEngineBoxImage.transform,72,162,24,20);
+        effectsText=CombatUIStyle.Text("Effects",panel,"",13);
+        CombatUIStyle.Box(effectsText.transform,12,210,296,64);
+    }
+    private Image ResourceBar(Transform parent,string name,float y)
+    {
+        var track=CombatUIStyle.Panel(name+"Track",parent,new Color(.18f,.22f,.27f));
+        track.raycastTarget=false;CombatUIStyle.Box(track.transform,12,y,296,8);
+        var fill=CombatUIStyle.Panel("Fill",track.transform,Color.cyan);fill.raycastTarget=false;
+        CombatUIStyle.Rect(fill.transform,Vector2.zero,Vector2.one,Vector2.zero,Vector2.zero);
+        return fill;
+    }
+    private void UpdateResources()
+    {
+        var player=GameObject.FindGameObjectWithTag("Player");
+        if(player!=null){playerHealth=player.GetComponent<ShipHealth>();playerWeapon=player.GetComponent<ShipWeapon>();}
+        else {playerHealth=null;playerWeapon=null;}
+        if(energyText==null)ConfigurePlayerPanel();
+        if(energyText==null)return;
+        var reactor=player!=null?player.GetComponent<ShipReactor>():null;
+        float energy=reactor!=null?Mathf.Clamp01(reactor.Energy/Mathf.Max(.001f,reactor.maxEnergy)):0;
+        float heat=reactor!=null?Mathf.Clamp01(reactor.Heat/ShipReactor.OverheatThreshold):0;
+        energyText.text=reactor!=null?$"Энергия: {reactor.Energy:0.#} / {reactor.maxEnergy:0.#}":"Энергия: —";
+        heatText.text=reactor!=null?$"Нагрев: {heat*100:0}%"+(reactor.Overheated?" — ПЕРЕГРЕВ":""):"Нагрев: —";
+        ((RectTransform)energyFill.transform).anchorMax=new Vector2(energy,1);
+        ((RectTransform)heatFill.transform).anchorMax=new Vector2(heat,1);
+        energyFill.color=new Color(.3f,.8f,.9f);
+        heatFill.color=Color.Lerp(new Color(.3f,.75f,.65f),new Color(1,.15f,.08f),heat);
+        effectsText.text=CombatStatusPanel.Effects(player);
+        if(playerHealth==null){if(playerHullText!=null)playerHullText.text="Корпус: —";if(playerShieldText!=null)playerShieldText.text="Щит: —";}
+    }
 
     [Header("Player HUD — Modules")]
     public Image playerWeaponBoxImage;
@@ -53,6 +109,7 @@ public class CombatHUDManager : MonoBehaviour
 
     private void Update()
     {
+        UpdateResources();
         UpdatePlayerHUD();
         UpdateTargetHUD();
     }

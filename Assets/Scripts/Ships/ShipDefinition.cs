@@ -33,6 +33,10 @@ public class ShipDefinition : ScriptableObject
     public float baseMaxSpeed = 6f;
     public float baseAcceleration = 14f;
     public float baseRotationSpeed = 300f;
+    public float baseMaxEnergy = 100f;
+    public float baseEnergyRegeneration = 12f;
+    public float baseCooling = 15f;
+    [Range(0f, .75f)] public float baseHeatResistance;
 
     [Tooltip("Базовое время захвата цели (сек). Меньше — быстрее.")]
     public float baseLockTime = 0.5f;

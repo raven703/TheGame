@@ -40,6 +40,9 @@ public class ShipHealth : MonoBehaviour
             Data.lockTime = shipDefinition.baseLockTime;
         }
         if (GetComponent<ShipReactor>() == null) gameObject.AddComponent<ShipReactor>();
+        if (shipDefinition != null)
+            GetComponent<ShipReactor>().Configure(shipDefinition.baseMaxEnergy, shipDefinition.baseEnergyRegeneration,
+                shipDefinition.baseCooling, shipDefinition.baseHeatResistance);
     }
 
     private void Update()

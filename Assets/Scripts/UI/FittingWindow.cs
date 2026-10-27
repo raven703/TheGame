@@ -58,10 +58,32 @@ public class FittingWindow : MonoBehaviour
     public bool CanEdit => CombatSession.IsPreparing && (GameState.Instance == null || !GameState.Instance.isCombatStarted);
     private string presetMessage = "";
     private TMPro.TextMeshProUGUI detailsLabel;
+    private TextMeshProUGUI statsLabel;
+    private void RefreshStats()
+    {
+        if (statsLabel == null) return;
+        var b = ShipStatsCalculator.Calculate(shipDefinition, null);
+        var s = ShipStatsCalculator.Calculate(shipDefinition, currentLoadout);
+        statsLabel.text = "ХАРАКТЕРИСТИКИ КОРАБЛЯ\nБаза → оснащение (без боевых эффектов)\n" +
+            $"Корпус: {b.hull:0.#} → {s.hull:0.#}\nЩит: {b.shield:0.#} → {s.shield:0.#}\n" +
+            $"Масса: {b.mass:0.##} → {s.mass:0.##}\nСкорость: {b.speed:0.#} → {s.speed:0.#}\n" +
+            $"Тяга: {b.thrust:0.#} → {s.thrust:0.#}\nПоворот: {b.turn:0.#} → {s.turn:0.#} °/с\n" +
+            $"Захват: {b.lockTime:0.##} → {s.lockTime:0.##} с\nЭнергия макс.: {b.energy:0.#} → {s.energy:0.#}\n" +
+            $"Восстановление: {b.regeneration:0.#} → {s.regeneration:0.#}/с\nУстойчивость: {b.resistance:P0} → {s.resistance:P0}\n" +
+            $"Охлаждение: {b.cooling:0.#} → {s.cooling:0.#}/с\n\nОРУЖИЕ (каждый слот отдельно)\n";
+        if (currentLoadout?.weaponSlots != null)
+            foreach (var item in currentLoadout.weaponSlots)
+            {
+                if (item == null || string.IsNullOrEmpty(item.id)) continue;
+                var w = WeaponStatsCalculator.Calculate(item, targetShipWeapon != null ? targetShipWeapon.baseCooldown : .6f);
+                statsLabel.text += $"{item.name} / {w.kind}\nУрон {w.damage:0.#}; DPS* {w.NominalDps:0.#}; КД {w.cooldown:0.##} с\nЭнергия {w.energy:0.#}; нагрев {ShipReactor.CalculateHeat(w.heat,s.resistance):0.#} (база {w.heat:0.#})\n";
+            }
+        statsLabel.text += "\n* Номинальный DPS без ограничений энергии,\nперегрева, точности и защиты цели.\nОбщий DPS не суммируется.";
+    }
     private Canvas modalCanvas;
     public static FittingWindow OpenWindow { get; private set; }
     private readonly Dictionary<CanvasGroup, bool[]> backgroundStates = new Dictionary<CanvasGroup, bool[]>();
-    public void ShowDescription(FittingItem item) { if (detailsLabel != null) detailsLabel.text = item == null ? "Перетащите модуль в слот своей категории. ПКМ — снять." : item.name + "\n" + item.description; }
+    public void ShowDescription(FittingItem item) { if (detailsLabel != null) detailsLabel.text = item == null ? "Перетащите модуль в слот своей категории. ПКМ — снять." : item.name + "\n" + item.EffectiveDescription; }
     public void ConfigureLayout()
     {
         var root = (RectTransform)transform;
@@ -80,26 +102,30 @@ public class FittingWindow : MonoBehaviour
         var scroll=inventoryContainer.GetComponentInParent<ScrollRect>(true);
         if(scroll!=null)
         {
-            CombatUIStyle.Box(scroll.transform,744,150,412,350);
+            CombatUIStyle.Box(scroll.transform,508,150,280,350);
             var bg=scroll.GetComponent<Image>();if(bg!=null){bg.sprite=null;bg.color=CombatUIStyle.Card;}
             CombatUIStyle.Rect(scroll.viewport,Vector2.zero,Vector2.one,new Vector2(8,8),new Vector2(-8,-8));
             var viewportImage=scroll.viewport.GetComponent<Image>();if(viewportImage!=null){viewportImage.sprite=null;viewportImage.color=new Color(.08f,.11f,.15f);}
             var vertical=inventoryContainer.GetComponent<VerticalLayoutGroup>();if(vertical!=null){vertical.spacing=10;vertical.padding=new RectOffset(6,6,6,6);vertical.childControlHeight=true;vertical.childControlWidth=true;vertical.childForceExpandHeight=false;vertical.childForceExpandWidth=true;}
             var grid=inventoryContainer.GetComponent<GridLayoutGroup>();
-            if(grid!=null){grid.cellSize=new Vector2(184,64);grid.spacing=new Vector2(10,10);grid.constraint=GridLayoutGroup.Constraint.FixedColumnCount;grid.constraintCount=2;grid.padding=new RectOffset(4,4,4,4);}
+            if(grid!=null){grid.cellSize=new Vector2(244,64);grid.spacing=new Vector2(10,10);grid.constraint=GridLayoutGroup.Constraint.FixedColumnCount;grid.constraintCount=1;grid.padding=new RectOffset(4,4,4,4);}
             var drop=CombatUIStyle.Ensure<InventoryDropZone>(scroll.viewport.gameObject);drop.window=this;
         }
-        var inventoryTitle=CombatUIStyle.Text("InventoryHeading",transform,"ИНВЕНТАРЬ",17);CombatUIStyle.Box(inventoryTitle.transform,744,122,412,25);
+        var inventoryTitle=CombatUIStyle.Text("InventoryHeading",transform,"ИНВЕНТАРЬ",17);CombatUIStyle.Box(inventoryTitle.transform,508,122,280,25);
+        statsLabel=CombatUIStyle.Text("ShipStatistics",transform,"",14);
+        CombatUIStyle.Box(statsLabel.transform,808,112,350,490);
+        statsLabel.enableAutoSizing=true; statsLabel.fontSizeMin=11; statsLabel.fontSizeMax=14;
+        RefreshStats();
         foreach(var text in GetComponentsInChildren<TextMeshProUGUI>(true))
             if(text!=titleLabel && (text.text.Contains("ГРУППА")||text.text.Contains("ГРУППЫ")||text.text.Contains("ИНВЕНТАРЬ МОДУЛЕЙ")))text.gameObject.SetActive(false);
-        detailsLabel=CombatUIStyle.Text("ModuleDescription",transform,"",14);CombatUIStyle.Box(detailsLabel.transform,744,510,412,84);ShowDescription(null);
-        var presets=CombatUIStyle.Node("PresetButtons",transform);CombatUIStyle.Box(presets.transform,24,548,690,42);
+        detailsLabel=CombatUIStyle.Text("ModuleDescription",transform,"",14);CombatUIStyle.Box(detailsLabel.transform,508,510,280,84);ShowDescription(null);
+        var presets=CombatUIStyle.Node("PresetButtons",transform);CombatUIStyle.Box(presets.transform,24,548,466,42);
         for (int slot = 1; slot <= 3; slot++)
         {
             int captured=slot;
             var save=CombatUIStyle.Button("Save"+slot,presets.transform,"Сохр. "+slot,()=>{if(!CanEdit||currentLoadout==null)return;SyncSlotsToLoadout();LoadoutPresets.Save(currentLoadout,captured);ShowDescription(null);});
             var load=CombatUIStyle.Button("Load"+slot,presets.transform,"Загр. "+slot,()=>{LoadPreset(captured);if(detailsLabel!=null)detailsLabel.text=presetMessage;});
-            CombatUIStyle.Box(save.transform,(slot-1)*230,0,106,36);CombatUIStyle.Box(load.transform,(slot-1)*230+112,0,106,36);
+            CombatUIStyle.Box(save.transform,(slot-1)*156,0,72,36);CombatUIStyle.Box(load.transform,(slot-1)*156+76,0,72,36);
         }
         var layer=CombatUIStyle.Node("ModalDragLayer",transform);
         CombatUIStyle.Rect(layer.transform,Vector2.zero,Vector2.one,Vector2.zero,Vector2.zero);
@@ -108,8 +134,8 @@ public class FittingWindow : MonoBehaviour
     }
     private void ConfigureGroup(Transform container,string caption,float x,float y)
     {
-        var heading=CombatUIStyle.Text(container.name+"Heading",transform,caption,17);CombatUIStyle.Box(heading.transform,x,y,690,25);
-        CombatUIStyle.Box(container,x,y+30,690,74);
+        var heading=CombatUIStyle.Text(container.name+"Heading",transform,caption,17);CombatUIStyle.Box(heading.transform,x,y,466,25);
+        CombatUIStyle.Box(container,x,y+30,466,74);
         var image=container.GetComponent<Image>();if(image!=null){image.sprite=null;image.color=new Color(.08f,.11f,.15f);image.raycastTarget=false;}
         var layout=container.GetComponent<HorizontalLayoutGroup>();if(layout!=null){layout.spacing=12;layout.padding=new RectOffset(4,4,4,4);layout.childControlWidth=true;layout.childControlHeight=true;layout.childForceExpandWidth=true;layout.childForceExpandHeight=true;}
     }
@@ -532,91 +558,10 @@ public class FittingWindow : MonoBehaviour
     {
         if (!CanEdit) return;
         if (targetShipHealth == null) ResolveTargetShip();
-        if (targetShipHealth == null) return;
-
-        if (targetShipMovement == null) targetShipMovement = targetShipHealth.GetComponent<ShipMovement>();
-        if (targetShipWeapon == null) targetShipWeapon = targetShipHealth.GetComponent<ShipWeapon>();
-
-        float totalShieldHP = 0f;
-        float totalSpeedAdd = 0f;
-        float totalAccelAdd = 0f;
-        float totalMassAdd = 0f;
-        float totalLockTimeAdd = 0f;
-
-        List<FittingItem> installedWeapons = new List<FittingItem>();
-
-        foreach (var s in weaponSlots)
-        {
-            if (s.Item != null)
-            {
-                installedWeapons.Add(s.Item);
-                totalShieldHP += s.Item.shieldBonus;
-                totalSpeedAdd += s.Item.speedBonus;
-                totalAccelAdd += s.Item.accelBonus;
-                totalMassAdd += s.Item.massBonus;
-                totalLockTimeAdd += s.Item.lockTimeBonus;
-            }
-        }
-        foreach (var s in shieldSlots)
-        {
-            if (s.Item != null)
-            {
-                totalShieldHP += s.Item.shieldBonus;
-                totalSpeedAdd += s.Item.speedBonus;
-                totalAccelAdd += s.Item.accelBonus;
-                totalMassAdd += s.Item.massBonus;
-                totalLockTimeAdd += s.Item.lockTimeBonus;
-            }
-        }
-        foreach (var s in engineSlots)
-        {
-            if (s.Item != null)
-            {
-                totalShieldHP += s.Item.shieldBonus;
-                totalSpeedAdd += s.Item.speedBonus;
-                totalAccelAdd += s.Item.accelBonus;
-                totalMassAdd += s.Item.massBonus;
-                totalLockTimeAdd += s.Item.lockTimeBonus;
-            }
-        }
-
-        if (targetShipWeapon != null)
-            targetShipWeapon.SetEquippedWeapons(installedWeapons);
-
-        float baseSpeed = shipDefinition != null ? shipDefinition.baseMaxSpeed : 5f;
-        float baseAccel = shipDefinition != null ? shipDefinition.baseAcceleration : 12f;
-        float baseShield = shipDefinition != null ? shipDefinition.baseShieldHP : 50f;
-        float baseMass = shipDefinition != null ? shipDefinition.baseMass : 2f;
-        float baseLockTime = shipDefinition != null ? shipDefinition.baseLockTime : 0.5f;
-
-        if (targetShipMovement != null)
-        {
-            targetShipMovement.maxSpeed = baseSpeed + totalSpeedAdd;
-            targetShipMovement.acceleration = baseAccel + totalAccelAdd;
-        }
-
-        if (targetShipHealth.Data != null)
-        {
-            float oldMaxShield = targetShipHealth.Data.maxShieldHP;
-            float newMaxShield = baseShield + totalShieldHP;
-            float delta = newMaxShield - oldMaxShield;
-
-            targetShipHealth.Data.maxShieldHP = newMaxShield;
-            targetShipHealth.Data.currentShieldHP = Mathf.Clamp(
-                targetShipHealth.Data.currentShieldHP + delta,
-                0f,
-                newMaxShield);
-
-            targetShipHealth.Data.mass = Mathf.Max(0.5f, baseMass + totalMassAdd);
-
-            // Время захвата: база + бонусы, минимум 0.05 сек
-            targetShipHealth.Data.lockTime = Mathf.Max(0.05f, baseLockTime + totalLockTimeAdd);
-
-            if (targetShipMovement != null)
-                targetShipMovement.ApplyMassFromData();
-        }
+        SyncSlotsToLoadout();
+        ShipStatsCalculator.Apply(targetShipHealth, shipDefinition, currentLoadout);
+        RefreshStats();
     }
-
     private void OnShipSelected(ShipDefinition newShip)
     {
         if (!CanEdit) return;

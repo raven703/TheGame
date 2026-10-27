@@ -144,4 +144,68 @@ public class CombatFeatureTests
         Physics2D.SyncTransforms();
         Assert.AreSame(far, method.Invoke(null, args));
     }
+    [TestCase(0f,20f)] [TestCase(.25f,15f)] [TestCase(-1f,20f)] [TestCase(1f,5f)]
+    public void Resistance_ClampsAndScalesHeat(float resistance,float expected)
+    {
+        var reactor=Add("ShipReactor");
+        reactor.GetType().GetProperty("HeatResistance").SetValue(reactor,resistance);
+        Assert.IsTrue((bool)Call(reactor,"TrySpend",10f,20f));
+        Assert.AreEqual(expected,Read<float>(reactor,"Heat"),.001f);
+        Assert.AreEqual(90f,Read<float>(reactor,"Energy"));
+        Assert.AreEqual(15f,(float)reactor.GetType().GetField("cooling").GetValue(reactor));
+    }
+    [Test] public void Resistance_LegacyEquipment_DoesNotAccumulate()
+    {
+        var definition=ScriptableObject.CreateInstance(RuntimeType("ShipDefinition"));
+        try {
+            object loadout=JsonUtility.FromJson("{\"shipId\":\"legacy\",\"engineSlots\":[{\"id\":\"e2\"}]}",RuntimeType("ShipLoadout"));
+            var calculate=RuntimeType("ShipStatsCalculator").GetMethod("Calculate");
+            for(int i=0;i<3;i++){
+                var result=calculate.Invoke(null,new[]{definition,loadout});
+                Assert.AreEqual(.1f,(float)result.GetType().GetField("resistance").GetValue(result),.001f);
+            }
+            var baseline=calculate.Invoke(null,new object[]{definition,null});
+            Assert.AreEqual(0f,(float)baseline.GetType().GetField("resistance").GetValue(baseline));
+            var old=JsonUtility.FromJson("{\"id\":\"custom\"}",RuntimeType("FittingItem"));
+            Assert.AreEqual(0f,Read<float>(old,"EffectiveHeatResistanceBonus"));
+        } finally {UnityEngine.Object.DestroyImmediate(definition);}
+    }
+    [Test] public void Resistance_AbilityUsesSharedReactor()
+    {
+        var movement=Add("ShipMovement");
+        var reactor=movement.gameObject.AddComponent(RuntimeType("ShipReactor"));
+        reactor.GetType().GetMethod("Awake",BindingFlags.NonPublic|BindingFlags.Instance).Invoke(reactor,null);
+        reactor.GetType().GetProperty("HeatResistance").SetValue(reactor,.25f);
+        var abilities=movement.gameObject.AddComponent(RuntimeType("ShipAbilities"));
+        var spend=abilities.GetType().GetMethod("Spend",BindingFlags.NonPublic|BindingFlags.Instance);
+        Assert.IsTrue((bool)spend.Invoke(abilities,new object[]{25f,20f}));
+        Assert.AreEqual(15f,Read<float>(reactor,"Heat"));
+        Assert.AreEqual(75f,Read<float>(reactor,"Energy"));
+    }
+
+    [TestCase(0f)]
+    [TestCase(.25f)]
+    [TestCase(.75f)]
+    public void Resistance_DoesNotAlterCoolingOrEnergyRegeneration(float resistance)
+    {
+        var reactor = Add("ShipReactor");
+        reactor.GetType().GetProperty("HeatResistance").SetValue(reactor, resistance);
+        Assert.IsTrue((bool)Call(reactor, "TrySpend", 40f, 80f));
+        float before = Read<float>(reactor, "Heat");
+        Call(reactor, "Tick", .5f);
+        Assert.AreEqual(before - 7.5f, Read<float>(reactor, "Heat"), .001f);
+        Assert.AreEqual(66f, Read<float>(reactor, "Energy"), .001f);
+    }
+
+    [Test] public void Reactor_RecoveryThresholdRemains35()
+    {
+        var reactor = Add("ShipReactor");
+        Call(reactor, "TrySpend", 10f, 100f);
+        Call(reactor, "Tick", 4f);
+        Assert.AreEqual(40f, Read<float>(reactor, "Heat"), .001f);
+        Assert.IsTrue(Read<bool>(reactor, "Overheated"));
+        Call(reactor, "Tick", 1f / 3f);
+        Assert.AreEqual(35f, Read<float>(reactor, "Heat"), .001f);
+        Assert.IsFalse(Read<bool>(reactor, "Overheated"));
+    }
 }

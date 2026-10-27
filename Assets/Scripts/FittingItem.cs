@@ -38,6 +38,12 @@ public class FittingItem
     public float speedBonus;
     public float accelBonus;
     public float massBonus;
+    public float heatResistanceBonus;
+    // Legacy saves contain item snapshots. e2 retains its identity and quantity.
+    public float EffectiveHeatResistanceBonus => id == "e2" ? .1f : heatResistanceBonus;
+    public string EffectiveDescription => id == "e2"
+        ? "Тяга +10, скорость +1, масса +0.5; устойчивость к перегреву +10 п.п."
+        : description;
 
     [Tooltip("Бонус к времени захвата цели. Отрицательный = быстрее захват.")]
     public float lockTimeBonus;
