@@ -7,13 +7,41 @@
 equal ownership. Placement is either the top-level free inventory or one ship's
 stable slot index; weapon hardpoint IDs and actual fire sectors are unchanged.
 
-`PlayerEquipment` is a detached ledger. Reads return snapshots. Move, unequip and
+`Game.Core.PlayerEquipment` is the sole detached ledger (stage 1, 2026-10-28).
+The existing Unity `PlayerEquipment` is a facade, not another owner. Reads return snapshots. Move, unequip and
 preset application stage a full snapshot, validate uniqueness and exact conservation
 of instance IDs and item data, invoke the writer, then publish. A throwing writer
 leaves the original ledger and UI unchanged. UI refresh happens only after success.
 The disk writer validates JSON, flushes a `.pending` file, reads it back, and uses
 `File.Replace` (old state in `.previous`). No fallback overwrites a failed save.
 Unreadable/future/duplicate-identity saves are errors, never fresh profiles.
+
+## Stage 1 boundary
+
+Core contains identity/ownership, free stock, placement, compatibility, empty-only
+moves, unequip, auto-equip, plan resolution/application, one-time starter issuance
+and legacy slot-repair rules. Commands receive current permission explicitly from
+the Unity facade; Core never reads CombatSession/GameState. Synchronous locked
+commands reject writer reentrancy and publish only after successful persistence.
+Snapshots and the writer's candidate are detached; items are immutable.
+
+EquipmentDataAdapter retains complete saved FittingItem records by opaque key,
+not inventory placement. It maps ShipDefinition capacities/stable hardpoint IDs to
+minimal Core data; visual values and saved stats remain outside Core and are
+reconstructed from saved records, never refreshed from a catalog. Existing enum
+values, v4 format, preset keys and empty indices are preserved. Legacy parsing,
+JsonUtility, PlayerPrefs, paths, verified backups and EquipmentFileStore atomic
+file replacement remain Unity/infrastructure adapters. No scenes/prefabs changed.
+
+Verified stage-1 backup: `Temp/SaveBackups/architecture-stage1-20261028-144405`.
+Final results: Core Release 0 warnings/errors; dotnet 26/26; EditMode 39/39;
+PlayMode 17/17 (all final runs 0 failed/skipped). Real isolated UI test checks
+green highlight, cancel/close, occupied refusal, write failure, unequip, preset,
+ship change/auto-equip, live speed/UI refresh and file re-read. Real JSON,
+`.previous`, pre-v4 backup hashes unchanged; gameplay PlayerPrefs unchanged.
+Intermediate failures, warning distinctions and exact job IDs are recorded in
+`docs/architecture-refactor.md`. No standalone/IL2CPP or manual visual acceptance.
+Reactor and stats remain Unity-coupled; stage 2 has not started.
 
 ## Fitting rules
 

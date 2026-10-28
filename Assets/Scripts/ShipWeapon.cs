@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
@@ -121,7 +121,7 @@ public class ShipWeapon : MonoBehaviour
     public float fallbackLockTime = 0.5f;
 
     // ============ TARGET STATE ============
-    private readonly Dictionary<string, float> weaponReadyAt = new Dictionary<string, float>();
+    private readonly Game.Core.WeaponCombat combat = new Game.Core.WeaponCombat();
     public float TargetingDisruptionRemaining => Mathf.Max(0f, targetingDisabledUntil - Time.time);
 
     private float targetingDisabledUntil;
@@ -366,31 +366,25 @@ public class ShipWeapon : MonoBehaviour
             // All equipped weapons use the same cover/resource path, including legacy prefabs.
             WeaponKind kind = weaponModule != null ? weaponModule.EffectiveWeaponKind : WeaponKind.Laser;
             string key = MountId(i);
-            if (weaponReadyAt.TryGetValue(key, out float ready) && Time.time < ready) continue;
             var reactor = ownerHealth.GetComponent<ShipReactor>();
-            if (reactor == null || !reactor.TrySpend(stats.energy, stats.heat)) continue;
-            weaponReadyAt[key] = Time.time + stats.cooldown;
-
-            Asteroid cover = Asteroid.FindCover(spawnPos, endPos, out Vector2 impact);
-            if (cover != null)
-            {
-                endPos = impact;
-                cover.TakeDamage(currentDamage);
-                CombatSession.Log($"{name}: выстрел в укрытие");
-            }
-            else if (Target != null)
-            {
-                var targetMovement = Target.GetComponent<ShipMovement>();
-                float speed = targetMovement != null && targetMovement.Rb != null
-                    ? targetMovement.Rb.linearVelocity.magnitude : 0f;
-                float evasion = Target.Data != null ? Target.Data.GetTotalEvasion(speed) : 0f;
-                float accuracyBonus = kind == WeaponKind.Laser ? .1f : kind == WeaponKind.Plasma ? -.1f : 0f;
-                if (UnityEngine.Random.value < Mathf.Clamp01(ownerHealth.Data.accuracy + accuracyBonus - evasion))
-                {
-                    Target.TakeWeaponDamage(currentDamage, kind, targetedModule);
-                }
-                else CombatSession.Log($"{name}: промах ({kind})");
-            }
+            var targetMovement = Target.GetComponent<ShipMovement>();
+            float speed = targetMovement != null && targetMovement.Rb != null ? targetMovement.Rb.linearVelocity.magnitude : 0f;
+            float evasion = Target.Data != null ? Target.Data.GetTotalEvasion(speed) : 0f;
+            Asteroid cover = null;
+            var coreStats = new Game.Core.WeaponStatValues { Kind=(Game.Core.WeaponKind)(int)kind, Damage=stats.damage,
+                Cooldown=stats.cooldown,Energy=stats.energy,Heat=stats.heat };
+            var shot = combat.TryFire(key,Time.time,coreStats,true,true,
+                !ownerHealth.Data.GetModule(ModuleType.Weapon).isDestroyed,
+                reactor != null ? reactor.CombatModel : null,ownerHealth.Data.accuracy,evasion,UnityCombatRandom.Instance,
+                () => { cover=Asteroid.FindCover(spawnPos,endPos,out Vector2 impact);if(cover!=null)endPos=impact;return cover!=null?cover.Model:null; },
+                Target.Data != null ? Target.Data.Damage : null,
+                targetedModule.HasValue ? (Game.Core.CombatModule?)(int)targetedModule.Value : null,
+                Target.ReportDamage, bypass=>Target.ReportBypass(bypass),
+                transition=>reactor.ReportCombatTransition(transition),
+                (state,destroyed)=>cover.ReportDamage(destroyed));
+            if(!shot.Fired)continue;
+            if(shot.Outcome==Game.Core.ShotOutcome.Cover)CombatSession.Log($"{name}: выстрел в укрытие");
+            else if(shot.Outcome==Game.Core.ShotOutcome.Miss)CombatSession.Log($"{name}: промах ({kind})");
             DrawShot(spawnPos, endPos, shotColor, visual);
         }
     }

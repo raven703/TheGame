@@ -29,9 +29,8 @@ public class FittingItem
     public float trackingSpeed = 90f;
     public float aimTolerance = 3f;
     public WeaponKind weaponKind = WeaponKind.Laser;
-    public WeaponKind EffectiveWeaponKind => weaponKind != WeaponKind.Laser ? weaponKind
-        : id == "w3" ? WeaponKind.Railgun
-        : id == "w2" || visualType == WeaponVisualType.Plasma ? WeaponKind.Plasma : WeaponKind.Laser;
+    public WeaponKind EffectiveWeaponKind => (WeaponKind)(int)Game.Core.WeaponStatRules.EffectiveKind(id,
+        (Game.Core.WeaponKind)(int)weaponKind,visualType==WeaponVisualType.Plasma);
     public string id;
     // Definition identity remains id; each owned physical copy has its own identity.
     public string instanceId;
@@ -49,7 +48,7 @@ public class FittingItem
     public float massBonus;
     public float heatResistanceBonus;
     // Legacy saves contain item snapshots. e2 retains its identity and quantity.
-    public float EffectiveHeatResistanceBonus => id == "e2" ? .1f : heatResistanceBonus;
+    public float EffectiveHeatResistanceBonus => Game.Core.StatMath.EffectiveResistanceBonus(id,heatResistanceBonus);
     public string EffectiveDescription => id == "e2"
         ? "Тяга +10, скорость +1, масса +0.5; устойчивость к перегреву +10 п.п."
         : description;

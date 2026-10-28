@@ -11,8 +11,8 @@ public class ShipData
     public const float DefaultEngineMaxHP = 30f;
 
     // Прочность корпуса
-    public float maxHullHP;
-    public float currentHullHP;
+    public float maxHullHP { get => Damage.MaxHull; set => Damage.SetMaxHull(value); }
+    public float currentHullHP { get => Damage.Hull; set => Damage.SetHull(value); }
 
     // Параметры физики и инерции
     public float mass = 2f;             // Масса корабля (влияет на инерцию)
@@ -24,76 +24,28 @@ public class ShipData
     public float speedEvasionMultiplier = 0.05f; // Бонус уклонения за каждый unit/sec скорости
 
     // Динамический щит
-    public float maxShieldHP = 50f;
-    public float currentShieldHP = 50f;
+    public float maxShieldHP { get => Damage.MaxShield; set => Damage.SetMaxShield(value); }
+    public float currentShieldHP { get => Damage.Shield; set => Damage.SetShield(value); }
 
     // Захват цели: время в секундах (база + бонусы модулей)
     public float lockTime = 0.5f;
 
     // Состояния повреждений отдельных узлов
-    public Dictionary<ModuleType, ShipModule> modules = new Dictionary<ModuleType, ShipModule>();
+    public Game.Core.DamageState Damage { get; }
+    private readonly Dictionary<ModuleType, ShipModule> moduleViews = new Dictionary<ModuleType, ShipModule>();
+    public IReadOnlyDictionary<ModuleType, ShipModule> modules => new System.Collections.ObjectModel.ReadOnlyDictionary<ModuleType, ShipModule>(moduleViews);
 
     public ShipData(float maxHull)
     {
-        maxHullHP = Mathf.Max(0f, maxHull);
-        currentHullHP = maxHullHP;
-
-        modules[ModuleType.Weapon] = new ShipModule(ModuleType.Weapon, DefaultWeaponMaxHP);
-        modules[ModuleType.Shield] = new ShipModule(ModuleType.Shield, DefaultShieldMaxHP);
-        modules[ModuleType.Engine] = new ShipModule(ModuleType.Engine, DefaultEngineMaxHP);
+        Damage = new Game.Core.DamageState(maxHull);
+        foreach (ModuleType type in System.Enum.GetValues(typeof(ModuleType)))
+            moduleViews[type] = new ShipModule(type, Damage);
     }
-
-    public bool IsDestroyed => currentHullHP <= 0f;
-
-    /// <summary>
-    /// Вычисляет итоговое уклонение с учётом текущей физической скорости.
-    /// </summary>
-    public float GetTotalEvasion(float currentSpeed)
-    {
-        var engineMod = GetModule(ModuleType.Engine);
-        if (engineMod != null && engineMod.isDestroyed)
-            return 0f; // С выбитым двигателем уклонение падает до нуля
-
-        return baseEvasion + (currentSpeed * speedEvasionMultiplier);
-    }
-
-    public ShipModule GetModule(ModuleType type)
-    {
-        return modules.TryGetValue(type, out var module) ? module : null;
-    }
-
-    public float AbsorbDamageWithShield(float damage)
-    {
-        var shieldMod = GetModule(ModuleType.Shield);
-
-        if (shieldMod != null && shieldMod.isDestroyed)
-            return damage;
-
-        if (currentShieldHP <= 0f)
-            return damage;
-
-        if (currentShieldHP >= damage)
-        {
-            currentShieldHP -= damage;
-            return 0f;
-        }
-
-        float excessDamage = damage - currentShieldHP;
-        currentShieldHP = 0f;
-        return excessDamage;
-    }
-
-    public void TakeHullDamage(float amount)
-    {
-        if (amount <= 0f)
-            return;
-
-        currentHullHP = Mathf.Max(0f, currentHullHP - amount);
-    }
-
-    public void TakeModuleDamage(ModuleType type, float amount)
-    {
-        var module = GetModule(type);
-        module?.TakeDamage(amount);
-    }
+    public bool IsDestroyed => Damage.Destroyed;
+    public float GetTotalEvasion(float currentSpeed) => Damage.Evasion(currentSpeed, baseEvasion, speedEvasionMultiplier);
+    public ShipModule GetModule(ModuleType type) => moduleViews.TryGetValue(type, out var module) ? module : null;
+    public float AbsorbDamageWithShield(float damage) => Damage.Absorb(damage);
+    public void TakeHullDamage(float amount) => Damage.HullDamage(amount);
+    public void TakeModuleDamage(ModuleType type, float amount) { if (GetModule(type)!=null) Damage.ModuleDamage((Game.Core.CombatModule)(int)type, amount); }
+    public void ApplyMaximums(float hull, float shield) => Damage.ConfigureMaximums(hull, shield);
 }

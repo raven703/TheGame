@@ -63,3 +63,14 @@ sysinfo.txt
 .Trashes
 ehthumbs.db
 Thumbs.db
+
+# Hand-maintained independent projects (Unity-generated projects stay ignored).
+!/DotNet/Game.Core/Game.Core.csproj
+!/DotNet/Game.Core.Tests/Game.Core.Tests.csproj
+/DotNet/**/bin/
+/DotNet/**/obj/
+/DotNet/**/TestResults/
+
+# Local progress, registry exports and backup material must never be committed.
+ship_loadouts.json*
+*.reg

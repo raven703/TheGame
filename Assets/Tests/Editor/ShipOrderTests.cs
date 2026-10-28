@@ -31,6 +31,28 @@ public class ShipOrderTests
             Assert.AreEqual(mount==2 || mount==type,actual);
         }
     }
+    [Test] public void MountCompatibility_AdapterPreservesSerializedValuesAndCoreBoundary()
+    {
+        var core = Assembly.Load("Game.Core");
+        var rule = core.GetType("Game.Core.MountCompatibilityRules", true);
+        var coreMount = core.GetType("Game.Core.MountCompatibility", true);
+        var coreType = core.GetType("Game.Core.WeaponMountType", true);
+        Assert.AreEqual("Game.Core", rule.Assembly.GetName().Name);
+        foreach (var reference in core.GetReferencedAssemblies())
+            Assert.False(reference.Name.StartsWith("Unity", StringComparison.Ordinal), reference.FullName);
+        foreach (string name in Enum.GetNames(T("MountCompatibility")))
+            Assert.AreEqual(Convert.ToInt32(Enum.Parse(T("MountCompatibility"), name)), Convert.ToInt32(Enum.Parse(coreMount, name)));
+        foreach (string name in Enum.GetNames(T("WeaponMountType")))
+            Assert.AreEqual(Convert.ToInt32(Enum.Parse(T("WeaponMountType"), name)), Convert.ToInt32(Enum.Parse(coreType, name)));
+        foreach (int mount in new[] { 0, 1, 2, 99 }) foreach (int type in new[] { 0, 1, 99 })
+        {
+            bool actual = (bool)T("WeaponMountRules").GetMethod("Accepts").Invoke(null,
+                new[] { Enum.ToObject(T("MountCompatibility"), mount), Enum.ToObject(T("WeaponMountType"), type) });
+            bool expected = (bool)rule.GetMethod("Accepts").Invoke(null,
+                new[] { Enum.ToObject(coreMount, mount), Enum.ToObject(coreType, type) });
+            Assert.AreEqual(expected, actual);
+        }
+    }
     [Test] public void Migration_IsIdempotent_PreservesHolesAndItems_AndSwapChecksBothSides()
     {
         var definition=ScriptableObject.CreateInstance(T("ShipDefinition"));

@@ -3,15 +3,6 @@ using UnityEngine;
 
 public class ShipHealth : MonoBehaviour
 {
-    private const float ModuleHitChance = 0.4f;
-
-    private static readonly ModuleType[] AllModuleTypes =
-    {
-        ModuleType.Weapon,
-        ModuleType.Shield,
-        ModuleType.Engine
-    };
-
     [Header("Ship Definition")]
     [Tooltip("ScriptableObject с базовыми ТТХ. Если назначен — maxHullHP/shield/mass берутся оттуда.")]
     public ShipDefinition shipDefinition;
@@ -25,7 +16,7 @@ public class ShipHealth : MonoBehaviour
     public event Action OnDamageTaken;
     public event Action OnDestroyed;
 
-    private bool isDead;
+
 
     private void Awake()
     {
@@ -34,8 +25,7 @@ public class ShipHealth : MonoBehaviour
 
         if (shipDefinition != null)
         {
-            Data.maxShieldHP = shipDefinition.baseShieldHP;
-            Data.currentShieldHP = shipDefinition.baseShieldHP;
+            Data.Damage.InitializeMaximums(Data.maxHullHP, shipDefinition.baseShieldHP);
             Data.mass = shipDefinition.baseMass;
             Data.lockTime = shipDefinition.baseLockTime;
         }
@@ -55,91 +45,35 @@ public class ShipHealth : MonoBehaviour
 
     public void TakeWeaponDamage(float amount, WeaponKind kind, ModuleType? targetedModule = null)
     {
-        if (CombatSession.IsPreparing || Data == null || Data.IsDestroyed || amount <= 0f) return;
-        if (kind == WeaponKind.Plasma)
-        {
-            var shield = Data.GetModule(ModuleType.Shield);
-            if (shield != null && !shield.isDestroyed)
-                Data.currentShieldHP -= Mathf.Min(Data.currentShieldHP, amount * .5f);
-        }
-        float bypass = kind == WeaponKind.Railgun ? amount * .4f : 0f;
-        TakeDamage(amount - bypass, targetedModule);
-        if (bypass > 0f)
-        {
-            Data.TakeHullDamage(bypass);
-            CombatSession.Log($"{name}: пробитие корпуса {bypass:F0}");
-            OnDamageTaken?.Invoke();
-        }
+        if(Data==null)return;
+        Data.Damage.WeaponDamage(amount,(Game.Core.WeaponKind)(int)kind,ToCore(targetedModule),UnityCombatRandom.Instance,
+            !CombatSession.IsPreparing,ReportDamage,ReportBypass);
     }
-
+    private static Game.Core.CombatModule? ToCore(ModuleType? module) => module.HasValue ? (Game.Core.CombatModule?)(int)module.Value : null;
     public void TakeDamage(float amount, ModuleType? targetedModule = null)
     {
-        if (CombatSession.IsPreparing || Data == null || Data.IsDestroyed || amount <= 0f)
-            return;
-
-        float remainingDamage = Data.AbsorbDamageWithShield(amount);
-
-        if (remainingDamage <= 0f)
-        {
-            CombatSession.Log($"{name}: щит поглотил {amount:F0}");
-            OnDamageTaken?.Invoke();
-            return;
-        }
-
-        if (targetedModule.HasValue)
-        {
-            ApplyModuleDamage(remainingDamage, targetedModule.Value);
-        }
-        else if (UnityEngine.Random.value < ModuleHitChance)
-        {
-            ApplyModuleDamage(remainingDamage, AllModuleTypes[UnityEngine.Random.Range(0, AllModuleTypes.Length)]);
-        }
+        if(Data==null)return;
+        ReportDamage(Data.Damage.Damage(amount,ToCore(targetedModule),UnityCombatRandom.Instance,!CombatSession.IsPreparing));
+    }
+    internal void ReportDamage(Game.Core.DamageResult result)
+    {
+        if(!result.Applied)return;
+        if(result.ShieldOnly)CombatSession.Log($"{name}: щит поглотил {result.Absorbed:F0}");
         else
         {
-            ApplyHullDamage(remainingDamage);
+            if(result.ModuleDestroyed)CombatSession.Log($"{name}: модуль {(ModuleType)(int)result.Module.Value} выбит");
+            CombatSession.Log($"{name}: урон {result.Remaining:F0}, корпус {Data.currentHullHP:F0}");
         }
-
-        CombatSession.Log($"{name}: урон {remainingDamage:F0}, корпус {Data.currentHullHP:F0}");
         OnDamageTaken?.Invoke();
     }
-
-    private void ApplyModuleDamage(float amount, ModuleType moduleType)
+    internal void ReportBypass(float bypass)
     {
-        var module = Data.GetModule(moduleType);
-        if (module == null)
-        {
-            ApplyHullDamage(amount);
-            return;
-        }
-
-        var wasAlreadyDestroyed = module.isDestroyed;
-        Data.TakeModuleDamage(moduleType, amount);
-
-        if (wasAlreadyDestroyed)
-        {
-            float spilloverDamage = amount * 0.5f;
-            Data.TakeHullDamage(spilloverDamage);
-            Debug.Log($"{gameObject.name}: Попадание в выбитый модуль {moduleType}! {spilloverDamage} урона прошло в корпус.");
-        }
-        else
-        {
-            if (module.isDestroyed) CombatSession.Log($"{name}: модуль {moduleType} выбит");
-            Debug.Log($"{gameObject.name}: Попадание в модуль {moduleType} - урон {amount}, HP модуля {module.currentHP}/{module.maxHP}{(module.isDestroyed ? " (МОДУЛЬ ВЫБИТ)" : string.Empty)}");
-        }
+        CombatSession.Log($"{name}: пробитие корпуса {bypass:F0}");
+        OnDamageTaken?.Invoke();
     }
-
-    private void ApplyHullDamage(float amount)
-    {
-        Data.TakeHullDamage(amount);
-        Debug.Log($"{gameObject.name}: Попадание в корпус - урон {amount}, HP корпуса {Data.currentHullHP}/{Data.maxHullHP}");
-    }
-
     private void Die()
     {
-        if (isDead)
-            return;
-
-        isDead = true;
+        if(Data==null||!Data.Damage.TryReportDestruction())return;
         CombatSession.Log($"{name}: уничтожен");
         OnDestroyed?.Invoke();
         Debug.Log($"{gameObject.name} уничтожен!");

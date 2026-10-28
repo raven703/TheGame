@@ -112,9 +112,9 @@ public class CombatFeatureTests
         Call(railTarget, "TakeWeaponDamage", 20f, Enum.Parse(kind, "Railgun"), null);
         object plasma = Read<object>(plasmaTarget, "Data");
         object rail = Read<object>(railTarget, "Data");
-        Assert.AreEqual(20f, (float)plasma.GetType().GetField("currentShieldHP").GetValue(plasma));
-        Assert.AreEqual(38f, (float)rail.GetType().GetField("currentShieldHP").GetValue(rail));
-        Assert.AreEqual(92f, (float)rail.GetType().GetField("currentHullHP").GetValue(rail));
+        Assert.AreEqual(20f, (float)plasma.GetType().GetProperty("currentShieldHP").GetValue(plasma));
+        Assert.AreEqual(38f, (float)rail.GetType().GetProperty("currentShieldHP").GetValue(rail));
+        Assert.AreEqual(92f, (float)rail.GetType().GetProperty("currentHullHP").GetValue(rail));
     }
 
     [Test] public void TargetDisruption_DoesNotLoseTargetOrShortenExistingEffect()

@@ -79,8 +79,7 @@ public class ShipAbilities : MonoBehaviour
 
         if (!Spend(30f, 15f)) return false;
         CombatSession.Log($"{name}: перегрузка щита");
-        shipHealth.Data.currentShieldHP = Mathf.Min(shipHealth.Data.maxShieldHP, shipHealth.Data.currentShieldHP + 30f);
-        shipHealth.Data.TakeHullDamage(10f);
+        shipHealth.Data.Damage.BoostShield(30f, 10f);
 
         shieldBoostCooldown = 8f;
         Debug.Log($"[АКТИВАЦИЯ] {gameObject.name} перегрузил щиты! (+30 Щит, -10 Корпус)");

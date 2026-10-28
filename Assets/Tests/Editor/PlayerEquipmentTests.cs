@@ -104,4 +104,51 @@ public class PlayerEquipmentTests
         foreach(string bad in new[]{"{}",Initial.Replace("\"instanceId\":\"b\"","\"instanceId\":\"a\""),Initial.Replace("\"instanceId\":\"b\"","\"instanceId\":\"\"")})
             Assert.Throws<TargetInvocationException>(()=>Activator.CreateInstance(T("PlayerEquipment"),bad,(Action<string>)(_=>{})));
     }
+    [Test] public void V4RoundTripRetainsFullSavedItemDataAndDetachedSnapshots()
+    {
+        var data=Snapshot(ledger);var item=((IList)Field(data,"inventory"))[0];
+        foreach(var field in new[]{"damageBonus","cooldownBonus","shieldBonus","speedBonus","accelBonus","massBonus","heatResistanceBonus","lockTimeBonus","fixedFireSector","trackingSpeed","aimTolerance"})
+            item.GetType().GetField(field).SetValue(item,12.345f);
+        item.GetType().GetField("iconColor").SetValue(item,new Color(.13f,.27f,.39f,.51f));
+        item.GetType().GetField("description").SetValue(item,"saved custom data, not current catalog");
+        string input=JsonUtility.ToJson(data,true);
+        var restored=Activator.CreateInstance(T("PlayerEquipment"),input,(Action<string>)(_=>{}));
+        Assert.AreEqual(input,Json(restored));
+        var read=Snapshot(restored);((IList)Field(read,"inventory")).Clear();((IList)Field(((IList)Field(read,"loadouts"))[0],"weaponSlots")).Clear();
+        Assert.AreEqual(input,Json(restored));
+        for(int i=0;i<3;i++){restored=Activator.CreateInstance(T("PlayerEquipment"),Json(restored),(Action<string>)(_=>{}));Assert.AreEqual(input,Json(restored));}
+    }
+    [Test] public void IsolatedFileWriterFailurePreservesExistingBytesAndPublishesNothing()
+    {
+        string directory=System.IO.Path.Combine(System.IO.Path.GetTempPath(),"TheGame-equipment-"+Guid.NewGuid().ToString("N"));
+        System.IO.Directory.CreateDirectory(directory);string path=System.IO.Path.Combine(directory,"ship_loadouts.json");
+        try
+        {
+            var store=Activator.CreateInstance(T("EquipmentFileStore"),path,null);
+            Call(store,"Write",Initial);byte[] original=System.IO.File.ReadAllBytes(path);
+            Action<string> fail=_=>{throw new System.IO.IOException("injected before atomic replace");};
+            var failing=Activator.CreateInstance(T("EquipmentFileStore"),path,fail);
+            var isolated=Activator.CreateInstance(T("PlayerEquipment"),Initial,(Action<string>)(json=>Call(failing,"Write",json)));
+            string before=Json(isolated);
+            Assert.False((bool)Call(isolated,"Move","test-a",definition,"a",Group,2,-1,true,null));
+            Assert.AreEqual(before,Json(isolated));CollectionAssert.AreEqual(original,System.IO.File.ReadAllBytes(path));
+            Assert.False(System.IO.File.Exists(path+".pending"));
+            isolated=Activator.CreateInstance(T("PlayerEquipment"),Initial,(Action<string>)(json=>Call(store,"Write",json)));
+            Assert.True((bool)Call(isolated,"Move","test-a",definition,"a",Group,2,-1,true,null));
+            var reloaded=Activator.CreateInstance(T("PlayerEquipment"),System.IO.File.ReadAllText(path),(Action<string>)(_=>{}));
+            Assert.AreEqual(Json(isolated),Json(reloaded));var slots=(IList)Field(Ship(reloaded),"weaponSlots");
+            Assert.IsNull(slots[0]);Assert.IsNull(slots[1]);Assert.AreEqual("a",Field(slots[2],"instanceId"));
+            CollectionAssert.AreEqual(original,System.IO.File.ReadAllBytes(path+".previous"));
+        }
+        finally{System.IO.Directory.Delete(directory,true);}
+    }
+    [Test] public void CategoryEnumMappingAndHardpointIdsStayStable()
+    {
+        var core=Assembly.Load("Game.Core").GetType("Game.Core.EquipmentCategory",true);
+        foreach(var pair in new[]{new[]{"Top_Weapons","Weapons"},new[]{"Center_Shields","Shields"},new[]{"Bottom_Engines","Engines"}})
+            Assert.AreEqual(Convert.ToInt32(Enum.Parse(T("SlotGroup"),pair[0])),Convert.ToInt32(Enum.Parse(core,pair[1])));
+        var converted=T("EquipmentDataAdapter").GetMethod("Definition").Invoke(null,new object[]{definition});
+        var point=converted.GetType().GetMethod("Hardpoint").Invoke(converted,new object[]{2});
+        Assert.AreEqual("test-a:weapon:2",Field(point,"Id"));
+    }
 }

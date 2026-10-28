@@ -3,11 +3,17 @@ using UnityEngine;
 /// <summary>Destructible static cover; ships collide with it and direct fire stops at it.</summary>
 public class Asteroid : MonoBehaviour
 {
-    public float hitPoints = 120f;
+    [SerializeField, UnityEngine.Serialization.FormerlySerializedAs("hitPoints")] private float initialHitPoints = 120f;
+    private Game.Core.CoverState model;
+    internal Game.Core.CoverState Model => model ?? (model = new Game.Core.CoverState(initialHitPoints));
+    public float hitPoints { get => Model.HitPoints; set => Model.SetHitPoints(value); }
     public void TakeDamage(float amount)
     {
-        hitPoints -= Mathf.Max(0f, amount);
-        if (hitPoints <= 0f)
+        ReportDamage(Model.Damage(amount));
+    }
+    internal void ReportDamage(bool destroyed)
+    {
+        if (destroyed)
         {
             CombatSession.Log("Астероид разрушен");
             Destroy(gameObject);

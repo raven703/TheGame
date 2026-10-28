@@ -19,9 +19,9 @@ public static class WeaponMountRules
 {
     public static bool Accepts(MountCompatibility mount, WeaponMountType type)
     {
-        return mount == MountCompatibility.Universal ||
-            (mount == MountCompatibility.FixedOnly && type == WeaponMountType.Fixed) ||
-            (mount == MountCompatibility.TurretOnly && type == WeaponMountType.Turret);
+        // Keep serialized Unity types in place; the rule itself has one owner in Core.
+        return Game.Core.MountCompatibilityRules.Accepts(
+            (Game.Core.MountCompatibility)(int)mount, (Game.Core.WeaponMountType)(int)type);
     }
     public static WeaponHardpoint Get(ShipDefinition definition, int slot)
     {
@@ -33,8 +33,9 @@ public static class WeaponMountRules
     }
     public static bool Fits(ShipDefinition definition, int slot, FittingItem item)
     {
-        return item == null || (item.allowedGroup == SlotGroup.Top_Weapons && slot >= 0 &&
-            (definition == null || slot < definition.weaponSlots) && Accepts(Get(definition,slot).compatibility,item.mountType));
+        var description = EquipmentDataAdapter.Definition(definition) ?? new Game.Core.EquipmentShipDefinition {
+            Id = "legacy", WeaponSlots = int.MaxValue };
+        return Game.Core.EquipmentRules.Fits(description,Game.Core.EquipmentCategory.Weapons,slot,new EquipmentDataAdapter().ToCore(item));
     }
     public static bool CanSwap(ShipDefinition definition, int a, FittingItem first, int b, FittingItem second)
     {
@@ -42,38 +43,19 @@ public static class WeaponMountRules
     }
     public static bool Validate(ShipDefinition definition, ShipLoadout loadout)
     {
-        if (definition == null || loadout == null || loadout.shipId != definition.shipId) return false;
-        if (loadout.weaponSlots.Count > definition.weaponSlots || loadout.shieldSlots.Count > definition.shieldSlots || loadout.engineSlots.Count > definition.engineSlots) return false;
-        for (int i=0;i<loadout.weaponSlots.Count;i++) if (!Fits(definition,i,loadout.weaponSlots[i])) return false;
-        return Groups(loadout.shieldSlots,SlotGroup.Center_Shields) && Groups(loadout.engineSlots,SlotGroup.Bottom_Engines);
-    }
-    private static bool Groups(List<FittingItem> items, SlotGroup group)
-    {
-        foreach(var item in items) if(item != null && item.allowedGroup != group) return false;
-        return true;
+        return Game.Core.EquipmentRules.Validate(EquipmentDataAdapter.Definition(definition),new EquipmentDataAdapter().ToCore(loadout));
     }
     // Active saves migrate in place. Presets must use Validate, never this repair path.
     public static int Migrate(ShipDefinition definition, ShipLoadout loadout)
     {
         if (definition == null || loadout == null) return 0;
+        var adapter=new EquipmentDataAdapter(true);
+        var ship=adapter.ToCore(loadout);var inventory=adapter.ToCore(loadout.inventory);
+        int moved=Game.Core.EquipmentRules.Repair(EquipmentDataAdapter.Definition(definition),ship,inventory);
         if(loadout.inventory==null)loadout.inventory=new List<FittingItem>();
-        int moved=Repair(loadout.weaponSlots,definition.weaponSlots,loadout.inventory,(i,item)=>Fits(definition,i,item));
-        moved+=Repair(loadout.shieldSlots,definition.shieldSlots,loadout.inventory,(i,item)=>item.allowedGroup==SlotGroup.Center_Shields);
-        moved+=Repair(loadout.engineSlots,definition.engineSlots,loadout.inventory,(i,item)=>item.allowedGroup==SlotGroup.Bottom_Engines);
+        adapter.RestoreReferences(loadout.weaponSlots,ship.Weapons);adapter.RestoreReferences(loadout.shieldSlots,ship.Shields);
+        adapter.RestoreReferences(loadout.engineSlots,ship.Engines);adapter.RestoreReferences(loadout.inventory,inventory);
         loadout.formatVersion=3;
-        return moved;
-    }
-    private static int Repair(List<FittingItem> slots,int capacity,List<FittingItem> inventory,Func<int,FittingItem,bool> fits)
-    {
-        int moved=0;
-        for(int i=0;i<slots.Count;i++)
-        {
-            var item=slots[i];
-            if(item==null || string.IsNullOrEmpty(item.id)){slots[i]=null;continue;}
-            if(i>=capacity || !fits(i,item)){inventory.Add(item);slots[i]=null;moved++;}
-        }
-        if(slots.Count>capacity)slots.RemoveRange(capacity,slots.Count-capacity);
-        while(slots.Count<capacity)slots.Add(null);
         return moved;
     }
 }

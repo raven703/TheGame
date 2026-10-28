@@ -46,20 +46,7 @@ public static class ShipLoadoutManager
     }
     private static void WriteAtomic(string json)
     {
-        PlayerEquipment.Parse(json, false);
-        string pending = FilePath + ".pending";
-        try
-        {
-            using (var stream = new FileStream(pending, FileMode.Create, FileAccess.Write, FileShare.None))
-            {
-                var bytes = System.Text.Encoding.UTF8.GetBytes(json);
-                stream.Write(bytes, 0, bytes.Length); stream.Flush(true);
-            }
-            if (File.ReadAllText(pending) != json) throw new IOException("Не пройдена проверка записанного оснащения.");
-            if (File.Exists(FilePath)) File.Replace(pending, FilePath, FilePath + ".previous");
-            else File.Move(pending, FilePath);
-        }
-        finally { if (File.Exists(pending)) File.Delete(pending); }
+        new EquipmentFileStore(FilePath).Write(json);
     }
     public static ShipLoadout GetLoadout(string shipId)
     {
@@ -73,6 +60,7 @@ public static class ShipLoadoutManager
     public static bool EnsureShip(ShipDefinition definition, List<FittingItem> starter, out string error) => Ledger.EnsureShip(definition, starter, out error);
     public static bool CanMove(string shipId, ShipDefinition def, string id, SlotGroup group, int target, int source, bool editable, out string error) => Ledger.CanMove(shipId, def, id, group, target, source, editable, out error);
     public static bool Move(string shipId, ShipDefinition def, string id, SlotGroup group, int target, int source, bool editable, out string error) => Ledger.Move(shipId, def, id, group, target, source, editable, out error);
+    public static bool AutoEquip(ShipDefinition def, string id, bool editable, out string error) => Ledger.AutoEquip(def, id, editable, out error);
     public static bool Unequip(string ship, SlotGroup group, int index, string id, bool editable, out string error) => Ledger.Unequip(ship, group, index, id, editable, out error);
     public static bool ApplyPlan(ShipDefinition def, ShipLoadout plan, bool editable, out string error) => Ledger.ApplyPlan(def, plan, editable, out error);
     public static void SaveLoadout(ShipLoadout loadout)

@@ -492,14 +492,14 @@ public class FittingWindow : MonoBehaviour
     public void HandleAutoEquip(FittingItemView view)
     {
         if(view==null || view.item==null || !CanEdit)return;
-        foreach(var list in new[]{weaponSlots,shieldSlots,engineSlots}) foreach(var slot in list)
-            if(CanDrop(slot,view.item,null)){HandleDropFromInventory(view,slot);return;}
-        presetMessage="Нет свободного совместимого слота";
-        if(detailsLabel!=null)detailsLabel.text=presetMessage;
+        if(!ShipLoadoutManager.AutoEquip(shipDefinition,view.item.instanceId,CanEdit,out var error))
+        {presetMessage=error;if(detailsLabel!=null)detailsLabel.text=presetMessage;return;}
+        ReloadEquipment();
     }
     public bool Accepts(FittingSlot slot,FittingItem item)
     {
-        return item==null || (slot.group==item.allowedGroup && (slot.group!=SlotGroup.Top_Weapons || WeaponMountRules.Fits(shipDefinition,slot.index,item)));
+        return Game.Core.EquipmentRules.Fits(EquipmentDataAdapter.Definition(shipDefinition),
+            (Game.Core.EquipmentCategory)(int)slot.group,slot.index,new EquipmentDataAdapter().ToCore(item));
     }
     public bool CanDrop(FittingSlot target, FittingItem item, FittingSlot source)
     {
@@ -633,10 +633,8 @@ public class FittingWindow : MonoBehaviour
 
                 if (targetShipHealth.Data != null)
             {
-                targetShipHealth.Data.maxHullHP = newShip.maxHullHP;
-                targetShipHealth.Data.currentHullHP = newShip.maxHullHP;
-                targetShipHealth.Data.maxShieldHP = newShip.baseShieldHP;
-                targetShipHealth.Data.currentShieldHP = newShip.baseShieldHP;
+                // Ship selection historically resets to full before applying equipment deltas.
+                targetShipHealth.Data.Damage.InitializeMaximums(newShip.maxHullHP, newShip.baseShieldHP);
                 targetShipHealth.Data.mass = newShip.baseMass;
                 targetShipHealth.Data.lockTime = newShip.baseLockTime;
             }

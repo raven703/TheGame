@@ -38,33 +38,7 @@ public static class LoadoutPresets
         try { preset = JsonUtility.FromJson<Preset>(json); }
         catch (Exception) { return null; }
         if (preset == null || preset.shipId != owned.shipId) return null;
-        var available = new List<FittingItem>();
-        Add(available, owned.weaponSlots); Add(available, owned.shieldSlots);
-        Add(available, owned.engineSlots); Add(available, owned.inventory);
-        var result = new ShipLoadout(owned.shipId);
-        if (!Resolve(preset.weapons, SlotGroup.Top_Weapons, result.weaponSlots, available) ||
-            !Resolve(preset.shields, SlotGroup.Center_Shields, result.shieldSlots, available) ||
-            !Resolve(preset.engines, SlotGroup.Bottom_Engines, result.engineSlots, available)) return null;
-        result.inventory = available;
         var definition=ShipRegistry.Instance!=null?ShipRegistry.Instance.Get(owned.shipId):null;
-        if(definition!=null && !WeaponMountRules.Validate(definition,result))return null;
-        return result;
-    }
-    private static void Add(List<FittingItem> target, List<FittingItem> source)
-    {
-        if (source != null) foreach (var item in source)
-            if (item != null && !string.IsNullOrEmpty(item.id)) target.Add(item);
-    }
-    private static bool Resolve(List<string> ids, SlotGroup group, List<FittingItem> slots, List<FittingItem> available)
-    {
-        if (ids == null) return false;
-        foreach (string id in ids)
-        {
-            if(string.IsNullOrEmpty(id)){slots.Add(null);continue;}
-            var item = available.Find(x => x.id == id && x.allowedGroup == group);
-            if (item == null) return false;
-            slots.Add(item); available.Remove(item);
-        }
-        return true;
+        return EquipmentDataAdapter.ResolvePreset(owned,new[]{preset.weapons,preset.shields,preset.engines},definition);
     }
 }

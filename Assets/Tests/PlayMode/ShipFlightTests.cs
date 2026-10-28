@@ -162,13 +162,13 @@ public class ShipFlightTests
         var owner=movement.gameObject.AddComponent(T("ShipHealth"));
         var weapon=movement.gameObject.AddComponent(T("ShipWeapon"));Field(weapon,"useFallbackWeapon",true);Field(weapon,"firingArcAngle",360f);
         var enemy=Node("weapon target");enemy.transform.position=new Vector3(0,3);var target=enemy.AddComponent(T("ShipHealth"));
-        var data=Get(target,"Data");data.GetType().GetField("currentShieldHP").SetValue(data,1000f);data.GetType().GetField("maxShieldHP").SetValue(data,1000f);
+        var data=Get(target,"Data");data.GetType().GetProperty("currentShieldHP").SetValue(data,1000f);data.GetType().GetProperty("maxShieldHP").SetValue(data,1000f);
         var ownData=Get(owner,"Data");ownData.GetType().GetField("lockTime").SetValue(ownData,.4f);
         Call(orders,"MoveTo",new Vector2(0,1),false);Call(weapon,"SetTarget",target);Call(weapon,"DisruptTargeting",.6f);
-        yield return new WaitForSeconds(.4f);Assert.AreEqual(1000f,data.GetType().GetField("currentShieldHP").GetValue(data));
-        yield return new WaitForSeconds(.25f);Assert.AreEqual(1000f,data.GetType().GetField("currentShieldHP").GetValue(data));
+        yield return new WaitForSeconds(.4f);Assert.AreEqual(1000f,data.GetType().GetProperty("currentShieldHP").GetValue(data));
+        yield return new WaitForSeconds(.25f);Assert.AreEqual(1000f,data.GetType().GetProperty("currentShieldHP").GetValue(data));
         yield return new WaitForSeconds(1.2f);Assert.AreSame(target,Get(weapon,"Target"));
-        Assert.Less((float)data.GetType().GetField("currentShieldHP").GetValue(data),1000f);
+        Assert.Less((float)data.GetType().GetProperty("currentShieldHP").GetValue(data),1000f);
         Assert.AreNotEqual("Orbit",Get(orders,"Mode").ToString());
         Assert.IsNull(Get(orders,"OrderTarget"));
     }
@@ -180,7 +180,7 @@ public class ShipFlightTests
         foreach(string personality in new[]{"Brawler","Sniper","Flanker","Cautious"})
         {
             Field(ai,"personality",Enum.Parse(T("AIPersonality"),personality));
-            if(personality=="Cautious"){var d=Get(health,"Data");d.GetType().GetField("currentHullHP").SetValue(d,10f);}
+            if(personality=="Cautious"){var d=Get(health,"Data");d.GetType().GetProperty("currentHullHP").SetValue(d,10f);}
             Call(ai,"UpdateOrders");yield return new WaitForFixedUpdate();
             Assert.AreSame(target,Get(orders,"OrderTarget"));Assert.AreNotEqual("MoveToPoint",Get(orders,"Mode").ToString());
             Assert.AreEqual(personality=="Flanker"?"Flank":personality=="Brawler"?"Orbit":"KeepDistance",Get(orders,"Mode").ToString());
@@ -213,7 +213,8 @@ public class ShipFlightTests
         var ownData=Get(owner,"Data");ownData.GetType().GetField("lockTime").SetValue(ownData,.01f);
         var reactor=owner.GetComponent(T("ShipReactor"));Call(reactor,"Configure",100f,0f,0f,0f);
         Call(weapon,"SetTarget",target);
-        var shots=(IDictionary)weapon.GetType().GetField("weaponReadyAt",BindingFlags.NonPublic|BindingFlags.Instance).GetValue(weapon);
+        var combat=weapon.GetType().GetField("combat",BindingFlags.NonPublic|BindingFlags.Instance).GetValue(weapon);
+        var shots=(IDictionary)combat.GetType().GetField("readyAt",BindingFlags.NonPublic|BindingFlags.Instance).GetValue(combat);
         yield return new WaitForSeconds(.25f);
         Assert.AreEqual(100f,Get(reactor,"Energy"),"no spend before turret aims; fixed cannot fire sideways");Assert.AreEqual(0,shots.Count);
         yield return new WaitForSeconds(1f);

@@ -1,4 +1,88 @@
-# Shared inventory — continuation completed for review
+# Current handoff: stage 3 - 2026-10-28
+
+Stage 3 production extraction is connected. Read combat-core.md first for exact
+ownership, shot sequence and known limitations. Core DamageState owns all hull,
+shield and module HP; ShipData/ShipModule forward old APIs. Core WeaponCombat
+owns stable-ID cooldowns, hit chance and one synchronous spend with existing
+Reactor. Asteroid keeps Physics2D and a Core CoverState. No stage-4 geometry,
+aiming or AI extraction. Historical sections below are superseded.
+
+Final checks: Core Release 0 warnings/errors, dotnet 60/60, EditMode 56/56
+(fccaf039dec641939ea0f8f039c6883d), PlayMode 21/21
+(cbe92d5c52294bda8545bec224beaf4f). Interrupted/failed attempts documented in
+combat-core.md; no old test weakened. Console final read 0 errors/warnings;
+pre-existing CS0618 rebuild warnings remain. Loaded CombatSandbox validation:
+0 missing scripts/broken prefabs. Save hashes and gameplay PlayerPrefs unchanged.
+
+Game View HUD/fitting and overheat reviewed at 1280x720; captures ignored under
+Temp/Stage3Captures. API/handler setup only, NOT physical mouse verification.
+No exhaustive wave progression scenario or whole-project prefab audit performed.
+Editor outside Play Mode; no scene/prefab changes intended. main HEAD unchanged,
+all stages 0-3 uncommitted; no checkout/commit/push. Stop here, not stage 4.
+
+# Stage 1 handoff — 2026-10-28 (supersedes older state/next instructions)
+
+- Stage 1 implemented and connected. Stop; do not start stage 2 without instruction.
+- Local main, HEAD df8d21c2c05844b34e08cf4d1ba887718f28c0ed unchanged. No commit,
+  push or checkout. All uncommitted stage-0 changes preserved.
+- Sole ownership/placement ledger is now `Assets/Game.Core/PlayerEquipment.cs`.
+  Unity PlayerEquipment/ShipLoadoutManager are facades. EquipmentDataAdapter owns
+  immutable full saved item records only (no placement); EquipmentFileStore owns
+  atomic I/O. Core has no Unity/JSON dependencies; live refs only netstandard.
+- Core operations: CanMove/Move/Unequip/AutoEquip/ApplyPlan/EnsureShip and shared
+  EquipmentRules for compatibility, preset resolution and legacy repair.
+  Explicit permission evaluated by Unity at command time. Prepare/validate/write/
+  publish under synchronous lock, detached writer snapshot, reentrant writes refused.
+  Read snapshots cannot modify state. No parallel legacy ledger implementation.
+- Existing JSON v4/preset keys, saved item parameters, instance IDs, holes and
+  stable mount IDs preserved. UI entry points retained; no scene/prefab edits.
+- Final: Core Release 0 warnings/errors; dotnet 26/26; EditMode 39/39 job
+  745f236d6456477e987b5bd4abb3c8b2; PlayMode 17/17 job
+  0c32a8410e7b40d78d3a34ed3e991384; all 0 failed/skipped.
+  New PlayMode test drives actual UI and live stats against isolated file/ledger.
+- Verified backup `Temp/SaveBackups/architecture-stage1-20261028-144405`.
+  Real JSON/.previous/pre-v4 hashes unchanged; registry gameplay values unchanged,
+  only PT_Run +3 Unity session values differ. No reset/blanket restore.
+- Final MCP: outside Play Mode/not compiling/CombatSandbox clean;
+  0 missing scripts/broken prefabs; final console empty. Rebuild still exposes 9
+  known runtime CS0618 plus 4 pre-existing test CS0618 and 1 test CS0252; no new-code
+  warning fixes. Intermediate tooling/test failures documented in architecture doc.
+- No manual visual comparison, standalone/IL2CPP or exhaustive asset audit.
+  Reactor/stats/combat/AI deliberately not extracted. Read latest architecture doc
+  and shared-inventory doc before future work. Preserve all uncommitted changes.
+
+# Architecture refactor — stage 0 (2026-10-28)
+
+This section supersedes older “leave Play running” and partial-stage notes below.
+Stage 0 completed on local main at df8d21c; no commit/push/branch change.
+See architecture-refactor.md for the 12 rules, dependency/state ownership map,
+full paths, commands, backup, actual job IDs and limitations.
+
+Added Assets/Game.Core (asmdef noEngineReferences + sole compatibility rule and
+metadata), DotNet/Game.Core and Game.Core.Tests, scoped SDK 8 global.json and
+gitignore exceptions/artifact protection. Existing WeaponMountRules.Accepts now
+delegates to Core; serialized Unity enums and all existing GUIDs remain in place.
+ShipOrderTests adds boundary/numeric-mapping coverage. Unity regenerated root
+My project.slnx with the new assembly. No generated csproj was hand-edited.
+
+Actual baseline: EditMode 35 passed/0 failed/0 skipped; PlayMode 16/0/0.
+Actual final: dotnet Release build 0 errors/warnings; dotnet tests 12/0/0;
+Unity EditMode 36/0/0; PlayMode 16/0/0. One intermediate EditMode initialization
+timeout ran no tests; retry passed. MCP refresh also timed out, but later real
+reads verified compiled Core loaded with only netstandard referenced.
+Recompile exposes 9 existing CS0618 warnings; not fixed as part of this stage.
+Scene validation before/after: 0 missing scripts / broken prefabs, no repairs.
+
+Verified ignored backup: Temp/SaveBackups/architecture-stage0-20261028-140445.
+Current JSON + previous + pre-v4 source hashes unchanged after tests. PlayerPrefs
+gameplay values unchanged; only Test Runner PT_Run and Unity session keys changed.
+Never reset or blanket-restore PlayerPrefs. Scene/prefabs/settings not edited.
+
+Only compatibility is extracted: ledger, stats, reactor, damage, weapon aiming,
+orders and AI remain coupled to Unity. No manual visual/physical interaction
+acceptance or standalone build claimed. Stop here; await stage 1 request.
+
+# Shared inventory — continuation completed for review (historical)
 
 Latest section supersedes the partial-stage notes below. Local main, existing
 ahead1 commit preserved, no branch/commit/push. Scene saved outside Play, validated
@@ -202,3 +286,5 @@ No branch, commit or push. All changes remain local main.
 
 Manual physical mouse/keyboard end-to-end session and long dense-field stress test
 remain unverified; automatic command, physics and real UGUI raycast tests passed.
+## Stage 2 continuation � 2026-10-28
+Core stats and authoritative reactor extraction implemented. See stats-reactor.md for exact boundaries, baseline and final validation. Core 40/40, EditMode 47/47, PlayMode 19/19. Real save hashes/gameplay preferences unchanged. Manual HUD/fitting visual review remains outstanding. Stop before stage 3; all changes local and uncommitted.
