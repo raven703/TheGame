@@ -183,6 +183,13 @@ Next: stop Play before edits, inspect git diff, resolve above issues, add missin
 tests (mass/orientation/boost, resource gates, multi-slot firing, migration), rerun
 all, MCP A-E, both resolutions, scene validation, update this handoff with facts.
 
+## Tactical weapon range continuation
+
+See weapon-range-display.md for implementation, passing suites and remaining
+acceptance limits. Existing FiringArcVisualizer replaced in place; fitting hover
+sector removed from ShipWeapon. No commit/push. Scene saved outside Play.
+Mixed preview is runtime-only and does not mutate player equipment save.
+
 ## Previous-stage history
 
 Implementation and final test results: see tactical-validation.md.

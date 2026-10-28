@@ -31,30 +31,13 @@ public class ShipWeapon : MonoBehaviour
     public Mount[] mounts;
     private readonly Dictionary<int,float> mountAngles = new Dictionary<int,float>();
     private readonly Dictionary<int,LineRenderer> turretVisuals = new Dictionary<int,LineRenderer>();
-    private int selectedMount = -1;
-    private LineRenderer selectedSector;
-    public void SelectMount(int index) { selectedMount=index; }
-    private void LateUpdate()
-    {
-        bool show=selectedMount>=0 && FittingWindow.OpenWindow!=null;
-        if(selectedSector!=null)selectedSector.enabled=show;
-        if(!show)return;
-        if(selectedSector==null)
-        {
-            var go=new GameObject("Selected mount sector");go.transform.SetParent(transform,false);
-            selectedSector=go.AddComponent<LineRenderer>();selectedSector.sharedMaterial=lineMaterial;
-            selectedSector.startWidth=selectedSector.endWidth=.025f;selectedSector.startColor=selectedSector.endColor=Color.cyan;selectedSector.sortingOrder=8;
-        }
-        selectedSector.enabled=true;
-        Vector3 origin=firePoints!=null && selectedMount<firePoints.Length && firePoints[selectedMount]!=null?firePoints[selectedMount].position:transform.position;
-        float sector=MountSector(selectedMount);
-        if(activeWeapons!=null && selectedMount<activeWeapons.Count && activeWeapons[selectedMount]!=null && activeWeapons[selectedMount].mountType==WeaponMountType.Fixed)
-            sector=Mathf.Min(sector,activeWeapons[selectedMount].FixedFireSector);
-        Vector3 axis=MountAxis(selectedMount);
-        selectedSector.positionCount=37;selectedSector.SetPosition(0,origin);
-        for(int i=0;i<=32;i++)selectedSector.SetPosition(i+1,origin+(Quaternion.Euler(0,0,-sector*.5f+sector*i/32f)*axis)*2f);
-        selectedSector.SetPosition(34,origin);selectedSector.SetPosition(35,origin+axis*2.3f);selectedSector.SetPosition(36,origin);
-    }
+    // Fitting hover no longer creates a competing world-space sector.
+    public void SelectMount(int index) { }
+    public int EquippedSlotCount => activeWeapons.Count;
+    public FittingItem EquippedWeapon(int index) => index>=0 && index<activeWeapons.Count && activeWeapons[index]!=null && !string.IsNullOrEmpty(activeWeapons[index].id)?activeWeapons[index]:null;
+    public Vector3 MountOrigin(int index) => firePoints!=null && index>=0 && index<firePoints.Length && firePoints[index]!=null?firePoints[index].position:transform.position;
+    public float EffectiveSector(int index,FittingItem item) => Mathf.Min(Mathf.Clamp(MountSector(index),0,360),item==null || item.mountType==WeaponMountType.Fixed?(item!=null?item.FixedFireSector:60):360);
+    public Vector2 BarrelDirection(int index) => Quaternion.Euler(0,0,MountAngle(index))*MountAxis(index);
     public float MountAngle(int index) => mountAngles.TryGetValue(index, out float angle) ? angle : 0f;
     private ShipDefinition Definition => GetComponent<ShipHealth>() != null ? GetComponent<ShipHealth>().shipDefinition : null;
     public string MountId(int index) => WeaponMountRules.Get(Definition,index).id;
@@ -68,14 +51,14 @@ public class ShipWeapon : MonoBehaviour
     }
     public bool CanAim(int index, FittingItem item, Vector2 targetPosition, float dt)
     {
-        Transform point = firePoints != null && index < firePoints.Length && firePoints[index] != null ? firePoints[index] : transform;
+        Vector3 origin = MountOrigin(index);
         if (item != null && Definition != null && !WeaponMountRules.Fits(Definition,index,item)) return false;
         Vector2 axis = MountAxis(index);
-        Vector2 delta = targetPosition - (Vector2)point.position;
+        Vector2 delta = targetPosition - (Vector2)origin;
         float desired = Vector2.SignedAngle(axis, delta);
         float half = Mathf.Clamp(MountSector(index),0f,360f)*.5f;
         bool inside = Mathf.Abs(desired) <= half;
-        if (item == null || item.mountType == WeaponMountType.Fixed) return inside && Mathf.Abs(desired) <= (item != null ? item.FixedFireSector : 60f)*.5f + .0001f && delta.magnitude <= range;
+        if (item == null || item.mountType == WeaponMountType.Fixed) return inside && Mathf.Abs(desired) <= EffectiveSector(index,item)*.5f + .0001f && delta.magnitude <= range;
         float current = MountAngle(index);
         float goal = Mathf.Clamp(desired,-half,half);
         // Partial sectors are a bounded interval, not a circle: never cross the forbidden rear arc.
@@ -97,9 +80,9 @@ public class ShipWeapon : MonoBehaviour
                 turretVisuals[index] = barrel;
             }
             Vector3 direction = Quaternion.Euler(0,0,current) * axis;
-            barrel.SetPosition(0, point.position - direction * .06f);
-            barrel.SetPosition(1, point.position);
-            barrel.SetPosition(2, point.position + direction * .3f);
+            barrel.SetPosition(0, origin - direction * .06f);
+            barrel.SetPosition(1, origin);
+            barrel.SetPosition(2, origin + direction * .3f);
         }
         return inside && delta.magnitude <= range && Mathf.Abs(Mathf.DeltaAngle(current,desired)) <= Mathf.Clamp(item.aimTolerance,0f,15f);
     }

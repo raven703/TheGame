@@ -15616,9 +15616,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 8c8c4bca2e9305444a082840dd369890, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::FiringArcVisualizer
-  segments: 24
-  arcColor: {r: 0.2, g: 0.8, b: 1, a: 0.25}
-  lineWidth: 0.05
 --- !u!114 &1898430285
 MonoBehaviour:
   m_ObjectHideFlags: 0
