@@ -47,6 +47,7 @@ public class ShipDefinition : ScriptableObject
 
     [Header("Slots")]
     public int weaponSlots = 4;
+    public WeaponHardpoint[] hardpoints;
     public int shieldSlots = 4;
     public int engineSlots = 4;
 }

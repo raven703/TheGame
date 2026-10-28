@@ -7,6 +7,7 @@ public static class LoadoutPresets
 {
     [Serializable] private class Preset
     {
+        public int formatVersion = 3;
         public string shipId;
         public List<string> weapons = new List<string>();
         public List<string> shields = new List<string>();
@@ -17,7 +18,7 @@ public static class LoadoutPresets
     {
         var result = new List<string>();
         if (items != null) foreach (var item in items)
-            if (item != null && !string.IsNullOrEmpty(item.id)) result.Add(item.id);
+            result.Add(item != null && !string.IsNullOrEmpty(item.id) ? item.id : "");
         return result;
     }
     public static bool Save(ShipLoadout loadout, int slot)
@@ -45,6 +46,8 @@ public static class LoadoutPresets
             !Resolve(preset.shields, SlotGroup.Center_Shields, result.shieldSlots, available) ||
             !Resolve(preset.engines, SlotGroup.Bottom_Engines, result.engineSlots, available)) return null;
         result.inventory = available;
+        var definition=ShipRegistry.Instance!=null?ShipRegistry.Instance.Get(owned.shipId):null;
+        if(definition!=null && !WeaponMountRules.Validate(definition,result))return null;
         return result;
     }
     private static void Add(List<FittingItem> target, List<FittingItem> source)
@@ -57,6 +60,7 @@ public static class LoadoutPresets
         if (ids == null) return false;
         foreach (string id in ids)
         {
+            if(string.IsNullOrEmpty(id)){slots.Add(null);continue;}
             var item = available.Find(x => x.id == id && x.allowedGroup == group);
             if (item == null) return false;
             slots.Add(item); available.Remove(item);

@@ -24,6 +24,8 @@ public enum WeaponVisualType
 public class FittingItem
 {
     public WeaponMountType mountType = WeaponMountType.Fixed;
+    public float fixedFireSector = 60f;
+    public float FixedFireSector => fixedFireSector > 0f ? Mathf.Clamp(fixedFireSector, 0f, 360f) : 60f;
     public float trackingSpeed = 90f;
     public float aimTolerance = 3f;
     public WeaponKind weaponKind = WeaponKind.Laser;
@@ -31,6 +33,8 @@ public class FittingItem
         : id == "w3" ? WeaponKind.Railgun
         : id == "w2" || visualType == WeaponVisualType.Plasma ? WeaponKind.Plasma : WeaponKind.Laser;
     public string id;
+    // Definition identity remains id; each owned physical copy has its own identity.
+    public string instanceId;
     public string name;
     public SlotGroup allowedGroup;
     public Color iconColor = Color.cyan;

@@ -188,6 +188,58 @@ public class ShipFlightTests
         yield return new WaitForSeconds(.5f);Assert.Greater(rb.position.magnitude,.02f);
         targetGo.SetActive(false);yield return new WaitForFixedUpdate();Assert.AreEqual("HoldPosition",Get(orders,"Mode").ToString());
     }
+    [UnityTest] public IEnumerator Hardpoints_ActualShots_RespectGeometryResourcesAndStableSlots()
+    {
+        Rigidbody2D rb;object orders;var movement=Ship(out rb,out orders);
+        movement.GetType().GetProperty("enabled").SetValue(movement,false);
+        var owner=movement.gameObject.AddComponent(T("ShipHealth"));
+        var weapon=movement.gameObject.AddComponent(T("ShipWeapon"));
+        var targetGo=Node("mount target");targetGo.transform.position=new Vector3(3,0);
+        var target=targetGo.AddComponent(T("ShipHealth"));
+        var definition=ScriptableObject.CreateInstance(T("ShipDefinition"));
+        Field(definition,"shipId","mount_integration");Field(definition,"weaponSlots",4);
+        var points=Array.CreateInstance(T("WeaponHardpoint"),4);
+        for(int i=0;i<4;i++)
+        {
+            var point=Activator.CreateInstance(T("WeaponHardpoint"));Field(point,"id","mount-test-"+i);Field(point,"slotIndex",i);
+            Field(point,"compatibility",Enum.ToObject(T("MountCompatibility"),2));Field(point,"sector",i==3?180f:360f);points.SetValue(point,i);
+        }
+        Field(definition,"hardpoints",points);Field(owner,"shipDefinition",definition);
+        var fixedGun=JsonUtility.FromJson("{\"id\":\"fixed\",\"damageBonus\":1,\"fixedFireSector\":60}",T("FittingItem"));
+        var turret=JsonUtility.FromJson("{\"id\":\"turret\",\"damageBonus\":1,\"mountType\":1,\"trackingSpeed\":90,\"aimTolerance\":1}",T("FittingItem"));
+        var list=(IList)Activator.CreateInstance(typeof(List<>).MakeGenericType(T("FittingItem")));
+        list.Add(fixedGun);list.Add(null);list.Add(turret);list.Add(null);
+        Call(weapon,"SetEquippedWeapons",list);Field(weapon,"fallbackLockTime",.01f);
+        var ownData=Get(owner,"Data");ownData.GetType().GetField("lockTime").SetValue(ownData,.01f);
+        var reactor=owner.GetComponent(T("ShipReactor"));Call(reactor,"Configure",100f,0f,0f,0f);
+        Call(weapon,"SetTarget",target);
+        var shots=(IDictionary)weapon.GetType().GetField("weaponReadyAt",BindingFlags.NonPublic|BindingFlags.Instance).GetValue(weapon);
+        yield return new WaitForSeconds(.25f);
+        Assert.AreEqual(100f,Get(reactor,"Energy"),"no spend before turret aims; fixed cannot fire sideways");Assert.AreEqual(0,shots.Count);
+        yield return new WaitForSeconds(1f);
+        Assert.IsFalse(shots.Contains("mount-test-0"));Assert.IsTrue(shots.Contains("mount-test-2"));
+        Assert.Less((float)Get(reactor,"Energy"),100f);Assert.AreEqual(0f,Call(weapon,"MountAngle",1));
+        // Fixed keeps its own 60-degree cone even on 360-degree hardpoint.
+        Assert.False((bool)Call(weapon,"CanAim",0,fixedGun,Vector2.down*3f,0f));
+        Assert.True((bool)Call(weapon,"CanAim",0,fixedGun,Vector2.up*3f,0f));
+        Assert.True((bool)Call(weapon,"CanAim",0,fixedGun,(Vector2)(Quaternion.Euler(0,0,30)*Vector2.up)*3f,0f));
+        Assert.False((bool)Call(weapon,"CanAim",0,fixedGun,(Vector2)(Quaternion.Euler(0,0,31)*Vector2.up)*3f,0f));
+        Field(points.GetValue(0),"sector",20f);
+        Assert.False((bool)Call(weapon,"CanAim",0,fixedGun,(Vector2)(Quaternion.Euler(0,0,15)*Vector2.up)*3f,0f),"hardpoint can narrow, never widen, the weapon cone");
+        Field(points.GetValue(0),"sector",360f);
+        movement.transform.rotation=Quaternion.Euler(0,0,-90);
+        Assert.True((bool)Call(weapon,"CanAim",0,fixedGun,Vector2.right*3f,0f));
+        Assert.False((bool)Call(weapon,"CanAim",0,fixedGun,Vector2.up*3f,0f));
+        movement.transform.rotation=Quaternion.identity;
+        Assert.False((bool)Call(weapon,"CanAim",3,turret,Vector2.down*3f,5f));
+        Assert.True((bool)Call(weapon,"CanAim",2,turret,Vector2.down*3f,5f));
+        float oldAngle=(float)Call(weapon,"MountAngle",2);
+        Call(weapon,"CanAim",2,turret,new Vector2(.01f,-3f),.01f);
+        Assert.LessOrEqual(Mathf.Abs(Mathf.DeltaAngle(oldAngle,(float)Call(weapon,"MountAngle",2))),.901f);
+        // UI/equipment refresh preserves identity and readiness, with an empty slot in the middle.
+        object ready=shots["mount-test-2"];Call(weapon,"SetEquippedWeapons",list);Assert.AreEqual(ready,shots["mount-test-2"]);
+        UnityEngine.Object.Destroy(definition);
+    }
     [UnityTest] public IEnumerator RealUGUIRaycast_BlocksWorldOrders()
     {
         var eventGo=Node("test event system");eventGo.AddComponent<UnityEngine.EventSystems.EventSystem>();

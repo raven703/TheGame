@@ -31,21 +31,51 @@ public class ShipWeapon : MonoBehaviour
     public Mount[] mounts;
     private readonly Dictionary<int,float> mountAngles = new Dictionary<int,float>();
     private readonly Dictionary<int,LineRenderer> turretVisuals = new Dictionary<int,LineRenderer>();
+    private int selectedMount = -1;
+    private LineRenderer selectedSector;
+    public void SelectMount(int index) { selectedMount=index; }
+    private void LateUpdate()
+    {
+        bool show=selectedMount>=0 && FittingWindow.OpenWindow!=null;
+        if(selectedSector!=null)selectedSector.enabled=show;
+        if(!show)return;
+        if(selectedSector==null)
+        {
+            var go=new GameObject("Selected mount sector");go.transform.SetParent(transform,false);
+            selectedSector=go.AddComponent<LineRenderer>();selectedSector.sharedMaterial=lineMaterial;
+            selectedSector.startWidth=selectedSector.endWidth=.025f;selectedSector.startColor=selectedSector.endColor=Color.cyan;selectedSector.sortingOrder=8;
+        }
+        selectedSector.enabled=true;
+        Vector3 origin=firePoints!=null && selectedMount<firePoints.Length && firePoints[selectedMount]!=null?firePoints[selectedMount].position:transform.position;
+        float sector=MountSector(selectedMount);
+        if(activeWeapons!=null && selectedMount<activeWeapons.Count && activeWeapons[selectedMount]!=null && activeWeapons[selectedMount].mountType==WeaponMountType.Fixed)
+            sector=Mathf.Min(sector,activeWeapons[selectedMount].FixedFireSector);
+        Vector3 axis=MountAxis(selectedMount);
+        selectedSector.positionCount=37;selectedSector.SetPosition(0,origin);
+        for(int i=0;i<=32;i++)selectedSector.SetPosition(i+1,origin+(Quaternion.Euler(0,0,-sector*.5f+sector*i/32f)*axis)*2f);
+        selectedSector.SetPosition(34,origin);selectedSector.SetPosition(35,origin+axis*2.3f);selectedSector.SetPosition(36,origin);
+    }
     public float MountAngle(int index) => mountAngles.TryGetValue(index, out float angle) ? angle : 0f;
-    public float MountSector(int index) => mounts != null && index < mounts.Length && mounts[index] != null ? mounts[index].sector : firingArcAngle;
+    private ShipDefinition Definition => GetComponent<ShipHealth>() != null ? GetComponent<ShipHealth>().shipDefinition : null;
+    public string MountId(int index) => WeaponMountRules.Get(Definition,index).id;
+    public MountCompatibility Compatibility(int index) => WeaponMountRules.Get(Definition,index).compatibility;
+    public float MountSector(int index) => Definition != null ? WeaponMountRules.Get(Definition,index).sector : mounts != null && index < mounts.Length && mounts[index] != null ? mounts[index].sector : firingArcAngle;
+    public Vector2 MountAxis(int index)
+    {
+        Vector2 forward = shipMovement != null ? shipMovement.GetForwardVector() : (Vector2)transform.up;
+        float angle = Definition != null ? WeaponMountRules.Get(Definition,index).localAxis : mounts != null && index < mounts.Length && mounts[index] != null ? mounts[index].directionOffset : 0f;
+        return Quaternion.Euler(0,0,angle) * forward;
+    }
     public bool CanAim(int index, FittingItem item, Vector2 targetPosition, float dt)
     {
         Transform point = firePoints != null && index < firePoints.Length && firePoints[index] != null ? firePoints[index] : transform;
-        Vector2 forward = shipMovement != null ? shipMovement.GetForwardVector() : (Vector2)transform.up;
-        // firePoint local rotation is the authored mounting direction; old identity points remain forward.
-        float offset = Mathf.DeltaAngle(transform.eulerAngles.z, point.eulerAngles.z);
-        if (mounts != null && index < mounts.Length && mounts[index] != null) offset += mounts[index].directionOffset;
-        Vector2 axis = Quaternion.Euler(0,0,offset) * forward;
+        if (item != null && Definition != null && !WeaponMountRules.Fits(Definition,index,item)) return false;
+        Vector2 axis = MountAxis(index);
         Vector2 delta = targetPosition - (Vector2)point.position;
         float desired = Vector2.SignedAngle(axis, delta);
         float half = Mathf.Clamp(MountSector(index),0f,360f)*.5f;
         bool inside = Mathf.Abs(desired) <= half;
-        if (item == null || item.mountType == WeaponMountType.Fixed) return inside && delta.magnitude <= range;
+        if (item == null || item.mountType == WeaponMountType.Fixed) return inside && Mathf.Abs(desired) <= (item != null ? item.FixedFireSector : 60f)*.5f + .0001f && delta.magnitude <= range;
         float current = MountAngle(index);
         float goal = Mathf.Clamp(desired,-half,half);
         // Partial sectors are a bounded interval, not a circle: never cross the forbidden rear arc.
@@ -241,7 +271,9 @@ public class ShipWeapon : MonoBehaviour
 
     public void SetEquippedWeapons(List<FittingItem> weapons)
     {
-        activeWeapons = weapons;
+        activeWeapons = weapons != null ? new List<FittingItem>(weapons) : new List<FittingItem>();
+        foreach(var entry in turretVisuals)
+            if(entry.Value!=null)entry.Value.enabled=entry.Key<activeWeapons.Count && activeWeapons[entry.Key]!=null && activeWeapons[entry.Key].mountType==WeaponMountType.Turret;
     }
 
     private void CancelLock()
@@ -313,7 +345,7 @@ public class ShipWeapon : MonoBehaviour
 
     private void Shoot()
     {
-        if (Target == null || pendingTarget != null || IsTargetingDisrupted) return;
+        if (!ShipOrderController.Available(Target) || pendingTarget != null || IsTargetingDisrupted || CombatSession.IsPreparing) return;
         bool useFitting = activeWeapons != null && activeWeapons.Count > 0;
         if (!useFitting && !useFallbackWeapon)
             return;
@@ -332,6 +364,7 @@ public class ShipWeapon : MonoBehaviour
                 : transform;
 
             FittingItem weaponModule = useFitting ? activeWeapons[i] : null;
+            if(useFitting && (weaponModule==null || string.IsNullOrEmpty(weaponModule.id)))continue;
 
             if (!CanAim(i, weaponModule, Target.transform.position, Time.deltaTime)) continue;
             var stats = WeaponStatsCalculator.Calculate(weaponModule, baseCooldown, fallbackDamage);
@@ -349,7 +382,7 @@ public class ShipWeapon : MonoBehaviour
 
             // All equipped weapons use the same cover/resource path, including legacy prefabs.
             WeaponKind kind = weaponModule != null ? weaponModule.EffectiveWeaponKind : WeaponKind.Laser;
-            string key = i.ToString();
+            string key = MountId(i);
             if (weaponReadyAt.TryGetValue(key, out float ready) && Time.time < ready) continue;
             var reactor = ownerHealth.GetComponent<ShipReactor>();
             if (reactor == null || !reactor.TrySpend(stats.energy, stats.heat)) continue;

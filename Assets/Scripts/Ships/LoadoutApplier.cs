@@ -61,7 +61,20 @@ public class LoadoutApplier : MonoBehaviour
             visuals.Apply(def);
 
         // 4. Загружаем loadout
-        var loadout = ShipLoadoutManager.GetLoadout(def.shipId);
+        ShipLoadout loadout;
+        try
+        {
+            loadout = ShipLoadoutManager.GetLoadout(def.shipId);
+            if(loadout!=null)
+            {
+                if(!ShipLoadoutManager.EnsureShip(def,null,out var error))throw new System.InvalidOperationException(error);
+                loadout=ShipLoadoutManager.GetLoadout(def.shipId);
+            }
+        }
+        catch(System.Exception e)
+        {
+            Debug.LogError(e.Message);CombatSession.Log(e.Message);return;
+        }
         if (loadout == null)
         {
             Debug.Log($"[LoadoutApplier] Нет сохранённого loadout для {def.shipId}.");

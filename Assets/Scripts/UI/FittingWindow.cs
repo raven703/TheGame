@@ -79,7 +79,7 @@ public class FittingWindow : MonoBehaviour
                 int index = currentLoadout.weaponSlots.IndexOf(item);
                 float sector = targetShipWeapon != null ? targetShipWeapon.MountSector(index) : 60f;
                 statsLabel.text += $"{item.name} / {w.kind} / {(item.mountType == WeaponMountType.Turret ? "Турель" : "Курсовая")}\nКрепление {index + 1}: сектор {sector:0}°" +
-                    (item.mountType == WeaponMountType.Turret ? $"; {item.trackingSpeed:0} °/с; допуск {item.aimTolerance:0}°" : "; без вращения") +
+                    (item.mountType == WeaponMountType.Turret ? $"; {item.trackingSpeed:0} °/с; вращение ограничено креплением" : $"; собственный сектор {item.FixedFireSector:0}°; итог ±{Mathf.Min(sector,item.FixedFireSector)*.5f:0}°") +
                     $"\nУрон {w.damage:0.#}; DPS* {w.NominalDps:0.#}; КД {w.cooldown:0.##} с\nЭнергия {w.energy:0.#}; нагрев {ShipReactor.CalculateHeat(w.heat,s.resistance):0.#} (база {w.heat:0.#})\n";
             }
         statsLabel.text += "\n* Номинальный DPS без ограничений энергии,\nперегрева, точности и защиты цели.\nОбщий DPS не суммируется.";
@@ -152,6 +152,8 @@ public class FittingWindow : MonoBehaviour
     }
     private void CancelDrags()
     {
+        HideSlotTooltip();
+        HighlightDestinations(null,null);
         foreach(var view in GetComponentsInChildren<FittingItemView>(true))view.CancelDrag();
         foreach(var slot in GetComponentsInChildren<FittingSlot>(true))slot.CancelDrag();
     }
@@ -175,11 +177,10 @@ public class FittingWindow : MonoBehaviour
         if (!CanEdit || shipDefinition == null) return;
         SyncSlotsToLoadout();
         var restored = LoadoutPresets.Load(currentLoadout, slot);
-        if (restored == null || restored.weaponSlots.Count > shipDefinition.weaponSlots ||
-            restored.shieldSlots.Count > shipDefinition.shieldSlots || restored.engineSlots.Count > shipDefinition.engineSlots)
-        { presetMessage = "Комплект отсутствует или недоступен"; return; }
-        currentLoadout = restored;
-        BuildSlots(); BuildInventory(); ApplyLoadoutToShip(); SaveCurrentLoadout();
+        if (restored == null || !WeaponMountRules.Validate(shipDefinition,restored))
+        { presetMessage = "Комплект недоступен: предметы, вместимость или совместимость креплений. Ничего не изменено."; return; }
+        if(!ShipLoadoutManager.ApplyPlan(shipDefinition,restored,CanEdit,out var error)){presetMessage=error;return;}
+        ReloadEquipment();
         presetMessage = $"Комплект {slot} загружен";
     }
 
@@ -219,7 +220,11 @@ public class FittingWindow : MonoBehaviour
 
         if (!isBuilt)
         {
-            BuildAll();
+            try { BuildAll(); }
+            catch(System.Exception e)
+            {
+                isBuilding=false;presetMessage=e.Message;CombatSession.Log(e.Message);Debug.LogError(e.Message);return;
+            }
             isBuilt = true;
         }
 
@@ -281,22 +286,10 @@ public class FittingWindow : MonoBehaviour
 
     private void LoadLoadoutFor(ShipDefinition def)
     {
-        currentLoadout = ShipLoadoutManager.GetLoadout(def.shipId);
-
-        if (currentLoadout == null)
-        {
-            currentLoadout = new ShipLoadout(def.shipId);
-            PopulateDefaultInventory(currentLoadout);
-        }
-
-        if (!currentLoadout.inventory.Exists(item => item != null && item.id == "w_laser_turret_demo") &&
-            !currentLoadout.weaponSlots.Exists(item => item != null && item.id == "w_laser_turret_demo"))
-        {
-            currentLoadout.inventory.Add(new FittingItem("w_laser_turret_demo", "Лазер T1 — турель", SlotGroup.Top_Weapons, Color.cyan,
-                "Турель: урон 11 вместо 15; наведение 90 °/с. Сектор задаётся креплением.", damage: 11f)
-                { mountType = WeaponMountType.Turret, trackingSpeed = 90f, aimTolerance = 3f });
-            ShipLoadoutManager.SaveLoadout(currentLoadout);
-        }
+        var starter = new ShipLoadout(def.shipId);
+        if(!ShipLoadoutManager.StarterInventoryIssued)PopulateDefaultInventory(starter);
+        if(!ShipLoadoutManager.EnsureShip(def,starter.inventory,out var error))throw new System.InvalidOperationException(error);
+        currentLoadout=ShipLoadoutManager.GetLoadout(def.shipId);
         if (titleLabel != null)
             titleLabel.text = $"ПОСТРОЙКА И КОНФИГУРАЦИЯ: {def.displayName}";
     }
@@ -305,7 +298,7 @@ public class FittingWindow : MonoBehaviour
     {
         if (currentLoadout == null) return;
         SyncSlotsToLoadout();
-        ShipLoadoutManager.SaveLoadout(currentLoadout);
+        // Operations already persisted by the ledger; never import mutable UI snapshots.
     }
 
     private void SyncSlotsToLoadout()
@@ -316,9 +309,9 @@ public class FittingWindow : MonoBehaviour
         currentLoadout.shieldSlots = new List<FittingItem>();
         currentLoadout.engineSlots = new List<FittingItem>();
 
-        foreach (var s in weaponSlots) if (s.Item != null) currentLoadout.weaponSlots.Add(s.Item);
-        foreach (var s in shieldSlots) if (s.Item != null) currentLoadout.shieldSlots.Add(s.Item);
-        foreach (var s in engineSlots) if (s.Item != null) currentLoadout.engineSlots.Add(s.Item);
+        foreach (var s in weaponSlots) currentLoadout.weaponSlots.Add(s.Item);
+        foreach (var s in shieldSlots) currentLoadout.shieldSlots.Add(s.Item);
+        foreach (var s in engineSlots) currentLoadout.engineSlots.Add(s.Item);
     }
 
     private void PopulateDefaultInventory(ShipLoadout loadout)
@@ -416,7 +409,10 @@ public class FittingWindow : MonoBehaviour
             if (child == null) continue;
 
             if (Application.isPlaying)
+            {
+                child.gameObject.SetActive(false);
                 Destroy(child.gameObject);
+            }
             else
                 DestroyImmediate(child.gameObject);
         }
@@ -466,102 +462,135 @@ public class FittingWindow : MonoBehaviour
         itemViews.Add(view);
     }
 
-    public void HandleDropFromInventory(FittingItemView source, FittingSlot targetSlot)
+    private void ReloadEquipment()
     {
-        if (!CanEdit) return;
-        if (source == null || targetSlot == null) return;
-        if (source.item == null) return;
-        if (source.item.allowedGroup != targetSlot.group) return;
-
-        if (targetSlot.Item != null)
-            AddToInventory(targetSlot.Item);
-
-        if (currentLoadout != null && currentLoadout.inventory != null)
-            currentLoadout.inventory.Remove(source.item);
-
-        targetSlot.SetItem(source.item);
-
-        itemViews.Remove(source);
-        Destroy(source.gameObject);
-
-        ApplyLoadoutToShip();
-        SaveCurrentLoadout();
+        CancelDrags();
+        currentLoadout = ShipLoadoutManager.GetLoadout(shipDefinition.shipId);
+        BuildSlots(); BuildInventory(); ApplyLoadoutToShip();
     }
-
-    public void HandleDropFromSlot(FittingSlot sourceSlot, FittingSlot targetSlot)
+    public void HandleDropFromInventory(FittingItemView source, FittingSlot target)
     {
-        if (!CanEdit) return;
-        if (sourceSlot == null || targetSlot == null) return;
-        if (sourceSlot == targetSlot) return;
-        if (sourceSlot.Item == null) return;
-        if (sourceSlot.Item.allowedGroup != targetSlot.group) return;
-
-        var sourceItem = sourceSlot.Item;
-        var targetItem = targetSlot.Item;
-
-        targetSlot.SetItem(sourceItem);
-        sourceSlot.SetItem(targetItem);
-
-        ApplyLoadoutToShip();
-        SaveCurrentLoadout();
+        if(source == null || !CanDrop(target,source.item,null)) { CancelDrags(); return; }
+        if(!ShipLoadoutManager.Move(shipDefinition.shipId,shipDefinition,source.item.instanceId,target.group,target.index,-1,CanEdit,out var error))
+        { presetMessage=error; CancelDrags(); return; }
+        ReloadEquipment();
     }
-
+    public void HandleDropFromSlot(FittingSlot source, FittingSlot target)
+    {
+        if(source==null || !CanDrop(target,source.Item,source)) { CancelDrags(); return; }
+        if(!ShipLoadoutManager.Move(shipDefinition.shipId,shipDefinition,source.Item.instanceId,target.group,target.index,source.index,CanEdit,out var error))
+        { presetMessage=error; CancelDrags(); return; }
+        ReloadEquipment();
+    }
     public void HandleUnequip(FittingSlot slot)
     {
-        if (!CanEdit) return;
-        if (slot == null || slot.Item == null) return;
-
-        AddToInventory(slot.Item);
-        slot.SetItem(null);
-
-        ApplyLoadoutToShip();
-        SaveCurrentLoadout();
+        if(slot==null || slot.Item==null || !CanEdit)return;
+        if(!ShipLoadoutManager.Unequip(shipDefinition.shipId,slot.group,slot.index,slot.Item.instanceId,CanEdit,out var error))
+        { presetMessage=error; return; }
+        ReloadEquipment();
     }
-
     public void HandleAutoEquip(FittingItemView view)
     {
-        if (!CanEdit) return;
-        if (view == null || view.item == null) return;
-
-        var item = view.item;
-        FittingSlot target = FindFirstEmptySlot(item.allowedGroup);
-        if (target == null) return;
-
-        if (currentLoadout != null && currentLoadout.inventory != null)
-            currentLoadout.inventory.Remove(item);
-
-        target.SetItem(item);
-
-        itemViews.Remove(view);
-        Destroy(view.gameObject);
-
-        ApplyLoadoutToShip();
-        SaveCurrentLoadout();
+        if(view==null || view.item==null || !CanEdit)return;
+        foreach(var list in new[]{weaponSlots,shieldSlots,engineSlots}) foreach(var slot in list)
+            if(CanDrop(slot,view.item,null)){HandleDropFromInventory(view,slot);return;}
+        presetMessage="Нет свободного совместимого слота";
+        if(detailsLabel!=null)detailsLabel.text=presetMessage;
+    }
+    public bool Accepts(FittingSlot slot,FittingItem item)
+    {
+        return item==null || (slot.group==item.allowedGroup && (slot.group!=SlotGroup.Top_Weapons || WeaponMountRules.Fits(shipDefinition,slot.index,item)));
+    }
+    public bool CanDrop(FittingSlot target, FittingItem item, FittingSlot source)
+    {
+        return target != null && target.window == this && item != null && target.Item == null && target != source &&
+            (source == null || (source.window == this && source.Item == item && source.group == target.group)) &&
+            ShipLoadoutManager.CanMove(shipDefinition.shipId,shipDefinition,item.instanceId,target.group,target.index,
+                source==null?-1:source.index,CanEdit,out _);
     }
 
-    private FittingSlot FindFirstEmptySlot(SlotGroup group)
+    public void HighlightDestinations(FittingItem item, FittingSlot source)
     {
-        List<FittingSlot> list = null;
-        if (group == SlotGroup.Top_Weapons) list = weaponSlots;
-        else if (group == SlotGroup.Center_Shields) list = shieldSlots;
-        else if (group == SlotGroup.Bottom_Engines) list = engineSlots;
-
-        if (list == null) return null;
-
-        foreach (var s in list)
-            if (s.Item == null) return s;
-        return null;
+        if(item!=null && draggedItem==null)HideSlotTooltip();
+        draggedItem=item;draggedSource=source;
+        foreach (var slot in weaponSlots) slot.SetHighlight(CanDrop(slot,item,source));
+        foreach (var slot in shieldSlots) slot.SetHighlight(CanDrop(slot,item,source));
+        foreach (var slot in engineSlots) slot.SetHighlight(CanDrop(slot,item,source));
     }
-
-    private void AddToInventory(FittingItem item)
+    public string SlotDescription(int index)
     {
-        if (item == null) return;
-
-        if (currentLoadout.inventory == null)
-            currentLoadout.inventory = new List<FittingItem>();
-
-        currentLoadout.inventory.Add(item);
-        CreateItemView(item);
+        var point=WeaponMountRules.Get(shipDefinition,index);
+        return $"{index+1}: {point.compatibility} / {point.sector:0}°";
+    }
+    public string SlotIcon(FittingSlot slot)
+    {
+        if(slot.group==SlotGroup.Center_Shields)return "Shield";
+        if(slot.group==SlotGroup.Bottom_Engines)return "Engine";
+        var mount=WeaponMountRules.Get(shipDefinition,slot.index).compatibility;
+        return mount==MountCompatibility.FixedOnly?"Fixed":mount==MountCompatibility.TurretOnly?"Turret":"Universal";
+    }
+    private TextMeshProUGUI slotTooltip;
+    [System.NonSerialized] private FittingItem draggedItem;
+    private FittingSlot draggedSource;
+    private void Update(){if(!CanEdit && draggedItem!=null)CancelDrags();}
+    public void HideSlotTooltip(){if(slotTooltip!=null)slotTooltip.transform.parent.gameObject.SetActive(false);}
+    public void DescribeSlot(FittingSlot slot)
+    {
+        string text;
+        if(slot.group==SlotGroup.Top_Weapons)
+        {
+            var mount=WeaponMountRules.Get(shipDefinition,slot.index);
+            text=(mount.compatibility==MountCompatibility.FixedOnly?"Курсовое крепление":
+                mount.compatibility==MountCompatibility.TurretOnly?"Турельное крепление":"Универсальное крепление")+
+                ". Сектор "+mount.sector.ToString("0")+"°";
+            targetShipWeapon?.SelectMount(slot.index);
+        }
+        else text=slot.group==SlotGroup.Center_Shields?"Слот щита":"Слот двигателя";
+        if(draggedItem!=null && !string.IsNullOrEmpty(draggedItem.id) && !CanDrop(slot,draggedItem,draggedSource))
+            text+="\n"+(!CanEdit?"Оснащение заблокировано в бою.":slot==draggedSource?"Исходный слот.":slot.Item!=null?"Слот занят. Сначала снимите модуль.":"Несовместимый слот.");
+        ShowTooltip(text,(RectTransform)slot.transform);
+    }
+    public void DescribeItem(FittingItem item, RectTransform target)
+    {
+        if(item==null || draggedItem!=null)return;
+        string text=item.allowedGroup!=SlotGroup.Top_Weapons?item.name:
+            item.mountType==WeaponMountType.Fixed?"Курсовое орудие. Сектор "+item.FixedFireSector.ToString("0")+"°":
+            "Турель. Наведение "+item.trackingSpeed.ToString("0")+"°/с";
+        ShowTooltip(text,target);
+    }
+    private void ShowTooltip(string text, RectTransform target)
+    {
+        var canvas=GetComponentInParent<Canvas>().rootCanvas;
+        var bounds=(RectTransform)canvas.transform;
+        if(slotTooltip==null)
+        {
+            var panel=CombatUIStyle.Panel("SlotTooltip",transform,new Color(.04f,.06f,.09f,.98f));panel.raycastTarget=false;
+            slotTooltip=CombatUIStyle.Text("Text",panel.transform,"",16);slotTooltip.raycastTarget=false;
+            slotTooltip.textWrappingMode=TextWrappingModes.Normal;
+            slotTooltip.enableAutoSizing=false;
+            CombatUIStyle.Rect(slotTooltip.transform,Vector2.zero,Vector2.one,new Vector2(12,8),new Vector2(-12,-8));
+        }
+        var rect=(RectTransform)slotTooltip.transform.parent;
+        rect.gameObject.SetActive(true);rect.SetAsLastSibling();
+        slotTooltip.text=text;
+        // Work in root Canvas units, not screen pixels: honors CanvasScaler and Game View zoom.
+        float width=Mathf.Min(300,bounds.rect.width-24);
+        float height=slotTooltip.GetPreferredValues(text,width-24,0).y+16;
+        rect.anchorMin=rect.anchorMax=new Vector2(.5f,.5f);rect.pivot=new Vector2(.5f,.5f);
+        rect.sizeDelta=new Vector2(width,height);rect.localScale=Vector3.one;
+        var corners=new Vector3[4];target.GetWorldCorners(corners);
+        Vector2 low=bounds.InverseTransformPoint(corners[0]), high=bounds.InverseTransformPoint(corners[2]);
+        var visible=bounds.rect;
+        float y=high.y+10+height*.5f;
+        if(y+height*.5f>visible.yMax-8)y=low.y-10-height*.5f;
+        float x=Mathf.Clamp((low.x+high.x)*.5f,visible.xMin+width*.5f+8,visible.xMax-width*.5f-8);
+        y=Mathf.Clamp(y,visible.yMin+height*.5f+8,visible.yMax-height*.5f-8);
+        rect.position=bounds.TransformPoint(new Vector3(x,y,0));
+    }
+    private void Reject(FittingItem item)
+    {
+        presetMessage=item.mountType==WeaponMountType.Fixed?"Требуется курсовое крепление":"Требуется турельное/универсальное крепление";
+        if(detailsLabel!=null)detailsLabel.text=presetMessage;
     }
 
     // ==================== APPLY TO SHIP ====================
@@ -579,7 +608,12 @@ public class FittingWindow : MonoBehaviour
         if (!CanEdit) return;
         if (newShip == null || newShip == shipDefinition) return;
 
+        CancelDrags();
+
         SaveCurrentLoadout();
+
+        if(!ShipLoadoutManager.EnsureShip(newShip,null,out var selectionError))
+        {presetMessage=selectionError;return;}
 
         if (PlayerProfile.Instance != null)
             PlayerProfile.Instance.SetCurrentShip(newShip.shipId);

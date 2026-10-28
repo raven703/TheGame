@@ -23,6 +23,49 @@ public class ShipOrderTests
         var go=Node(name);Add(go,"ShipHealth");Add(go,"ShipMovement");return Add(go,"ShipWeapon");
     }
     [TearDown] public void Cleanup(){foreach(var go in objects)if(go!=null)UnityEngine.Object.DestroyImmediate(go);objects.Clear();}
+    [Test] public void MountCompatibility_AllSixCombinations()
+    {
+        for(int mount=0;mount<3;mount++)for(int type=0;type<2;type++)
+        {
+            bool actual=(bool)T("WeaponMountRules").GetMethod("Accepts").Invoke(null,new[]{Enum.ToObject(T("MountCompatibility"),mount),Enum.ToObject(T("WeaponMountType"),type)});
+            Assert.AreEqual(mount==2 || mount==type,actual);
+        }
+    }
+    [Test] public void Migration_IsIdempotent_PreservesHolesAndItems_AndSwapChecksBothSides()
+    {
+        var definition=ScriptableObject.CreateInstance(T("ShipDefinition"));
+        try
+        {
+            T("ShipDefinition").GetField("shipId").SetValue(definition,"migration_test");
+            T("ShipDefinition").GetField("weaponSlots").SetValue(definition,4);
+            var points=Array.CreateInstance(T("WeaponHardpoint"),4);
+            for(int i=0;i<4;i++)
+            {
+                var point=Activator.CreateInstance(T("WeaponHardpoint"));
+                point.GetType().GetField("id").SetValue(point,"stable"+i);
+                point.GetType().GetField("slotIndex").SetValue(point,i);
+                point.GetType().GetField("compatibility").SetValue(point,Enum.ToObject(T("MountCompatibility"),i==2?1:i==3?2:0));points.SetValue(point,i);
+            }
+            T("ShipDefinition").GetField("hardpoints").SetValue(definition,points);
+            var load=JsonUtility.FromJson("{\"shipId\":\"migration_test\",\"weaponSlots\":[{\"id\":\"a\"},{},{\"id\":\"b\"},{\"id\":\"t\",\"mountType\":1}],\"inventory\":[]}",T("ShipLoadout"));
+            var migrate=T("WeaponMountRules").GetMethod("Migrate");
+            Assert.AreEqual(1,migrate.Invoke(null,new[]{definition,load}));
+            var slots=(IList)T("ShipLoadout").GetField("weaponSlots").GetValue(load);
+            var inv=(IList)T("ShipLoadout").GetField("inventory").GetValue(load);
+            Assert.AreEqual(4,slots.Count);Assert.IsNull(slots[1]);Assert.IsNull(slots[2]);Assert.AreEqual(1,inv.Count);
+            Assert.AreEqual(0,migrate.Invoke(null,new[]{definition,load}));Assert.AreEqual(1,inv.Count);
+            Assert.False((bool)T("WeaponMountRules").GetMethod("CanSwap").Invoke(null,new[]{definition,(object)0,slots[0],3,slots[3]}));
+            string json=JsonUtility.ToJson(load);var round=JsonUtility.FromJson(json,T("ShipLoadout"));
+            var restored=(IList)T("ShipLoadout").GetField("weaponSlots").GetValue(round);
+            // JsonUtility may instantiate null class entries: sanitizer must normalize, never compact.
+            T("ShipLoadoutManager").GetMethod("Sanitize",BindingFlags.NonPublic|BindingFlags.Static).Invoke(null,new[]{round});
+            Assert.AreEqual(4,restored.Count);Assert.IsNull(restored[1]);Assert.IsNull(restored[2]);
+            slots[2]=slots[0];
+            Assert.False((bool)T("WeaponMountRules").GetMethod("Validate").Invoke(null,new[]{definition,load}));
+            Assert.AreSame(slots[0],slots[2],"validation must not partially repair a preset");
+        }
+        finally{UnityEngine.Object.DestroyImmediate(definition);}
+    }
     [Test] public void DirectionalForce_UsesSharedBudget_AndBoost()
     {
         var movement=Ship("thrust").GetComponent(T("ShipMovement"));

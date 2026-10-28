@@ -10,7 +10,7 @@ using TMPro;
 /// </summary>
 [RequireComponent(typeof(Image))]
 public class FittingSlot : MonoBehaviour, IDropHandler, IPointerClickHandler,
-    IBeginDragHandler, IDragHandler, IEndDragHandler, IPointerEnterHandler
+    IBeginDragHandler, IDragHandler, IEndDragHandler, IPointerEnterHandler, IPointerExitHandler
 {
     [Header("UI References")]
     public Image background;
@@ -46,7 +46,7 @@ public class FittingSlot : MonoBehaviour, IDropHandler, IPointerClickHandler,
 
     public void SetItem(FittingItem newItem)
     {
-        item = newItem;
+        item = newItem != null && !string.IsNullOrEmpty(newItem.id) ? newItem : null;
         isHighlighted = false;   // сброс подсветки при любом изменении
         RefreshVisual();
     }
@@ -56,7 +56,41 @@ public class FittingSlot : MonoBehaviour, IDropHandler, IPointerClickHandler,
         if (background == null) background = GetComponent<Image>();
         if (label == null) label = GetComponentInChildren<TextMeshProUGUI>();
 
-        CombatUIStyle.CardVisual(background,label,group,item==null?"Пустой слот "+(index+1):item.name,isHighlighted);
+        string title=item==null?"":item.name;
+        CombatUIStyle.CardVisual(background,label,group,title,isHighlighted);
+        if(window!=null)
+        {
+            var iconTransform=transform.Find("MountIcon");
+            Image icon;
+            if(iconTransform==null)
+            {
+                var go=new GameObject("MountIcon",typeof(RectTransform),typeof(Image));
+                go.transform.SetParent(transform,false);icon=go.GetComponent<Image>();
+            }
+            else icon=iconTransform.GetComponent<Image>();
+            icon.sprite=Resources.Load<Sprite>("FittingIcons/"+window.SlotIcon(this));
+            icon.raycastTarget=false;icon.preserveAspect=true;
+            CombatUIStyle.Rect(icon.transform,new Vector2(0,.5f),new Vector2(0,.5f),new Vector2(7,-15),new Vector2(37,15));
+            if(label!=null)
+            {
+                CombatUIStyle.Rect(label.transform,Vector2.zero,Vector2.one,new Vector2(43,6),new Vector2(-5,-6));
+                label.overflowMode=TextOverflowModes.Overflow;label.textWrappingMode=TextWrappingModes.Normal;
+                var layout=CombatUIStyle.Ensure<LayoutElement>(label.gameObject);layout.ignoreLayout=true;
+            }
+            var number=CombatUIStyle.Text("SlotNumber",transform,(index+1).ToString(),11);
+            CombatUIStyle.Rect(number.transform,Vector2.zero,Vector2.one,new Vector2(7,1),new Vector2(-7,-48));
+            number.alignment=TextAlignmentOptions.BottomLeft;number.raycastTarget=false;
+            CombatUIStyle.Ensure<LayoutElement>(number.gameObject).ignoreLayout=true;
+            CombatUIStyle.Ensure<LayoutElement>(icon.gameObject).ignoreLayout=true;
+        }
+        if (isHighlighted)
+        {
+            background.color = new Color(.30f,.48f,.32f,1f);
+            var outline = GetComponent<Outline>();
+            if (outline == null) outline = gameObject.AddComponent<Outline>();
+            outline.effectColor = new Color(.48f,.95f,.59f,1f);
+            outline.effectDistance = new Vector2(2f,-2f);
+        }
     }
 
     // ==================== DROP ====================
@@ -115,7 +149,7 @@ public class FittingSlot : MonoBehaviour, IDropHandler, IPointerClickHandler,
             dragVisual = view.gameObject;
             var rect=(RectTransform)dragVisual.transform;
             rect.anchorMin=rect.anchorMax=new Vector2(.5f,.5f);
-            rect.sizeDelta=((RectTransform)transform).rect.size;
+            rect.sizeDelta=new Vector2(170,64);
             Vector3 pointer;RectTransformUtility.ScreenPointToWorldPointInRectangle((RectTransform)window.dragLayer,eventData.position,eventData.pressEventCamera,out pointer);
             dragOffset=transform.position-pointer;
             dragVisual.transform.position=pointer+dragOffset;
@@ -125,6 +159,7 @@ public class FittingSlot : MonoBehaviour, IDropHandler, IPointerClickHandler,
 
         canvasGroup.blocksRaycasts = false;
         isDragging = true;
+        window.HighlightDestinations(item,this);
     }
 
     public void OnDrag(PointerEventData eventData)
@@ -135,7 +170,7 @@ public class FittingSlot : MonoBehaviour, IDropHandler, IPointerClickHandler,
             dragVisual.transform.position=pointer+dragOffset;
         }
 
-        HighlightSlotUnderPointer(eventData);
+        if(isDragging)window.HighlightDestinations(item,this);
     }
 
     public void OnEndDrag(PointerEventData eventData)
@@ -145,6 +180,7 @@ public class FittingSlot : MonoBehaviour, IDropHandler, IPointerClickHandler,
     public void CancelDrag()
     {
         if (!isDragging) return;
+        if(window!=null)window.HighlightDestinations(null,null);
 
         canvasGroup.blocksRaycasts = true;
         isDragging = false;
@@ -177,40 +213,7 @@ public class FittingSlot : MonoBehaviour, IDropHandler, IPointerClickHandler,
         RefreshVisual();
     }
     private void OnDisable(){CancelDrag();}
-    public void OnPointerEnter(PointerEventData eventData){if(window!=null)window.ShowDescription(item);}
+    public void OnPointerEnter(PointerEventData eventData){if(window!=null)window.DescribeSlot(this);}
+    public void OnPointerExit(PointerEventData eventData){if(window!=null)window.HideSlotTooltip();}
 
-    private void HighlightSlotUnderPointer(PointerEventData eventData)
-    {
-        if (EventSystem.current == null) return;
-
-        var results = new List<RaycastResult>();
-        EventSystem.current.RaycastAll(eventData, results);
-
-        FittingSlot slotUnderPointer = null;
-        foreach (var r in results)
-        {
-            var slot = r.gameObject.GetComponentInParent<FittingSlot>();
-            if (slot != null)
-            {
-                slotUnderPointer = slot;
-                break;
-            }
-        }
-
-        if (lastHighlightedSlot != null && lastHighlightedSlot != slotUnderPointer)
-        {
-            lastHighlightedSlot.SetHighlight(false);
-        }
-
-        if (slotUnderPointer != null && slotUnderPointer != this
-            && item != null && slotUnderPointer.group == item.allowedGroup)
-        {
-            slotUnderPointer.SetHighlight(true);
-            lastHighlightedSlot = slotUnderPointer;
-        }
-        else
-        {
-            lastHighlightedSlot = null;
-        }
-    }
 }

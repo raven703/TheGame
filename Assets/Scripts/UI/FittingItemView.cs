@@ -9,7 +9,7 @@ using TMPro;
 /// При перетаскивании подсвечивает слоты нужной группы.
 /// </summary>
 [RequireComponent(typeof(Image))]
-public class FittingItemView : MonoBehaviour, IBeginDragHandler, IDragHandler, IEndDragHandler, IPointerClickHandler, IPointerEnterHandler
+public class FittingItemView : MonoBehaviour, IBeginDragHandler, IDragHandler, IEndDragHandler, IPointerClickHandler, IPointerEnterHandler, IPointerExitHandler
 {
     [Header("UI References")]
     public Image background;
@@ -81,11 +81,12 @@ public class FittingItemView : MonoBehaviour, IBeginDragHandler, IDragHandler, I
         // Переносим в DragLayer, чтобы был поверх всего
         transform.SetParent(window.dragLayer, true);
         rectTransform.anchorMin=rectTransform.anchorMax=new Vector2(.5f,.5f);
-        rectTransform.sizeDelta=size;
+        rectTransform.sizeDelta=new Vector2(170,64);
         transform.SetAsLastSibling();
 
         canvasGroup.blocksRaycasts = false; // чтобы drop прошёл под элементом
         canvasGroup.alpha = 0.85f;
+        window.HighlightDestinations(item,null);
     }
 
     public void OnDrag(PointerEventData eventData)
@@ -96,7 +97,7 @@ public class FittingItemView : MonoBehaviour, IBeginDragHandler, IDragHandler, I
         rectTransform.position = pointer+pointerOffset;
 
         // Подсветка слота под курсором
-        HighlightSlotUnderPointer(eventData);
+        window.HighlightDestinations(item,null);
     }
 
     public void OnEndDrag(PointerEventData eventData)
@@ -106,6 +107,7 @@ public class FittingItemView : MonoBehaviour, IBeginDragHandler, IDragHandler, I
     public void CancelDrag()
     {
         if(!dragging)return;dragging=false;
+        if(window!=null)window.HighlightDestinations(null,null);
         if(placeholder!=null){Destroy(placeholder);placeholder=null;}
 
         canvasGroup.blocksRaycasts = true;
@@ -127,7 +129,9 @@ public class FittingItemView : MonoBehaviour, IBeginDragHandler, IDragHandler, I
         }
     }
     private void OnDestroy(){if(placeholder!=null)Destroy(placeholder);}
-    public void OnPointerEnter(PointerEventData eventData){if(window!=null)window.ShowDescription(item);}
+    public void OnPointerEnter(PointerEventData eventData){if(window!=null)window.DescribeItem(item,rectTransform);}
+    public void OnPointerExit(PointerEventData eventData){if(window!=null)window.HideSlotTooltip();}
+    private void OnDisable(){CancelDrag();}
 
     public void OnPointerClick(PointerEventData eventData)
     {
@@ -143,40 +147,4 @@ public class FittingItemView : MonoBehaviour, IBeginDragHandler, IDragHandler, I
     /// <summary>
     /// Подсвечивает слот под курсором, если группа слота совпадает с группой модуля.
     /// </summary>
-    private void HighlightSlotUnderPointer(PointerEventData eventData)
-    {
-        if (EventSystem.current == null) return;
-
-        // Raycast по всем UI-элементам под курсором
-        var results = new List<RaycastResult>();
-        EventSystem.current.RaycastAll(eventData, results);
-
-        FittingSlot slotUnderPointer = null;
-        foreach (var r in results)
-        {
-            var slot = r.gameObject.GetComponentInParent<FittingSlot>();
-            if (slot != null)
-            {
-                slotUnderPointer = slot;
-                break;
-            }
-        }
-
-        // Снимаем подсветку с прошлого
-        if (lastHighlightedSlot != null && lastHighlightedSlot != slotUnderPointer)
-        {
-            lastHighlightedSlot.SetHighlight(false);
-        }
-
-        // Подсвечиваем новый, если группа совпадает
-        if (slotUnderPointer != null && item != null && slotUnderPointer.group == item.allowedGroup)
-        {
-            slotUnderPointer.SetHighlight(true);
-            lastHighlightedSlot = slotUnderPointer;
-        }
-        else
-        {
-            lastHighlightedSlot = null;
-        }
-    }
 }

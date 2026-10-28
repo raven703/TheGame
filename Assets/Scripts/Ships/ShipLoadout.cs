@@ -9,6 +9,7 @@ using UnityEngine;
 public class ShipLoadout
 {
     public string shipId;
+    public int formatVersion = 3;
 
     public List<FittingItem> weaponSlots = new List<FittingItem>();
     public List<FittingItem> shieldSlots = new List<FittingItem>();
@@ -37,5 +38,8 @@ public class ShipLoadout
 [System.Serializable]
 public class ShipLoadoutSaveFile
 {
+    public int formatVersion;
+    public bool starterInventoryIssued;
+    public List<FittingItem> inventory = new List<FittingItem>();
     public List<ShipLoadout> loadouts = new List<ShipLoadout>();
 }

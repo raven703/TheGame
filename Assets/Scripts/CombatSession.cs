@@ -59,7 +59,7 @@ public class CombatSession : MonoBehaviour
             personalityButton = CombatUIStyle.Button("Personality",panel.transform,"",()=>EnemyPersonality=(AIPersonality)(((int)EnemyPersonality+1)%4));
             CombatUIStyle.Box(personalityButton.transform,12,102,326,28);
         }
-        journal.text = Started ? string.Join("\n", entries) : "ПОДГОТОВКА\nОснастите корабль перед началом боя.";
+        journal.text = Started ? string.Join("\n", entries) : "ПОДГОТОВКА\nОснастите корабль перед началом боя.\n"+string.Join("\n",entries);
         personalityButton.gameObject.SetActive(!Started);
         personalityButton.GetComponentInChildren<TMPro.TextMeshProUGUI>().text = "Противники: " + EnemyPersonality;
     }

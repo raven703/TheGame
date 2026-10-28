@@ -54,6 +54,11 @@ public static class ShipStatsCalculator
     public static void Apply(ShipHealth health, ShipDefinition definition, ShipLoadout loadout)
     {
         if (health == null || health.Data == null || !CombatSession.IsPreparing) return;
+        if(loadout != null && definition != null)
+        {
+            int moved=WeaponMountRules.Migrate(definition,loadout);
+            if(moved>0){CombatSession.Log($"Несовместимые модули перенесены в инвентарь: {moved}");ShipLoadoutManager.SaveLoadout(loadout);}
+        }
         var s = Calculate(definition, loadout);
         var data = health.Data;
         data.currentHullHP = Mathf.Clamp(data.currentHullHP + s.hull - data.maxHullHP, 0f, s.hull);
@@ -71,6 +76,6 @@ public static class ShipStatsCalculator
         if (reactor != null) reactor.Configure(s.energy, s.regeneration, s.cooling, s.resistance);
         var weapon = health.GetComponent<ShipWeapon>();
         if (weapon != null) weapon.SetEquippedWeapons(loadout != null && loadout.weaponSlots != null
-            ? loadout.weaponSlots.FindAll(item => item != null && !string.IsNullOrEmpty(item.id)) : new List<FittingItem>());
+            ? new List<FittingItem>(loadout.weaponSlots) : new List<FittingItem>());
     }
 }
