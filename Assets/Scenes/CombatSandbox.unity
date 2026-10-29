@@ -16631,7 +16631,10 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::ShipSpawner
   enemyPrefab: {fileID: 5865611579440152740, guid: be2cad60f7b33f1458687759bde43394, type: 3}
-  waveSizes: 010000000200000003000000
+  waveSizes: 01000000010000000100000002000000
+  useCombatArchetypes: 1
+  interceptorDefinition: {fileID: 11400000, guid: e1bcd225bc761ec42aa9ca75c12ca7a4, type: 2}
+  cobraDefinition: {fileID: 11400000, guid: c346ed5929ae76343a04e9f5c080ea0c, type: 2}
   pauseBetweenWaves: 3
   spawnRadius: 14
   playerTransform: {fileID: 4491389979883334910}

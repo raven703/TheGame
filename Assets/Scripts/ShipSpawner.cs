@@ -15,6 +15,16 @@ public class ShipSpawner : MonoBehaviour
     [Header("Waves")]
     [Tooltip("Количество врагов в каждой волне. Порядок: 1, 2, 3.")]
     public int[] waveSizes = new int[] { 1, 2, 3 };
+    public bool useCombatArchetypes;
+    public ShipDefinition interceptorDefinition;
+    public ShipDefinition cobraDefinition;
+    public static CombatDemoLoadouts.Role RoleForWave(int wave,int index)
+    {
+        if(wave==0)return CombatDemoLoadouts.Role.Interceptor;
+        if(wave==1)return CombatDemoLoadouts.Role.Artillery;
+        if(wave==2)return CombatDemoLoadouts.Role.Escort;
+        return index==0?CombatDemoLoadouts.Role.Interceptor:CombatDemoLoadouts.Role.Escort;
+    }
 
     [Tooltip("Пауза между волнами (сек).")]
     public float pauseBetweenWaves = 3f;
@@ -101,6 +111,19 @@ public class ShipSpawner : MonoBehaviour
             go.name = $"EnemyShip_W{currentWaveIndex + 1}_{i + 1}";
 
             var health = go.GetComponent<ShipHealth>();
+            if(useCombatArchetypes && health!=null)
+            {
+                var role=RoleForWave(currentWaveIndex,i);
+                var definition=role==CombatDemoLoadouts.Role.Interceptor?interceptorDefinition:cobraDefinition;
+                var ai=go.GetComponent<EnemyAI>()??go.AddComponent<EnemyAI>();
+                ai.useCombatRole=true;ai.combatRole=(Game.Core.CombatRole)(int)role;
+                ai.SetOpponent(playerTransform!=null?playerTransform.GetComponent<ShipHealth>():null);
+                if(go.GetComponent<ShipAbilities>()==null)go.AddComponent<ShipAbilities>();
+                ShipStatsCalculator.ApplyNpc(health,definition,CombatDemoLoadouts.Create(role,definition,"npc:"+System.Guid.NewGuid().ToString("N")));
+                var sprite=go.GetComponentInChildren<SpriteRenderer>();if(sprite!=null)sprite.sprite=definition.hullSprite;
+                string label=role==CombatDemoLoadouts.Role.Interceptor?"Перехватчик":role==CombatDemoLoadouts.Role.Artillery?"Артиллерист":"Эскорт";
+                go.name=label+" W"+(currentWaveIndex+1);CombatSession.Log(go.name);
+            }
             if (health != null)
             {
                 spawnedEnemies.Add(health);

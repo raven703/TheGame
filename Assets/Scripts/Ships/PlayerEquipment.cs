@@ -18,8 +18,16 @@ public sealed class PlayerEquipment
         core = new Game.Core.PlayerEquipment(adapter.ToCore(data), snapshot => persist(JsonUtility.ToJson(adapter.FromCore(snapshot), true)),
             () => Guid.NewGuid().ToString("N"));
     }
-    public bool EnsureShip(ShipDefinition def, List<FittingItem> starter, out string error) =>
-        core.EnsureShip(EquipmentDataAdapter.Definition(def), adapter.ToCore(starter), EditingAllowed(true), out error);
+    public bool EnsureShip(ShipDefinition def, List<FittingItem> starter, out string error)
+    {
+        var current=new List<FittingItem>();
+        if(starter!=null)foreach(var original in starter)
+        {
+            var item=original==null?null:JsonUtility.FromJson<FittingItem>(JsonUtility.ToJson(original));
+            CombatStandardDefinitions.Upgrade(item);current.Add(item);
+        }
+        return core.EnsureShip(EquipmentDataAdapter.Definition(def), adapter.ToCore(current), EditingAllowed(true), out error);
+    }
     public bool CanMove(string shipId, ShipDefinition def, string id, SlotGroup group, int target, int source, bool editable, out string error) =>
         core.CanMove(shipId, EquipmentDataAdapter.Definition(def), id, (Game.Core.EquipmentCategory)(int)group, target, source, EditingAllowed(editable), out error);
     public bool Move(string shipId, ShipDefinition def, string id, SlotGroup group, int target, int source, bool editable, out string error) =>
@@ -55,6 +63,7 @@ public sealed class PlayerEquipment
         data.formatVersion = 4;
         if (legacy) data.starterInventoryIssued = true;
         Game.Core.EquipmentRules.ValidateOwnership(new EquipmentDataAdapter().ToCore(data));
+        if(migrate)foreach(var item in Items(data))CombatStandardDefinitions.Upgrade(item);
         return data;
     }
     public static void Normalize(ShipLoadout ship)

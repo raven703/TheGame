@@ -165,6 +165,8 @@ public class ShipFlightTests
         var enemy=Node("weapon target");enemy.transform.position=new Vector3(0,3);var target=enemy.AddComponent(T("ShipHealth"));
         var data=Get(target,"Data");data.GetType().GetProperty("currentShieldHP").SetValue(data,1000f);data.GetType().GetProperty("maxShieldHP").SetValue(data,1000f);
         var ownData=Get(owner,"Data");ownData.GetType().GetField("lockTime").SetValue(ownData,.4f);
+        // Lock/EMP contract must not fail because every permitted shot randomly misses.
+        Field(ownData,"accuracy",1f);Field(data,"baseEvasion",0f);Field(data,"speedEvasionMultiplier",0f);
         Call(orders,"MoveTo",new Vector2(0,1),false);Call(weapon,"SetTarget",target);Call(weapon,"DisruptTargeting",.6f);
         yield return new WaitForSeconds(.4f);Assert.AreEqual(1000f,data.GetType().GetProperty("currentShieldHP").GetValue(data));
         yield return new WaitForSeconds(.25f);Assert.AreEqual(1000f,data.GetType().GetProperty("currentShieldHP").GetValue(data));

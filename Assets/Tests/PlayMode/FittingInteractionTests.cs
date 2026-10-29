@@ -90,10 +90,21 @@ public class FittingInteractionTests
             player.AddComponent<Rigidbody2D>();var playerHealth=player.AddComponent(T("ShipHealth"));
             var movement=player.AddComponent(T("ShipMovement"));
             var weapon=player.AddComponent(T("ShipWeapon"));Set(weapon,"useFallbackWeapon",true);Set(weapon,"fallbackDamage",10000f);Set(weapon,"firingArcAngle",360f);Set(weapon,"range",100f);
+            // This checks lifecycle, not mutable catalog balance or navigation/aim luck.
+            // A real equipped shot still pays its explicit resource costs and traverses Core damage.
+            ((Behaviour)movement).enabled=false;
+            Set(weapon,"useFallbackWeapon",false);
+            var testGun=JsonUtility.FromJson("{\"id\":\"lifecycle-test-only\",\"instanceId\":\"lifecycle-shot\",\"explicitWeaponStats\":true,\"damageBonus\":10000,\"weaponInterval\":0.1,\"weaponEnergy\":1,\"weaponHeat\":1,\"mountType\":0,\"fixedFireSector\":360}",T("FittingItem"));
+            var guns=(IList)Activator.CreateInstance(typeof(List<>).MakeGenericType(T("FittingItem")));
+            guns.Add(testGun);Call(weapon,"SetEquippedWeapons",guns);
+            var playerData=playerHealth.GetType().GetProperty("Data").GetValue(playerHealth);
+            Set(playerData,"accuracy",1f);
             var definition=ScriptableObject.CreateInstance(T("ShipDefinition"));fixtureDefinitions.Add(definition);
             Set(definition,"maxHullHP",1f);Set(definition,"baseShieldHP",0f);
             var template=new GameObject("shortened stationary enemy template");template.SetActive(false);template.transform.position=new Vector3(1000,1000,0);
             var enemy=template.AddComponent(T("ShipHealth"));Set(enemy,"shipDefinition",definition);template.SetActive(true);
+            var enemyData=enemy.GetType().GetProperty("Data").GetValue(enemy);
+            Set(enemyData,"baseEvasion",0f);Set(enemyData,"speedEvasionMultiplier",0f);
             var manager=new GameObject("audit manager").AddComponent(T("CombatManager"));Set(manager,"playerHealth",playerHealth);
             var win=new GameObject("win evidence");Set(manager,"winPanel",win);
             var spawner=new GameObject("audit spawner").AddComponent(T("ShipSpawner"));Set(spawner,"enemyPrefab",template);Set(spawner,"playerTransform",player.transform);

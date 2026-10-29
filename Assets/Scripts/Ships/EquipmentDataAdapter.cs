@@ -57,13 +57,13 @@ public sealed class EquipmentDataAdapter
         weaponSlots = FromCore(ship.Weapons), shieldSlots = FromCore(ship.Shields), engineSlots = FromCore(ship.Engines) };
     public EquipmentSnapshot ToCore(ShipLoadoutSaveFile data)
     {
-        var result = new EquipmentSnapshot { StarterInventoryIssued = data.starterInventoryIssued, Inventory = ToCore(data.inventory) };
+        var result = new EquipmentSnapshot { StarterInventoryIssued = data.starterInventoryIssued, CombatStarterVersion = data.combatStarterVersion, Inventory = ToCore(data.inventory) };
         foreach (var ship in data.loadouts) result.Ships.Add(ToCore(ship));
         return result;
     }
     public ShipLoadoutSaveFile FromCore(EquipmentSnapshot data)
     {
-        var result = new ShipLoadoutSaveFile { formatVersion = 4, starterInventoryIssued = data.StarterInventoryIssued, inventory = FromCore(data.Inventory) };
+        var result = new ShipLoadoutSaveFile { formatVersion = 4, starterInventoryIssued = data.StarterInventoryIssued, combatStarterVersion = data.CombatStarterVersion, inventory = FromCore(data.Inventory) };
         foreach (var ship in data.Ships) result.loadouts.Add(FromCore(ship));
         return result;
     }

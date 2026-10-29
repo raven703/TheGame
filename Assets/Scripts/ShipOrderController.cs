@@ -48,6 +48,7 @@ public class ShipOrderController : MonoBehaviour
         string id=identities.GetValue(target,_=>new TargetIdentity()).Id;
         targets.Clear();targets[id]=new WeakReference<ShipHealth>(target);return id;
     }
+    public static string RuntimeTargetId(ShipHealth target)=>Available(target)?identities.GetValue(target,_=>new TargetIdentity()).Id:null;
     public bool SetOrientation(HullOrientation value) => model.SetOrientation((OrderOrientation)value,Available(OrderTarget));
     public Vector2 FacingDirection(Vector2 position, Vector2 fallback) => V(model.Facing(Observe(position,Vector2.zero),P(fallback)));
     public void SetSpeedLimit(float value) => model.SetSpeedLimit(value);

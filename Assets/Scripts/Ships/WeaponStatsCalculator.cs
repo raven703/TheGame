@@ -12,6 +12,9 @@ public static class WeaponStatsCalculator
     public static WeaponStats Calculate(FittingItem item, float laserCooldown, float fallbackDamage = .5f)
     {
         var kind = item != null ? item.EffectiveWeaponKind : WeaponKind.Laser;
+        if(item!=null && item.explicitWeaponStats)
+            return new WeaponStats {kind=kind,damage=item.damageBonus,cooldown=Mathf.Max(.1f,item.weaponInterval),
+                energy=Mathf.Max(0f,item.weaponEnergy),heat=Mathf.Max(0f,item.weaponHeat)};
         var s=Game.Core.WeaponStatRules.Calculate((Game.Core.WeaponKind)(int)kind,item!=null?item.damageBonus:fallbackDamage,
             item!=null?item.cooldownBonus:0f,laserCooldown);
         return new WeaponStats { kind=(WeaponKind)(int)s.Kind,damage=s.Damage,cooldown=s.Cooldown,energy=s.Energy,heat=s.Heat };

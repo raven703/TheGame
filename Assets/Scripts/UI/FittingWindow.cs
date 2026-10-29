@@ -67,7 +67,7 @@ public class FittingWindow : MonoBehaviour
         statsLabel.text = "ХАРАКТЕРИСТИКИ КОРАБЛЯ\nБаза → оснащение (без боевых эффектов)\n" +
             $"Корпус: {b.hull:0.#} → {s.hull:0.#}\nЩит: {b.shield:0.#} → {s.shield:0.#}\n" +
             $"Масса: {b.mass:0.##} → {s.mass:0.##}\nСкорость: {b.speed:0.#} → {s.speed:0.#}\n" +
-            $"Маршевая сила: {b.thrust:0.#} → {s.thrust:0.#}\nНазад: {s.thrust * (targetShipMovement != null ? targetShipMovement.reverseThrustRatio : .5f):0.#}; вбок: {s.thrust * (targetShipMovement != null ? targetShipMovement.lateralThrustRatio : .35f):0.#}\nПоворот: {b.turn:0.#} → {s.turn:0.#} °/с\n" +
+            $"Маршевая сила: {b.thrust:0.#} → {s.thrust:0.#}\nНазад: {s.reverseThrust:0.#}; вбок: {s.lateralThrust:0.#}\nПоворот: {b.turn:0.#} → {s.turn:0.#} °/с\n" +
             $"Захват: {b.lockTime:0.##} → {s.lockTime:0.##} с\nЭнергия макс.: {b.energy:0.#} → {s.energy:0.#}\n" +
             $"Восстановление: {b.regeneration:0.#} → {s.regeneration:0.#}/с\nУстойчивость: {b.resistance:P0} → {s.resistance:P0}\n" +
             $"Охлаждение: {b.cooling:0.#} → {s.cooling:0.#}/с\n\nОРУЖИЕ (каждый слот отдельно)\n";
@@ -116,9 +116,22 @@ public class FittingWindow : MonoBehaviour
             var drop=CombatUIStyle.Ensure<InventoryDropZone>(scroll.viewport.gameObject);drop.window=this;
         }
         var inventoryTitle=CombatUIStyle.Text("InventoryHeading",transform,"ИНВЕНТАРЬ",17);CombatUIStyle.Box(inventoryTitle.transform,508,122,280,25);
-        statsLabel=CombatUIStyle.Text("ShipStatistics",transform,"",14);
-        CombatUIStyle.Box(statsLabel.transform,808,112,350,490);
-        statsLabel.enableAutoSizing=true; statsLabel.fontSizeMin=11; statsLabel.fontSizeMax=14;
+        var statsPanel=CombatUIStyle.Node("StatisticsScroll",transform);
+        CombatUIStyle.Box(statsPanel.transform,808,112,350,490);
+        var statsScroll=CombatUIStyle.Ensure<ScrollRect>(statsPanel);
+        statsScroll.horizontal=false;statsScroll.vertical=true;
+        var statsViewport=CombatUIStyle.Node("Viewport",statsPanel.transform);
+        CombatUIStyle.Rect(statsViewport.transform,Vector2.zero,Vector2.one,Vector2.zero,Vector2.zero);
+        CombatUIStyle.Ensure<Image>(statsViewport).color=new Color(.055f,.075f,.105f);
+        CombatUIStyle.Ensure<RectMask2D>(statsViewport);
+        statsLabel=CombatUIStyle.Text("ShipStatistics",statsViewport.transform,"",14);
+        var statsRect=(RectTransform)statsLabel.transform;
+        statsRect.anchorMin=new Vector2(0,1);statsRect.anchorMax=Vector2.one;
+        statsRect.pivot=new Vector2(.5f,1);statsRect.anchoredPosition=Vector2.zero;statsRect.sizeDelta=Vector2.zero;
+        var statsFit=CombatUIStyle.Ensure<ContentSizeFitter>(statsLabel.gameObject);
+        statsFit.verticalFit=ContentSizeFitter.FitMode.PreferredSize;
+        statsScroll.viewport=(RectTransform)statsViewport.transform;statsScroll.content=statsRect;
+        statsLabel.enableAutoSizing=false;statsLabel.fontSize=14;
         RefreshStats();
         foreach(var text in GetComponentsInChildren<TextMeshProUGUI>(true))
             if(text!=titleLabel && (text.text.Contains("ГРУППА")||text.text.Contains("ГРУППЫ")||text.text.Contains("ИНВЕНТАРЬ МОДУЛЕЙ")))text.gameObject.SetActive(false);

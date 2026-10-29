@@ -35,9 +35,8 @@ public class ShipMovement : MonoBehaviour
         float main = AvailableForce;
         float a = main * (longitudinal >= 0f ? 1f : reverseThrustRatio);
         float b = main * lateralThrustRatio;
-        Vector2 effort = new Vector2(a > 0f ? longitudinal / a : 0f, b > 0f ? lateral / b : 0f);
-        effort = Vector2.ClampMagnitude(effort, 1f);
-        return forward * effort.x * a + side * effort.y * b;
+        var limited=Game.Core.DirectedThrust.Limit(longitudinal,lateral,main,main*reverseThrustRatio,b);
+        return forward * limited.X + side * limited.Y;
     }
     public float ForceAlong(Vector2 direction)
     {

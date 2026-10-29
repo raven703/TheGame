@@ -223,12 +223,12 @@ MonoBehaviour:
   baseAcceleration: 14
   baseReverseThrust: 0
   baseLateralThrust: 0
-  baseRotationSpeed: 300
-  baseMaxEnergy: 100
-  baseEnergyRegeneration: 12
+  baseRotationSpeed: 240
+  baseMaxEnergy: 120
+  baseEnergyRegeneration: 15
   baseCooling: 15
   baseHeatResistance: 0
-  baseLockTime: 0.5
+  baseLockTime: 0.6
   weaponSlots: 4
   hardpoints:
   - id: cobra_mk3:weapon:0

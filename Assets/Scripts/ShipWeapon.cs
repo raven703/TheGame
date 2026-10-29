@@ -19,6 +19,9 @@ public enum CombatBehavior
 
 public class ShipWeapon : MonoBehaviour
 {
+    public bool AIFireAllowed { get; set; } = true;
+    public Game.Core.ICombatRandom CombatRandom { get; set; }
+    public event Action<Game.Core.ShotResult,float,float,float> OnShotResolved;
     [Header("Weapon & Projectile Setup")]
     public GameObject bulletPrefab;
     [Tooltip("Точки вылета снарядов (по индексу = слот оружия). Если пусто — центр корабля.")]
@@ -320,6 +323,7 @@ public class ShipWeapon : MonoBehaviour
 
     private void Shoot()
     {
+        if(!AIFireAllowed)return;
         if (!ShipOrderController.Available(Target) || pendingTarget != null || IsTargetingDisrupted || CombatSession.IsPreparing) return;
         bool useFitting = activeWeapons != null && activeWeapons.Count > 0;
         if (!useFitting && !useFallbackWeapon)
@@ -365,15 +369,19 @@ public class ShipWeapon : MonoBehaviour
             Asteroid cover = null;
             var coreStats = new Game.Core.WeaponStatValues { Kind=(Game.Core.WeaponKind)(int)kind, Damage=stats.damage,
                 Cooldown=stats.cooldown,Energy=stats.energy,Heat=stats.heat };
+            float hullBefore=Target.Data.Damage.Hull,shieldBefore=Target.Data.Damage.Shield,moduleBefore=0;
+            foreach(var module in Target.Data.Damage.Modules)moduleBefore+=module.Current;
             var shot = combat.TryFire(key,Time.time,coreStats,true,true,
                 !ownerHealth.Data.GetModule(ModuleType.Weapon).isDestroyed,
-                reactor != null ? reactor.CombatModel : null,ownerHealth.Data.accuracy,evasion,UnityCombatRandom.Instance,
+                reactor != null ? reactor.CombatModel : null,ownerHealth.Data.accuracy,evasion,CombatRandom??UnityCombatRandom.Instance,
                 () => { cover=Asteroid.FindCover(spawnPos,endPos,out Vector2 impact);if(cover!=null)endPos=impact;return cover!=null?cover.Model:null; },
                 Target.Data != null ? Target.Data.Damage : null,
                 targetedModule.HasValue ? (Game.Core.CombatModule?)(int)targetedModule.Value : null,
                 Target.ReportDamage, bypass=>Target.ReportBypass(bypass),
                 transition=>reactor.ReportCombatTransition(transition),
                 (state,destroyed)=>cover.ReportDamage(destroyed));
+            float moduleAfter=0;foreach(var module in Target.Data.Damage.Modules)moduleAfter+=module.Current;
+            OnShotResolved?.Invoke(shot,Mathf.Max(0,hullBefore-Target.Data.Damage.Hull),Mathf.Max(0,shieldBefore-Target.Data.Damage.Shield),Mathf.Max(0,moduleBefore-moduleAfter));
             if(!shot.Fired)continue;
             if(shot.Outcome==Game.Core.ShotOutcome.Cover)CombatSession.Log($"{name}: выстрел в укрытие");
             else if(shot.Outcome==Game.Core.ShotOutcome.Miss)CombatSession.Log($"{name}: промах ({kind})");

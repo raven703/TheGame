@@ -197,17 +197,17 @@ MonoBehaviour:
   hullSprite: {fileID: -7667641669907399498, guid: 44999e73c73a2bd4190b66025d6c4ca2, type: 3}
   displayName: SideWinder
   icon: {fileID: -7667641669907399498, guid: 44999e73c73a2bd4190b66025d6c4ca2, type: 3}
-  maxHullHP: 80
-  baseShieldHP: 40
-  baseMass: 1.5
+  maxHullHP: 75
+  baseShieldHP: 35
+  baseMass: 1.8
   baseMaxSpeed: 8
-  baseAcceleration: 18
+  baseAcceleration: 14
   baseReverseThrust: 0
   baseLateralThrust: 0
-  baseRotationSpeed: 420
-  baseMaxEnergy: 100
-  baseEnergyRegeneration: 12
-  baseCooling: 15
+  baseRotationSpeed: 360
+  baseMaxEnergy: 80
+  baseEnergyRegeneration: 13
+  baseCooling: 18
   baseHeatResistance: 0
   baseLockTime: 0.35
   weaponSlots: 2

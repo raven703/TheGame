@@ -1,4 +1,62 @@
-# Current handoff: stage 6 audit
+## Ordinary CombatSandbox integration — October 29, 2026 (supersedes demo priority)
+
+User authorized production profile upgrade; main branch retained, no commit/push/switch. CombatSandbox scene saved outside Play Mode with runtime ShipSpawner role configuration and hull references: waves Interceptor; Artillery; Escort; Interceptor+Escort. NPC use existing CombatDemoLoadouts definitions (runtime despite historical name), shared ShipStatsCalculator.ApplyNpc, EnemyAI role pilot and ordinary paid ShipAbilities. No player inventory access for NPC, no new demo/profile/screen. Editor-only ApplyExperiment is not used by ordinary combat. Runtime Windows paths are compiled into Assembly-CSharp; standalone Windows executable build/launch was NOT performed.
+
+Production backup (outside Temp, excluded from Git): C:\Personal\Unity\TheGame\My project\Tools\CombatEvidence\ProductionUpgrade-20261029. JSON copies verified SHA256; PlayerPrefs registry exported. Original current JSON hash 9871051137244C9782F4246FF34F85693DEDD30626AB8B935FB44DB50C7B96A2. This is the current authorized checkpoint, not the lost historical baseline.
+
+One-shot combatStarterVersion=1 persisted through Unity/Core adapter and Core snapshot copy. Grant checks category-compatible stable IDs across free inventory and every ship. Existing records untouched, no auto-equip, no replenish after version stamped. Migration + grant use one atomic EquipmentFileStore replacement before publishing ledger. Failure-injection test verifies original bytes and pending cleanup. Known-standard migration remains CombatStandardDefinitions.Upgrade balanceVersion=1; unknown IDs untouched.
+
+Actually added: lightweight-engine, maneuver-block, radiator, capacitor, w4 pulse laser, laser-turret. Already owned: s2 heavy shield, w2 plasma, w3 railgun. All 17 previous items retain every field and instanceId; placements/empty slots unchanged; total23. Existing profile had already received versioned standard parameter migration: no previous item fields changed in this authorized upgrade. New records use unchanged catalog values. After hash3755316138E82B78476077C6F554ABBC876B9118EC1F1492D2B2AAACDC899631 remained identical through restart/reentry/fitting. No presets rewritten.
+
+Fitting standard descriptions now derive from actual catalog effects; 1280x720 HUD/fitting screenshots inspected. Long statistics moved into masked scroll at readable14pt rather than clipped/shrunk text; reverse/lateral stats use calculated values. Existing unrelated UI/selection settings preserved.
+
+Checks: Core Release build0 warnings/errors, Core tests102/102; affected EditMode21/21 XML20261029-124818-265 (MCP initialization timeout was false negative, authoritative XML Passed); affected FittingInteraction PlayMode3/3, latest1.4544937s. Earlier new fixture initially failed because raw JsonUtility null slot becomes empty FittingItem: test now uses production Parse normalization, assertion retained. No full regression or72-batch. Real CombatSandbox smoke confirmed roles/weapons: Interceptor w4/w4 Approach/Exit; Artillery w3/w2 Recover energy83.67/155; Escort w4/turret Orbit and resource spending; W4 both roles. Defeat panel observed in unmodified battle; victory and all wave transitions verified with diagnostic lethal damage, temporary runtime-only player HP and shorter pauses. Restart reload clears all diagnostic changes. This is not an unassisted four-wave victory/balance test. Ability code audited to call ordinary paid methods; detailed per-ability NPC telemetry not captured.
+
+Final: ordinary CombatSandbox Play Mode, preparation=true, fitting=false, enemies0, role configuration=true, scene dirty=false, Console errors0. Windows player build/run remains unverified. Backup and evidence available outside Temp. Existing historical full-suite limitations remain; no claim full regression clean.
+
+# Current handoff — October 29, 2026
+
+CURRENT PRIORITY: interactive playable demo, 72-fight batch deferred by user. CombatExperiment now defaults Interactive=true: A/B role selectors, AI/player-A toggle, fixed-cover toggle, start/restart, elapsed time/winner, ship stats and paid ability buttons. Player right-click issues normal MoveTo; weapon targets B automatically; A AI disabled in player mode. Scene Assets/Scenes/CombatArchetypesV1.unity, menu TheGame/Combat v1/Create isolated experiment scene, main camera tagged. Normal build starting scene/settings untouched.
+Latest smoke reports outside Temp: Tools/CombatEvidence/Demo/20261029-120851. AI interceptor/escort A wins33.48s; interceptor/artillery B wins21.80s; player-controlled interceptor vs interceptor with cover B wins24.41s, player fired2 shots and movement/paid boost verified. All roles enter and finish fights; not a manual player-vs-each-role acceptance or balance result. Targeted EditMode catalog/demo tests8/8 Passed, XML20261029-121227-355.xml. Main production save hash987105... unchanged through demo session. No blind save restoration.
+Known limitations: Editor-only demo, IMGUI basic presentation, auto target B rather than full tactical HUD; no two-resolution visual acceptance; original interceptor pass-through and artillery facing still need manual review. Do not claim full regression or72-batch completed. No balance tuning/commit/push. Final intended state Play Mode demo selection/preparation.
+
+STORAGE AUDIT: main save no longer matches original B0386A (now987105...). Line comparison to outside-Temp checkpoint-20261029 has no differences, so predates latest fixture runs. Preserved current copy Tools/CombatEvidence/save-after-tests.json; no blind restoration. Audit earlier production migration/access before further combat execution or storage-safety claims.
+
+NEWEST: victory-chain fixture stabilized without bypassing shots/damage: explicit isolated gun and accuracy, no movement/catalog dependency. Three sequential framework XML Passed (0.299036/0.244387/0.255382s). Added CombatTestEvidence Editor callbacks preserving every run XML+log under ignored Tools/CombatEvidence/TestRuns, outside Temp. Full subsequent PlayMode completed23/24, failed AutoFire lock/EMP test from random misses; fixture-only accuracy/evasion made explicit, targeted rerun Passed2.080163s. Full suite after that last fixture change pending. See latest test-localization paragraphs in combat-archetypes-v1.md. No72-batch or balance changes. Editor closure considered external, not confirmed crash.
+
+LATEST: Read the latest-investigation subsection of combat-archetypes-v1.md first. Fresh PlayMode retry ended in full Unity shutdown; NOT passed. Editor relaunched. TimeController null enable/disable guard fixed, but not yet validated by a completed Unity run. Prior run had compile/reload during execution: do not edit files during tests.
+Temp was cleared on shutdown: original save/prefs backups and smoke reports are gone. Shutdown log copied outside Temp into Tools/CombatEvidence/playmode-shutdown.log. Original gameplay-prefs baseline unavailable; no registry restored. Main save still matches original documented SHA256. Core build separately succeeded (0 warnings/errors), dotnet tests separately passed 102/102.
+72-fight matrix NOT started; existing loop does not implement requested matrix. Remaining user checklist is unfinished. Do not claim completion, recovered original prefs baseline or final preparation scene. No balance tuning, commit, push or branch switch.
+
+See the verified update at the top of `C:\Personal\Unity\TheGame\My project\docs\combat-archetypes-v1.md`; the older handoff below is superseded.
+Core 102/102; EditMode 69/69 after latest refactor. Full PlayMode runner aborted at ExitPlayModeTask after 21/24; editor confirmed stopped, orphan status cleared.
+Isolated scene created and valid three-fight smoke completed; reports in `C:\Personal\Unity\TheGame\My project\Temp\CombatArchetypesV1\Reports\20261029-105644`.
+Fixed zero weapons in initial invalid smoke: Editor-only ShipStatsCalculator.ApplyExperiment shares stat application but skips migration/persistence, preserving production preparation guard.
+EnemyAI role mode no longer resolves legacy Player tag in Awake. Editor is stopped, experiment scene active.
+Three save files still match backup. Full PlayerPrefs differs; inspect structured values before making any game-progress equality claim. Never overwrite all prefs to hide Unity session differences.
+Next: add lifecycle/error/telemetry tests, fix independent seed coverage and per-weapon geometry metrics, rerun Unity tests, then batch/visual checks. Do not call the feature complete or balance validated.
+No commit/push/branch switch; preserve all pre-existing settings changes. Generated test-runner scene remains untracked; inspect before removing. New experiment/tool/scene metas must be retained.
+
+# Historical handoff: combat archetypes v1 — partial, blocked on Unity verification
+
+User requested A/B/C/D vertical slice, no commit/push/branch switch. Current main
+HEAD e0991fa. NOT implemented end-to-end. Read combat-archetypes-v1.md before continuing.
+Initial tree had user changes in render settings, TMP fallback, PlayerSettings,
+EditorBuildSettings and untracked Build Profiles; preserved, never reverted.
+Verified copied storage and exported registry under ignored
+Temp/SaveBackups/combat-v1-20261029-121549 (name uses machine clock).
+Fresh independent baseline 89/89. Added Core catalog and bonus/axis math plus
+8 tests: full dotnet 97/97, Release zero warnings/errors. Unity adapters still
+use legacy values; no migration, ship tuning, new AI, demo or stand implemented.
+Unity refresh timed out after 60s; subsequent read_console reported session not
+ready/ping unanswered. Final independent shell inspection exceeded 300s and was
+left running by tool; output at
+C:/Users/user/AppData/Local/Temp/cline/proceed-while-running-1793265975405-uvqypo3.log.
+Do not claim final save/prefs comparison, Unity compile or visual checks passed.
+No play session started. Next: recover/check Unity responsiveness, inspect console,
+confirm generated .meta for new Core script, finish A verification before B.
+
+# Previous handoff: stage 6 audit
 
 ## Final acceptance and commit preparation
 

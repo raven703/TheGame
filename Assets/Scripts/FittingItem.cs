@@ -1,4 +1,4 @@
-﻿using UnityEngine;
+using UnityEngine;
 
 /// <summary>
 /// Тип визуализации выстрела, зависит от установленного оружия.
@@ -42,6 +42,11 @@ public class FittingItem
     // Модификаторы характеристик
     public float damageBonus;
     public float cooldownBonus;
+    public int balanceVersion;
+    public bool explicitWeaponStats;
+    public float weaponInterval, weaponEnergy, weaponHeat;
+    public float energyBonus, regenerationBonus, coolingBonus;
+    public float speedPercent, thrustPercent, reversePercent, lateralPercent, afterburnerHeatPercent;
     public float shieldBonus;
     public float speedBonus;
     public float accelBonus;
@@ -49,7 +54,7 @@ public class FittingItem
     public float heatResistanceBonus;
     // Legacy saves contain item snapshots. e2 retains its identity and quantity.
     public float EffectiveHeatResistanceBonus => Game.Core.StatMath.EffectiveResistanceBonus(id,heatResistanceBonus);
-    public string EffectiveDescription => id == "e2"
+    public string EffectiveDescription => (Game.Core.CombatArchetypeCatalog.TryWeapon(id,out _) || Game.Core.CombatArchetypeCatalog.TryModule(id,out _)) ? CombatStandardDefinitions.Description(id) : id == "e2"
         ? "Тяга +10, скорость +1, масса +0.5; устойчивость к перегреву +10 п.п."
         : description;
 

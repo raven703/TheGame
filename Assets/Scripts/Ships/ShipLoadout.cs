@@ -40,6 +40,7 @@ public class ShipLoadoutSaveFile
 {
     public int formatVersion;
     public bool starterInventoryIssued;
+    public int combatStarterVersion;
     public List<FittingItem> inventory = new List<FittingItem>();
     public List<ShipLoadout> loadouts = new List<ShipLoadout>();
 }

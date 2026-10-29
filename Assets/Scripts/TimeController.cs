@@ -23,12 +23,12 @@ public class TimeController : MonoBehaviour
 
     private void OnEnable()
     {
-        controls.Combat.Enable();
+        if (controls != null) controls.Combat.Enable();
     }
 
     private void OnDisable()
     {
-        controls.Combat.Disable();
+        if (controls != null) controls.Combat.Disable();
     }
 
     private void OnDestroy()

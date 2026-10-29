@@ -25,6 +25,11 @@ public class EnemyAI : MonoBehaviour
     public float optimalDistance = 4.5f;
 
     public AIPersonality personality = AIPersonality.Brawler;
+    public bool useCombatRole;
+    public Game.Core.CombatRole combatRole;
+    private readonly Game.Core.CombatRolePilot rolePilot=new Game.Core.CombatRolePilot();
+    public Game.Core.CombatManeuver CurrentManeuver=>rolePilot.Maneuver;
+    public void SetOpponent(ShipHealth opponent) { playerTarget=opponent; }
 
     private void Awake()
     {
@@ -33,7 +38,7 @@ public class EnemyAI : MonoBehaviour
         if (shipWeapon == null)
             shipWeapon = GetComponent<ShipWeapon>();
 
-        if (playerTarget == null)
+        if (playerTarget == null && !useCombatRole)
         {
             var playerObject = GameObject.FindWithTag("Player");
             if (playerObject != null)
@@ -44,11 +49,11 @@ public class EnemyAI : MonoBehaviour
 
     private void Start()
     {
-        if (CombatSession.Instance != null) personality = CombatSession.Instance.EnemyPersonality;
+        if (!useCombatRole && CombatSession.Instance != null) personality = CombatSession.Instance.EnemyPersonality;
         if (shipWeapon != null)
         {
             shipWeapon.SetTarget(playerTarget);
-            shipWeapon.useFallbackWeapon = true;
+            shipWeapon.useFallbackWeapon = !useCombatRole;
         }
     }
 
@@ -56,6 +61,7 @@ public class EnemyAI : MonoBehaviour
     {
         if (CombatSession.IsPreparing || shipMovement == null || shipWeapon == null) return;
         var orders = shipMovement.Orders;
+        if(useCombatRole){UpdateCombatRole(orders);return;}
         if (!ShipOrderController.Available(playerTarget))
         {
             orders.ApplyDecision(Game.Core.PilotDecisions.Decide((Game.Core.PilotPersonality)personality,
@@ -69,6 +75,45 @@ public class EnemyAI : MonoBehaviour
             health != null && health.Data != null ? health.Data.currentHullHP : 0f,
             health != null && health.Data != null ? health.Data.maxHullHP : 0f, shipWeapon.range, optimalDistance);
         orders.ApplyDecision(decision, playerTarget);
+    }
+
+    private void UpdateCombatRole(ShipOrderController orders)
+    {
+        bool available=ShipOrderController.Available(playerTarget);
+        if(available && shipWeapon.Target!=playerTarget && shipWeapon.PendingTarget!=playerTarget)shipWeapon.SetTarget(playerTarget);
+        var health=GetComponent<ShipHealth>();var data=health!=null?health.Data:null;
+        var reactor=GetComponent<ShipReactor>();var abilities=GetComponent<ShipAbilities>();
+        var targetBody=available?playerTarget.GetComponent<Rigidbody2D>():null;
+        var targetMovement=available?playerTarget.GetComponent<ShipMovement>():null;
+        var targetWeapon=available?playerTarget.GetComponent<ShipWeapon>():null;
+        Vector2 position=transform.position,targetPosition=available?(Vector2)playerTarget.transform.position:position;
+        Vector2 forward=shipMovement.GetForwardVector(),targetForward=targetMovement!=null?targetMovement.GetForwardVector():Vector2.up;
+        Vector2 velocity=targetBody!=null?targetBody.linearVelocity:Vector2.zero;
+        bool blocked=available&&Asteroid.FindCover(position,targetPosition,out _ )!=null;
+        var observation=new Game.Core.CombatRoleObservation {
+            Position=new Game.Core.AimPoint(position.x,position.y),Forward=new Game.Core.AimPoint(forward.x,forward.y),
+            TargetPosition=new Game.Core.AimPoint(targetPosition.x,targetPosition.y),TargetVelocity=new Game.Core.AimPoint(velocity.x,velocity.y),
+            TargetForward=new Game.Core.AimPoint(targetForward.x,targetForward.y),TargetAvailable=available,
+            EngineAvailable=shipMovement.EngineAvailable,WeaponAvailable=data!=null&&!data.GetModule(ModuleType.Weapon).isDestroyed,
+            LineBlocked=blocked,Range=shipWeapon.range,Energy=reactor!=null?reactor.Energy:0,MaxEnergy=reactor!=null?reactor.maxEnergy:0,
+            EnergyFraction=reactor!=null?reactor.Energy/Mathf.Max(1,reactor.maxEnergy):0,HeatFraction=reactor!=null?reactor.Heat/100f:0,
+            Hull=data!=null?data.currentHullHP:0,HullFraction=data!=null?data.currentHullHP/Mathf.Max(1,data.maxHullHP):0,
+            ShieldFraction=data!=null?data.currentShieldHP/Mathf.Max(1,data.maxShieldHP):1,
+            BoostReady=abilities!=null&&abilities.afterburnerCooldown<=0,ShieldReady=abilities!=null&&abilities.shieldBoostCooldown<=0,
+            EmpReady=abilities!=null&&abilities.emPulseCooldown<=0,TargetSuppressed=targetWeapon!=null&&targetWeapon.IsTargetingDisrupted };
+        var decision=rolePilot.Decide(combatRole,ShipOrderController.RuntimeTargetId(playerTarget),observation,Time.fixedDeltaTime);
+        if(decision.NewCommand)
+        {
+            if(decision.UseWaypoint)orders.MoveTo(new Vector2(decision.Waypoint.X,decision.Waypoint.Y));
+            else {orders.ApplyDecision(decision.Order,playerTarget);if(decision.Order.Mode!=Game.Core.OrderMode.HoldPosition)orders.SetOrientation((HullOrientation)decision.Orientation);}
+        }
+        shipWeapon.AIFireAllowed=decision.AllowFire;
+        if(abilities!=null)
+        {
+            if(decision.Shield)abilities.UseShieldBoost();
+            if(decision.Boost)abilities.UseAfterburner();
+            if(decision.Emp)abilities.UseEMPulse();
+        }
     }
 
 }

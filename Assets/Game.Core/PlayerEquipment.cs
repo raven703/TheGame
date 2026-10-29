@@ -58,11 +58,12 @@ namespace Game.Core
     public sealed class EquipmentSnapshot
     {
         public bool StarterInventoryIssued;
+        public int CombatStarterVersion;
         public List<EquipmentItem> Inventory = new List<EquipmentItem>();
         public List<ShipEquipment> Ships = new List<ShipEquipment>();
         public EquipmentSnapshot Copy()
         {
-            var result = new EquipmentSnapshot { StarterInventoryIssued = StarterInventoryIssued, Inventory = new List<EquipmentItem>(Inventory) };
+            var result = new EquipmentSnapshot { StarterInventoryIssued = StarterInventoryIssued, CombatStarterVersion = CombatStarterVersion, Inventory = new List<EquipmentItem>(Inventory) };
             foreach (var ship in Ships) result.Ships.Add(ship.Copy());
             return result;
         }

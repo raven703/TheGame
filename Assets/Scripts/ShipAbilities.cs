@@ -6,6 +6,7 @@ public class ShipAbilities : MonoBehaviour
     private ShipMovement shipMovement;
     private ShipHealth shipHealth;
     private ShipWeapon shipWeapon;
+    public float AfterburnerHeatMultiplier { get; set; } = 1f;
     private bool Spend(float energy, float heat)
     {
         var reactor = GetComponent<ShipReactor>();
@@ -40,7 +41,7 @@ public class ShipAbilities : MonoBehaviour
         if (afterburnerCooldown > 0f || isAfterburnerActive || shipMovement == null)
             return false;
 
-        if (!Spend(25f, 20f)) return false;
+        if (!Spend(25f, 20f * AfterburnerHeatMultiplier)) return false;
         CombatSession.Log($"{name}: форсаж на 2 сек.");
         StartCoroutine(AfterburnerRoutine());
         afterburnerCooldown = 10f;

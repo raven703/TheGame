@@ -18,24 +18,30 @@ public static class ShipLoadoutManager
             BeforeProductionAccess?.Invoke();
             if (!File.Exists(FilePath))
             {
-                ledger = new PlayerEquipment(JsonUtility.ToJson(new ShipLoadoutSaveFile { formatVersion = 4 }), WriteAtomic);
+                var fresh=new ShipLoadoutSaveFile { formatVersion = 4 };
+                CombatStandardDefinitions.EnsureStarterSet(fresh);
+                var created=new PlayerEquipment(JsonUtility.ToJson(fresh), WriteAtomic);
+                WriteAtomic(created.Json);
+                ledger = created;
                 return ledger;
             }
             try
             {
                 string original = File.ReadAllText(FilePath);
-                var prepared = new PlayerEquipment(original, WriteAtomic);
-                if (JsonUtility.FromJson<ShipLoadoutSaveFile>(original).formatVersion < 4)
+                var migrated=PlayerEquipment.Parse(original,true);
+                bool starterGrant=CombatStandardDefinitions.EnsureStarterSet(migrated);
+                var prepared = new PlayerEquipment(JsonUtility.ToJson(migrated), WriteAtomic);
+                var originalData=JsonUtility.FromJson<ShipLoadoutSaveFile>(original);
+                bool balanceMigration=false;
+                if(originalData.formatVersion==4)
+                    foreach(var item in PlayerEquipment.Items(originalData))
+                        if(CombatStandardDefinitions.Upgrade(item))balanceMigration=true;
+                if(balanceMigration || starterGrant || originalData.formatVersion<4)
                 {
-                    string backup = FilePath + ".pre-v4.bak";
-                    if (!File.Exists(backup)) File.Copy(FilePath, backup);
-                    if (File.ReadAllText(backup) != original)
-                    {
-                        backup = FilePath + ".pre-v4-" + Guid.NewGuid().ToString("N") + ".bak";
-                        File.Copy(FilePath, backup);
-                    }
+                    string backup=FilePath+".pre-combat-v1-"+Guid.NewGuid().ToString("N")+".bak";
+                    File.Copy(FilePath,backup);
+                    if(File.ReadAllText(backup)!=original)throw new IOException("Combat balance backup verification failed.");
                     WriteAtomic(prepared.Json);
-                    Debug.Log("[Equipment] Миграция v4 завершена без повторной выдачи. Резервная копия: " + backup);
                 }
                 ledger = prepared;
                 return ledger;
