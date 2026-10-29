@@ -8,7 +8,7 @@ using UnityEngine.InputSystem;
 /// <summary>
 /// Переключение цели:
 /// - Tab — циклически по живым врагам.
-/// - Автозахват ближайшего, если цели нет.
+/// - No implicit target selection: only an explicit Tab changes weapon selection.
 /// </summary>
 public class TargetSwitcher : MonoBehaviour
 {
@@ -20,7 +20,7 @@ public class TargetSwitcher : MonoBehaviour
 
     private void Update()
     {
-        if (playerWeapon == null) return;
+        if (playerWeapon == null || FittingWindow.OpenWindow != null || PlayerInputHandler.IsPointerOverUI()) return;
 
 #if ENABLE_INPUT_SYSTEM
         bool switchPressed = Keyboard.current != null && Keyboard.current.tabKey.wasPressedThisFrame;
@@ -29,19 +29,6 @@ public class TargetSwitcher : MonoBehaviour
 #endif
 
         var alive = EnemyRegistry.GetAliveEnemies();
-
-        // === Автозахват: если цели нет (ни захваченной, ни в процессе) — берём ближайшую ===
-        bool noTarget = playerWeapon.Target == null
-                        && playerWeapon.PendingTarget == null;
-
-        bool targetDestroyed = playerWeapon.Target != null
-                               && (playerWeapon.Target.Data == null
-                                   || playerWeapon.Target.Data.IsDestroyed);
-
-        if ((noTarget || targetDestroyed) && alive.Count > 0)
-        {
-            playerWeapon.SetTarget(GetNearestEnemy(alive));
-        }
 
         // === Tab — циклическое переключение ===
         if (switchPressed && alive.Count > 0)

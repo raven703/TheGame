@@ -152,12 +152,19 @@ public class CombatHUDManager : MonoBehaviour
 
     private void UpdateTargetHUD()
     {
-        ShipHealth target = (playerWeapon != null && playerWeapon.Target != null)
-            ? playerWeapon.Target
-            : defaultEnemyHealth;
+        ShipHealth target = playerWeapon!=null
+            ? (playerWeapon.PendingTarget!=null?playerWeapon.PendingTarget:playerWeapon.Target)
+            : null;
 
-        if (target == null || target.Data == null)
+        if (!ShipOrderController.Available(target))
+        {
+            if(targetTitleLabel!=null)targetTitleLabel.text="ЦЕЛЬ — не выбрана";
+            if(targetHullText!=null)targetHullText.text="";
+            if(targetShieldText!=null)targetShieldText.text="";
+            if(targetHullBarFill!=null)targetHullBarFill.fillAmount=0;
+            if(targetShieldBarFill!=null)targetShieldBarFill.fillAmount=0;
             return;
+        }
 
         if (targetTitleLabel != null)
             targetTitleLabel.text = "ЦЕЛЬ";

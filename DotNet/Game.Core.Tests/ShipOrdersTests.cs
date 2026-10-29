@@ -8,6 +8,18 @@ public class ShipOrdersTests
     private static AimPoint P(float x=0,float y=0) => new AimPoint(x,y);
     private static OrderObservation O(float x=0,float y=0,float speed=0,bool available=true) =>
         new OrderObservation {Position=P(x,y),Velocity=P(speed),TargetAvailable=available,TargetForward=P(0,1),WeaponRange=10};
+    [Test] public void FollowCursor_OnePoint_NoRevisionReset_ReleaseAndStopAreFinal()
+    {
+        var order=new ShipOrders();order.Tactical(OrderMode.Orbit,"enemy");order.BeginFollowCursor(P(5));
+        int revision=order.NavigationRevision;
+        for(int i=0;i<100;i++)order.UpdateFollowCursor(P(i));
+        Assert.AreEqual(revision,order.NavigationRevision);Assert.AreEqual(1,order.Waypoints.Count);
+        Assert.IsNull(order.TargetId);Assert.AreEqual(OrderOrientation.Course,order.Orientation);
+        order.Evaluate(O(99,0),out _);Assert.AreEqual(OrderMode.FollowCursor,order.Mode);
+        order.EndFollowCursor();Assert.AreEqual(OrderMode.MoveToPoint,order.Mode);
+        order.UpdateFollowCursor(P(500));Assert.AreEqual(99,order.Destination.X);
+        order.Stop(P());order.UpdateFollowCursor(P(500));Assert.AreEqual(OrderMode.HoldPosition,order.Mode);
+    }
     [Test] public void InitialManualQueueStopAndNoAutomaticOrbit()
     {
         var order=new ShipOrders();Assert.AreEqual(OrderMode.HoldPosition,order.Mode);Assert.False(order.IsBraking);

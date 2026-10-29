@@ -1,4 +1,4 @@
-﻿<Solution>
+<Solution>
   <Project Path="Unity.Timeline.csproj" />
   <Project Path="Unity.InputSystem.csproj" />
   <Project Path="Unity.PlasticSCM.Editor.csproj" />
@@ -45,6 +45,10 @@
   <Project Path="Unity.2D.Common.Runtime.csproj" />
   <Project Path="Unity.InputSystem.TestFramework.csproj" />
   <Project Path="Unity.VisualScripting.Shared.Editor.csproj" />
+  <Folder Name="/DotNet/">
+    <Project Path="DotNet/Game.Core.Tests/Game.Core.Tests.csproj" />
+    <Project Path="DotNet/Game.Core/Game.Core.csproj" />
+  </Folder>
   <Project Path="Assembly-CSharp-Editor.csproj" />
   <Project Path="Unity.2D.Aseprite.Common.csproj" />
   <Project Path="Unity.InputSystem.ForUI.Editor.csproj" />

@@ -97,7 +97,11 @@ public class ShipMovement : MonoBehaviour
         float alignment = Mathf.Clamp01(Vector2.Dot(GetForwardVector(), direction));
         Vector2 desiredVelocity = delta.magnitude < .08f ? Vector2.zero : direction * desiredSpeed * Mathf.Lerp(.15f, 1f, alignment);
         if (Orders.IsBraking) desiredVelocity = Vector2.zero;
-        Rb.AddForce(LimitThrust((desiredVelocity - Rb.linearVelocity) * Rb.mass * 4f));
+        // Box2D damping otherwise creates a permanent speed error (and can exceed
+        // the entire engine budget on heavy hulls). Feed forward only desired drag;
+        // braking still uses physical thrust and passive damping, never a velocity write.
+        Vector2 dragCompensation = desiredVelocity * Rb.linearDamping;
+        Rb.AddForce(LimitThrust(((desiredVelocity - Rb.linearVelocity) * 4f + dragCompensation) * Rb.mass));
         Vector2 facing = Orders.FacingDirection(Rb.position, direction);
         float desiredAngular = 0f;
         if (facing.sqrMagnitude > .001f && !Orders.IsBraking)

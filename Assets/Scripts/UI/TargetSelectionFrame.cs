@@ -35,14 +35,18 @@ public class TargetSelectionFrame : MonoBehaviour
 
     private void LateUpdate()
     {
-        if (playerWeapon == null || playerWeapon.Target == null)
+        var selected=playerWeapon!=null?(playerWeapon.PendingTarget!=null?playerWeapon.PendingTarget:playerWeapon.Target):null;
+        if (!ShipOrderController.Available(selected))
         {
             if (frameLine != null)
                 frameLine.enabled = false;
             return;
         }
 
-        var targetPos = playerWeapon.Target.transform.position;
+        bool pending=playerWeapon.PendingTarget!=null;
+        Color color=pending?Color.Lerp(new Color(1f,.65f,.1f),frameColor,playerWeapon.LockProgress):frameColor;
+        frameLine.startColor=frameLine.endColor=color;
+        var targetPos = selected.transform.position;
         DrawSquare(targetPos, 1.2f);
     }
 

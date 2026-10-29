@@ -8,6 +8,17 @@ public class CombatCatalogMigrationTests
 {
     private static Type T(string name)=>Type.GetType(name+", Assembly-CSharp",true);
     private static object Field(object item,string name)=>item.GetType().GetField(name).GetValue(item);
+    [Test] public void SpeedZoomIsMonotonicBoundedAndHasLowSpeedDeadZone()
+    {
+        var method=T("CameraFollow").GetMethod("SpeedZoomMultiplier");float previous=1;
+        for(int i=0;i<=300;i++)
+        {
+            float value=(float)method.Invoke(null,new object[]{i*.1f,10f,.2f,1.35f,1.6f});
+            Assert.That(value,Is.InRange(1f,1.6f));Assert.GreaterOrEqual(value,previous);previous=value;
+            if(i<=20)Assert.AreEqual(1f,value);
+            if(i==100)Assert.AreEqual(1.35f,value,.0001f);
+        }
+    }
     [Test] public void StarterGrantChecksInstalledOwnershipAndNeverReplenishes()
     {
         var data=JsonUtility.FromJson("{\"formatVersion\":4,\"starterInventoryIssued\":true,\"loadouts\":[{\"shipId\":\"one\",\"weaponSlots\":[null,{\"id\":\"w4\",\"instanceId\":\"existing\",\"allowedGroup\":0}]}]}",T("ShipLoadoutSaveFile"));

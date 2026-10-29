@@ -53,6 +53,12 @@ public class ParallaxLayer : MonoBehaviour
     void LateUpdate()
     {
         if (cam == null) return;
+        var cameraComponent=cam.GetComponent<Camera>();
+        if(cameraComponent!=null&&cameraComponent.orthographic)
+        {
+            float h=cameraComponent.orthographicSize*2f*1.1f;
+            transform.localScale=new Vector3(Mathf.Max(quadSize.x,h*cameraComponent.aspect),Mathf.Max(quadSize.y,h),1f);
+        }
 
         Vector3 delta = cam.position - lastCamPos;
         lastCamPos = cam.position;

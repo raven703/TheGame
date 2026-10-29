@@ -3,7 +3,7 @@ using System.Collections.Generic;
 
 namespace Game.Core
 {
-    public enum OrderMode { HoldPosition, MoveToPoint, EngageTarget, Orbit, KeepDistance, Flank }
+    public enum OrderMode { HoldPosition, MoveToPoint, EngageTarget, Orbit, KeepDistance, Flank, FollowCursor }
     public enum OrderOrientation { Course, OrderTarget }
     public enum PilotPersonality { Brawler, Sniper, Flanker, Cautious }
 
@@ -46,6 +46,19 @@ namespace Game.Core
             Mode = OrderMode.MoveToPoint; IsBraking = false; points.Add(accessiblePoint);
             Destination = points[0]; initialized = true; NavigationRevision++;
         }
+        public void BeginFollowCursor(AimPoint point)
+        {
+            MoveTo(point); Mode = OrderMode.FollowCursor;
+        }
+        public void UpdateFollowCursor(AimPoint point)
+        {
+            if (Mode != OrderMode.FollowCursor) return;
+            points[0] = point; Destination = point;
+        }
+        public void EndFollowCursor()
+        {
+            if (Mode == OrderMode.FollowCursor) Mode = OrderMode.MoveToPoint;
+        }
         public void Tactical(OrderMode mode, string targetId)
         {
             if (string.IsNullOrEmpty(targetId)) return;
@@ -77,12 +90,12 @@ namespace Game.Core
         {
             if (!initialized) { hold = o.Position; initialized = true; }
             final = true;
-            if (Mode == OrderMode.MoveToPoint)
+            if (Mode == OrderMode.MoveToPoint || Mode == OrderMode.FollowCursor)
             {
                 if (points.Count == 0) { Stop(o.Position); return hold; }
                 if (advanceRoute) AdvanceRouteLeg(o.Position);
                 Destination = points[0]; final = points.Count == 1;
-                if (final && Distance(o.Position, Destination) < .18f && Length(o.Velocity) < .12f) { Stop(o.Position); return hold; }
+                if (Mode == OrderMode.MoveToPoint && final && Distance(o.Position, Destination) < .18f && Length(o.Velocity) < .12f) { Stop(o.Position); return hold; }
                 return Destination;
             }
             if (Mode == OrderMode.HoldPosition)

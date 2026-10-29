@@ -66,6 +66,11 @@ public class TacticalCommandPanel : MonoBehaviour
         foreach(var fitter in GetComponentsInChildren<ContentSizeFitter>(true))fitter.enabled=false;
         foreach(var text in GetComponentsInChildren<TextMeshProUGUI>(true))text.gameObject.SetActive(false);
         Group("BehaviorHeading","ПРИКАЗ ДВИЖЕНИЯ",8);
+        var engage=CombatUIStyle.Button("EngageOrder",transform,"Вступить в бой",()=> {
+            var selected=playerWeapon!=null?(playerWeapon.PendingTarget!=null?playerWeapon.PendingTarget:playerWeapon.Target):null;
+            if(ShipOrderController.Available(selected))PlayerOrders()?.Tactical(ShipOrderMode.EngageTarget,selected);
+        });
+        CombatUIStyle.Box(engage.transform,134,8,130,18);
         Group("PriorityHeading","ПРИОРИТЕТ ЦЕЛИ",78);
         Group("AbilitiesHeading","СПОСОБНОСТИ",148);
         Setup(orbitButton,"orbit","Орбита","Орбита — движение вокруг захваченной цели.",0,28);

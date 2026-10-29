@@ -81,6 +81,29 @@ public class ShipFlightTests
         Assert.AreEqual("HoldPosition",Get(orders,"Mode").ToString(),"manual route must never resume orbit");
     }
     [UnityTest] public IEnumerator Arrival_LightHull_WithLateralVelocity(){yield return Arrival(1,3,1);}
+    [UnityTest] public IEnumerator StandardHull_LongStraightReachesSpeed_AndBrakesWithoutDrift()
+    {
+        foreach(string id in new[]{"sidewinder","cobra_mk3"})
+        {
+            Rigidbody2D rb;object orders;var movement=Ship(out rb,out orders);
+            var definition=ScriptableObject.CreateInstance(T("ShipDefinition"));Field(definition,"shipId",id);Field(definition,"flightVersion",0);
+            T("CombatStandardDefinitions").GetMethod("UpgradeFlight").Invoke(null,new object[]{definition});
+            Field(definition,"baseMass",id=="sidewinder"?1.5f:3f);
+            movement.gameObject.SetActive(false);var health=movement.gameObject.AddComponent(T("ShipHealth"));Field(health,"shipDefinition",definition);movement.gameObject.SetActive(true);
+            movement.GetType().GetField("shipHealth",BindingFlags.Instance|BindingFlags.NonPublic).SetValue(movement,health);
+            var loadout=Activator.CreateInstance(T("ShipLoadout"),id);
+            T("ShipStatsCalculator").GetMethod("ApplyNpc").Invoke(null,new object[]{health,definition,loadout});
+            Assert.AreEqual(id=="sidewinder"?10f:8f,movement.GetType().GetField("maxSpeed").GetValue(movement));
+            Call(orders,"MoveTo",new Vector2(0,500),false);float elapsed=0,t90=-1;
+            for(int i=0;i<400;i++){yield return new WaitForFixedUpdate();elapsed+=Time.fixedDeltaTime;if(t90<0&&rb.linearVelocity.magnitude>=(id=="sidewinder"?9f:7.2f))t90=elapsed;}
+            Assert.That(t90,Is.InRange(id=="sidewinder"?1.4f:1.9f,id=="sidewinder"?2.1f:2.6f));
+            Assert.AreEqual(id=="sidewinder"?10f:8f,rb.linearVelocity.magnitude,.15f);
+            Debug.Log(id+" speed="+rb.linearVelocity.magnitude+" t90="+t90);
+            Call(orders,"Stop");yield return new WaitForSeconds(3);Assert.Less(rb.linearVelocity.magnitude,.1f);
+            var hold=rb.position;yield return new WaitForSeconds(1);Assert.Less(Vector2.Distance(hold,rb.position),.05f);
+            UnityEngine.Object.Destroy(movement.gameObject);UnityEngine.Object.Destroy(definition);yield return null;
+        }
+    }
     [UnityTest] public IEnumerator Arrival_HeavyHull_WithBoost(){yield return Arrival(6,5,2);}
     [UnityTest] public IEnumerator Stop_ActivelyBrakesLinearAndAngular_ThenHolds()
     {
@@ -167,7 +190,9 @@ public class ShipFlightTests
         var ownData=Get(owner,"Data");ownData.GetType().GetField("lockTime").SetValue(ownData,.4f);
         // Lock/EMP contract must not fail because every permitted shot randomly misses.
         Field(ownData,"accuracy",1f);Field(data,"baseEvasion",0f);Field(data,"speedEvasionMultiplier",0f);
-        Call(orders,"MoveTo",new Vector2(0,1),false);Call(weapon,"SetTarget",target);Call(weapon,"DisruptTargeting",.6f);
+        var input=Node("single-click input").AddComponent(T("PlayerInputHandler"));
+        Field(input,"playerMovement",movement);Field(input,"playerWeapon",weapon);
+        Call(orders,"BeginFollowCursor",new Vector2(0,1));Call(input,"IssueClick",true,(Vector2)enemy.transform.position,target,false,false);Call(weapon,"DisruptTargeting",.6f);
         yield return new WaitForSeconds(.4f);Assert.AreEqual(1000f,data.GetType().GetProperty("currentShieldHP").GetValue(data));
         yield return new WaitForSeconds(.25f);Assert.AreEqual(1000f,data.GetType().GetProperty("currentShieldHP").GetValue(data));
         yield return new WaitForSeconds(1.2f);Assert.AreSame(target,Get(weapon,"Target"));

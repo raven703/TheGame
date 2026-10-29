@@ -5,6 +5,17 @@ using UnityEngine;
 /// <summary>Serialization adapter for the closed, versioned Core standard catalog. Never grants stock.</summary>
 public static class CombatStandardDefinitions
 {
+    // Hull assets have no saved equipment snapshot. Version the narrow runtime
+    // standard update separately so custom hulls and weapon/module balance stay intact.
+    public const int FlightVersion=2;
+    public static bool UpgradeFlight(ShipDefinition definition)
+    {
+        if(definition==null||definition.flightVersion>=FlightVersion)return false;
+        if(definition.shipId=="sidewinder"){definition.baseMaxSpeed=10f;definition.baseAcceleration=19f;}
+        else if(definition.shipId=="cobra_mk3"){definition.baseMaxSpeed=8f;definition.baseAcceleration=28.5f;}
+        else return false;
+        definition.flightVersion=FlightVersion;return true;
+    }
     public static readonly string[] StarterIds = {
         CombatArchetypeCatalog.LightweightEngine, CombatArchetypeCatalog.ManeuverBlock,
         CombatArchetypeCatalog.HeavyShield, CombatArchetypeCatalog.Radiator, CombatArchetypeCatalog.Capacitor,

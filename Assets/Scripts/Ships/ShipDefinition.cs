@@ -10,6 +10,8 @@ public class ShipDefinition : ScriptableObject
     [Header("Identity")]
     [Tooltip("Уникальный ключ для сохранения. Не менять после релиза!")]
     public string shipId = "cobra_mk3";
+    public int flightVersion;
+    private void OnEnable() { CombatStandardDefinitions.UpgradeFlight(this); }
 
     [Header("Default Loadout")]
     [Tooltip("Стартовые модули в инвентаре, если у игрока ещё нет сохранения для этого корабля.")]

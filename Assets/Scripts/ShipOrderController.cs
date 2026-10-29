@@ -4,7 +4,7 @@ using UnityEngine;
 using Game.Core;
 
 public enum HullOrientation { Course, OrderTarget }
-public enum ShipOrderMode { HoldPosition, MoveToPoint, EngageTarget, Orbit, KeepDistance, Flank }
+public enum ShipOrderMode { HoldPosition, MoveToPoint, EngageTarget, Orbit, KeepDistance, Flank, FollowCursor }
 
 /// <summary>Unity observation/physics adapter. ShipOrders is the only order-state owner.</summary>
 [RequireComponent(typeof(ShipMovement))]
@@ -58,6 +58,13 @@ public class ShipOrderController : MonoBehaviour
         if((actual-point).sqrMagnitude>.01f)CombatSession.Log("Точка внутри препятствия — назначена доступная точка рядом");
         model.MoveTo(P(actual),append);targets.Clear();SynchronizeNavigator();
     }
+    public void BeginFollowCursor(Vector2 point)
+    {
+        model.BeginFollowCursor(P(ShipLocalNavigator.AccessiblePoint(point,transform.position,Radius)));
+        targets.Clear();SynchronizeNavigator();
+    }
+    public void UpdateFollowCursor(Vector2 point) => model.UpdateFollowCursor(P(ShipLocalNavigator.AccessiblePoint(point,transform.position,Radius)));
+    public void EndFollowCursor() => model.EndFollowCursor();
     public void Tactical(ShipOrderMode mode, ShipHealth target)
     {
         if(!Available(target))return;
@@ -85,7 +92,7 @@ public class ShipOrderController : MonoBehaviour
     public Vector2 Evaluate(Vector2 position, Vector2 velocity, out bool final)
     {
         var previousMode=Mode;
-        if(Mode==ShipOrderMode.MoveToPoint)
+        if(Mode==ShipOrderMode.MoveToPoint || Mode==ShipOrderMode.FollowCursor)
         {
             model.AdvanceRouteLeg(P(position));
             var points=model.Waypoints;
@@ -114,7 +121,7 @@ public class ShipOrderController : MonoBehaviour
     {
         get {
             if(!string.IsNullOrEmpty(Error))return "Маршрут недоступен";
-            switch(Mode){case ShipOrderMode.MoveToPoint:return "Движение";case ShipOrderMode.EngageTarget:return "Вступить в бой";
+            switch(Mode){case ShipOrderMode.FollowCursor:return "За курсором";case ShipOrderMode.MoveToPoint:return "Движение";case ShipOrderMode.EngageTarget:return "Вступить в бой";
             case ShipOrderMode.Orbit:return "Орбита";case ShipOrderMode.KeepDistance:return "Дистанция";case ShipOrderMode.Flank:return "Заход с кормы";default:
             var m=GetComponent<ShipMovement>();return m!=null&&m.Rb!=null&&m.Rb.linearVelocity.magnitude>.12f?"Торможение":"Удержание позиции";}
         }

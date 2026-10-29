@@ -28,7 +28,7 @@ public class ShipOrderVisuals : MonoBehaviour
             route=Line("Remaining Route",new Color(.3f,.9f,1f,.8f));
             tactical=Line("Tactical Target - Not Weapon Selection",new Color(1f,.65f,.1f));
         }
-        bool routeVisible=orders.Mode==ShipOrderMode.MoveToPoint || !string.IsNullOrEmpty(orders.Error);
+        bool routeVisible=orders.Mode==ShipOrderMode.MoveToPoint || orders.Mode==ShipOrderMode.FollowCursor || !string.IsNullOrEmpty(orders.Error);
         int count=routeVisible?orders.Waypoints.Count:0;
         route.positionCount=count>0?count+1:0;
         if(count>0)route.SetPosition(0,transform.position);

@@ -28,16 +28,38 @@ public class CameraFollow : MonoBehaviour
 
     private Rigidbody2D targetRb;
     private Vector2 currentLookAhead;
+    [Header("Speed zoom (relative to equipped, non-boost maximum)")]
+    [SerializeField, Range(0f,.9f)] private float zoomStartFraction=.2f;
+    [SerializeField] private float cruiseZoomMultiplier=1.35f;
+    [SerializeField] private float maximumZoomMultiplier=1.6f;
+    [SerializeField] private float speedSmoothing=.15f;
+    [SerializeField] private float zoomOutTime=.5f;
+    [SerializeField] private float zoomInTime=1f;
+    private Camera view;
+    private ShipMovement movement;
+    private float baseSize, lastWrittenSize, smoothedSpeed, speedVelocity, zoomVelocity;
+    public float BaseSize => baseSize;
+    public static float SpeedZoomMultiplier(float speed,float maximum,float start=.2f,float cruise=1.35f,float cap=1.6f)
+    {
+        float fraction=Mathf.Max(0f,speed)/Mathf.Max(.01f,maximum);
+        cruise=Mathf.Max(1f,cruise);cap=Mathf.Max(cruise,cap);
+        return fraction<=1f?Mathf.Lerp(1f,cruise,Mathf.SmoothStep(0f,1f,Mathf.InverseLerp(Mathf.Clamp(start,0f,.99f),1f,fraction))):
+            Mathf.Lerp(cruise,cap,Mathf.SmoothStep(0f,1f,Mathf.Clamp01(fraction-1f)));
+    }
 
     private void Start()
     {
         if (target != null)
             targetRb = target.GetComponent<Rigidbody2D>();
+        movement=target!=null?target.GetComponent<ShipMovement>():null;
+        view=GetComponent<Camera>();
+        if(view!=null)baseSize=lastWrittenSize=view.orthographicSize;
     }
 
     private void LateUpdate()
     {
         if (target == null) return;
+        UpdateZoom(Time.deltaTime);
 
         // 1. Вычисляем желаемое смещение по скорости
         Vector2 desiredLookAhead = Vector2.zero;
@@ -77,5 +99,17 @@ public class CameraFollow : MonoBehaviour
             transform.position,
             desiredPosition,
             smoothSpeed * Time.deltaTime);
+    }
+    private void UpdateZoom(float deltaTime)
+    {
+        if(view==null||!view.orthographic||targetRb==null||deltaTime<=0f||FittingWindow.OpenWindow!=null)return;
+        // Preserve an external/manual zoom as a user base, not as a competing writer.
+        if(!Mathf.Approximately(view.orthographicSize,lastWrittenSize))
+            baseSize=Mathf.Max(.01f,view.orthographicSize/(lastWrittenSize/Mathf.Max(.01f,baseSize)));
+        smoothedSpeed=Mathf.SmoothDamp(smoothedSpeed,targetRb.linearVelocity.magnitude,ref speedVelocity,Mathf.Max(.01f,speedSmoothing),Mathf.Infinity,deltaTime);
+        float desired=baseSize*SpeedZoomMultiplier(smoothedSpeed,movement!=null?movement.maxSpeed:referenceSpeed,zoomStartFraction,cruiseZoomMultiplier,maximumZoomMultiplier);
+        float smoothing=desired>view.orthographicSize?zoomOutTime:zoomInTime;
+        view.orthographicSize=Mathf.SmoothDamp(view.orthographicSize,desired,ref zoomVelocity,Mathf.Max(.01f,smoothing),Mathf.Infinity,deltaTime);
+        lastWrittenSize=view.orthographicSize;
     }
 }

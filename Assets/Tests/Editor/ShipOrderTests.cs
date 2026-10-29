@@ -23,6 +23,65 @@ public class ShipOrderTests
         var go=Node(name);Add(go,"ShipHealth");Add(go,"ShipMovement");return Add(go,"ShipWeapon");
     }
     [TearDown] public void Cleanup(){foreach(var go in objects)if(go!=null)UnityEngine.Object.DestroyImmediate(go);objects.Clear();}
+    [Test] public void CursorGesture_UpdatesOnePoint_Releases_UI_Shift_Stop_Focus_AndPreservesLock()
+    {
+        var weapon=Ship("cursor-player");var enemy=Ship("cursor-enemy").GetComponent(T("ShipHealth"));
+        var movement=weapon.GetComponent(T("ShipMovement"));var orders=Get(movement,"Orders");
+        var input=Add(Node("cursor-input"),"PlayerInputHandler");
+        T("PlayerInputHandler").GetField("playerMovement").SetValue(input,movement);
+        T("PlayerInputHandler").GetField("playerWeapon").SetValue(input,weapon);
+        Call(weapon,"SetTarget",enemy);
+        Call(input,"ProcessRightPointer",true,true,false,false,false,new Vector2(5,1),0f);
+        Call(input,"ProcessRightPointer",false,false,true,false,false,new Vector2(9,1),.1f);
+        Assert.AreEqual(new Vector2(5,1),Get(orders,"Destination"));
+        Call(input,"ProcessRightPointer",true,true,false,false,false,new Vector2(5,1),1f);
+        for(int i=1;i<20;i++)Call(input,"ProcessRightPointer",false,true,false,false,false,new Vector2(5+i,1),1f+i*.1f);
+        Assert.AreEqual("FollowCursor",Get(orders,"Mode").ToString());
+        Assert.AreEqual(1,((IList)Get(orders,"Waypoints")).Count);
+        Call(input,"ProcessRightPointer",false,true,false,false,true,new Vector2(100,1),3f);
+        Assert.AreEqual(new Vector2(24,1),Get(orders,"Destination"));
+        Call(input,"ProcessRightPointer",false,false,true,false,true,Vector2.zero,3.1f);
+        Assert.AreEqual("MoveToPoint",Get(orders,"Mode").ToString());
+        Assert.AreSame(enemy,Get(weapon,"PendingTarget"));
+        Call(input,"ProcessRightPointer",true,true,false,true,false,new Vector2(30,1),4f);
+        Call(input,"ProcessRightPointer",false,true,false,true,false,new Vector2(40,1),5f);
+        Assert.AreEqual("MoveToPoint",Get(orders,"Mode").ToString());Assert.AreEqual(2,((IList)Get(orders,"Waypoints")).Count);
+        Call(input,"ProcessRightPointer",true,true,false,false,true,Vector2.zero,6f);
+        Call(input,"ProcessRightPointer",false,true,false,false,false,Vector2.one,7f);
+        Assert.AreEqual(2,((IList)Get(orders,"Waypoints")).Count);
+        Call(input,"ProcessRightPointer",true,true,false,false,false,Vector2.one,8f);
+        Call(input,"ProcessRightPointer",false,true,false,false,false,Vector2.one,9f);
+        Call(orders,"Stop");
+        Call(input,"ProcessRightPointer",false,true,false,false,false,Vector2.one,10f);
+        Assert.AreEqual("HoldPosition",Get(orders,"Mode").ToString());
+        Call(input,"ProcessRightPointer",true,true,false,false,false,Vector2.one,11f);
+        Call(input,"ProcessRightPointer",false,true,false,false,false,Vector2.one,12f);
+        T("PlayerInputHandler").GetMethod("OnApplicationFocus",BindingFlags.NonPublic|BindingFlags.Instance).Invoke(input,new object[]{false});
+        Assert.AreEqual("MoveToPoint",Get(orders,"Mode").ToString());
+        Call(input,"ProcessRightPointer",false,true,false,false,false,Vector2.zero,13f);
+        Assert.AreEqual(Vector2.one,Get(orders,"Destination"));
+    }
+    [Test] public void Selection_ChildModel_UsesTwelvePixels_AtDifferentZooms_WithoutCollider()
+    {
+        var enemy=Ship("selection enemy").GetComponent(T("ShipHealth"));enemy.gameObject.tag="Enemy";
+        var registry=T("EnemyRegistry");registry.GetMethod("Register").Invoke(null,new object[]{enemy});
+        var camera=Node("selection camera").AddComponent<Camera>();camera.orthographic=true;camera.transform.position=new Vector3(0,0,-10);camera.pixelRect=new Rect(0,0,800,600);
+        var model=Node("model");model.transform.SetParent(enemy.transform,false);
+        var renderer=model.AddComponent<SpriteRenderer>();var texture=new Texture2D(16,16);
+        var sprite=Sprite.Create(texture,new Rect(0,0,16,16),Vector2.one*.5f,16);renderer.sprite=sprite;
+        try
+        {
+            foreach(float zoom in new[]{5f,15f})
+            {
+                camera.orthographicSize=zoom;
+                Vector2 edge=camera.WorldToScreenPoint(new Vector3(.5f,0,0));
+                var pick=T("PlayerInputHandler").GetMethod("PickEnemy");
+                Assert.AreSame(enemy,pick.Invoke(null,new object[]{camera,edge+Vector2.right*11,12f}));
+                Assert.IsNull(pick.Invoke(null,new object[]{camera,edge+Vector2.right*14,12f}));
+            }
+        }
+        finally{registry.GetMethod("Unregister").Invoke(null,new object[]{enemy});UnityEngine.Object.DestroyImmediate(sprite);UnityEngine.Object.DestroyImmediate(texture);}
+    }
     [Test] public void MountCompatibility_AllSixCombinations()
     {
         for(int mount=0;mount<3;mount++)for(int type=0;type<2;type++)
@@ -160,6 +219,14 @@ public class ShipOrderTests
         Call(input,"IssueClick",true,Vector2.one,null,false,false);
         Assert.AreSame(enemy,Get(weapon,"PendingTarget"));
         Assert.AreEqual(new Vector2(8,2),Get(orders,"Destination"));
+        Call(input,"IssueClick",false,new Vector2(50,3),null,false,false);
+        Call(input,"IssueClick",false,new Vector2(60,3),null,true,false);
+        Call(movement,"Stop");
+        Assert.AreSame(enemy,Get(weapon,"PendingTarget"));Assert.AreEqual(.4f,Get(weapon,"LockProgress"));
+        Call(weapon,"SetTargetImmediate",enemy);
+        Call(input,"IssueClick",false,new Vector2(20,3),null,false,false);
+        Call(input,"IssueClick",false,new Vector2(30,3),null,true,false);Call(movement,"Stop");
+        Assert.AreSame(enemy,Get(weapon,"Target"));
     }
     [Test] public void Route_AppendOrder_ExplicitTactics_AndUIBlock()
     {
@@ -168,7 +235,8 @@ public class ShipOrderTests
         var movement=weapon.GetComponent(T("ShipMovement"));var orders=Get(movement,"Orders");
         var input=Add(Node("input"),"PlayerInputHandler");T("PlayerInputHandler").GetField("playerMovement").SetValue(input,movement);T("PlayerInputHandler").GetField("playerWeapon").SetValue(input,weapon);
         Call(weapon,"SetTarget",enemy);Call(input,"IssueClick",false,Vector2.zero,enemy,false,false);
-        Assert.AreEqual("EngageTarget",Get(orders,"Mode").ToString());
+        Assert.AreEqual("MoveToPoint",Get(orders,"Mode").ToString());
+        Call(orders,"Tactical",Enum.Parse(T("ShipOrderMode"),"EngageTarget"),enemy);
         Call(weapon,"SetTarget",other);Assert.AreSame(enemy,Get(orders,"OrderTarget"));
         Call(input,"IssueClick",false,new Vector2(2,3),null,true,false);
         Call(input,"IssueClick",false,new Vector2(4,5),null,true,false);
@@ -183,7 +251,7 @@ public class ShipOrderTests
         var weapon=Ship("player");var enemy=Ship("enemy").GetComponent(T("ShipHealth"));enemy.transform.position=new Vector3(7,4);
         var movement=weapon.GetComponent(T("ShipMovement"));var orders=Get(movement,"Orders");
         var input=Add(Node("input"),"PlayerInputHandler");T("PlayerInputHandler").GetField("playerMovement").SetValue(input,movement);T("PlayerInputHandler").GetField("playerWeapon").SetValue(input,weapon);
-        Call(input,"IssueClick",false,Vector2.zero,enemy,false,false);enemy.transform.position=Vector3.zero;
+        Call(input,"IssueClick",false,new Vector2(7,4),enemy,false,false);enemy.transform.position=Vector3.zero;
         Assert.AreEqual(new Vector2(7,4),Get(orders,"Destination"));Assert.IsNull(Get(weapon,"PendingTarget"));
         Call(orders,"SetSpeedLimit",.25f);Assert.AreEqual(5f,T("ShipMovement").GetField("maxSpeed").GetValue(movement));
     }
