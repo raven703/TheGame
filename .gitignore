@@ -67,6 +67,7 @@ Thumbs.db
 # Hand-maintained independent projects (Unity-generated projects stay ignored).
 !/DotNet/Game.Core/Game.Core.csproj
 !/DotNet/Game.Core.Tests/Game.Core.Tests.csproj
+!/DotNet/Game.Core.sln
 /DotNet/**/bin/
 /DotNet/**/obj/
 /DotNet/**/TestResults/

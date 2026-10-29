@@ -1,4 +1,106 @@
-# Current handoff: stage 3 - 2026-10-28
+# Current handoff: stage 6 audit
+
+## Final acceptance and commit preparation
+
+User reports manual acceptance completed with no observations so far. Editor is
+outside Play Mode, CombatSandbox clean; no runtime objects saved. The final root
+solution inspection found DotNet entries reintroduced/rearranged since the audit;
+its pre-regeneration copy was preserved in ignored Temp/Stage6Commit, then SyncVS
+regeneration removed them through the existing callback. No source/API changes.
+The user authorized committing the completed extraction and pushing main normally.
+Historical statements below about pending manual acceptance and leaving Play Mode
+running are superseded by this acceptance. Automated results remain unchanged.
+
+Read the Stage 6 section at the top of architecture-refactor.md first; it supersedes
+historical next-stage instructions. main/cbb4478 retained; no commit/push/checkout.
+All stage-4/5 local work preserved; no scene/prefab diff retained.
+
+Stage 6 changes: Core starter identity factory supplied by adapter (no hidden Guid),
+three independent boundary/identity tests, production ledger access guard seam,
+fitting fixture failure-safe cleanup and shortened real-shot/wave victory integration.
+No further proven duplicate removed; serialized compatibility fields intentionally kept.
+Core Release 0 warnings/errors; dotnet 89/89 stage6.trx; EditMode 61/61
+0eb48e4d3cef4a7fa644684d81237c9e; final PlayMode 23/23
+54aa9f0e161e48d7ac4588acfdf0c227, all final failed/skipped=0.
+Two initial new battle-fixture attempts failed (not hidden); corrected setup and
+facing, targeted 1/1 then full 23/23. See audit for job IDs/limitations.
+5 scenes/8 prefabs scanned without saving: missing/broken 0/0. diff-check exit 0.
+
+Temp/SaveBackups/stage6 holds JSON baseline and registry exports; all three real
+JSON files match baseline after tests and isolated preview/restart. Registry differs
+only in three Unity session metadata values. No stage-6 real-save restoration needed.
+Preview memory ledger/presets installed before components via temporary no-domain-
+reload; original editor settings restored and script reload clears all substitutions.
+Final normal CombatSandbox Play preparation is intended for user manual checks.
+Do not save runtime objects. Final manual session uses real original profile: user
+equipment/preset/ship changes may now persist normally (preview overrides removed).
+
+1280x720/1920x1080 HUD/route/tactical/sectors and fitting images captured AND viewed
+under Temp/Stage6Acceptance. Actual RestartCombat produced new player identity,
+empty queue/registry, no target, angle zero, full energy/zero heat, preparation.
+Completed shortened battle only: 2x1 stationary 1-HP enemies, high fallback damage,
+API orders/target, ordinary Update shooting/destruction/waves/victory. Not full
+unchanged battle or physical input. Physical V/mouse/tactical/abilities and C# Dev
+Kit root solution GUI loading remain user checks; exact checklist in architecture.
+
+# Historical handoff: stage 5
+
+Read orders-ai-core.md first. Stage 5 production extraction connected: Core
+ShipOrders owns order state; PilotDecisions owns four personality decisions.
+Unity facade resolves per-ShipHealth GUID identities and retains navigator/physics.
+ShipMovement and ShipLocalNavigator formulas unchanged. No stage 6/commit/push/checkout.
+Baseline main/cbb4478; all previous stage-4 changes retained.
+
+Core Release 0 warnings/errors; dotnet 86/86 (stage5.trx); full EditMode 61/61
+3494931a076c491390ad604f0cbf3b33. Full PlayMode 22/22 initial
+af5216acbe1f4cfeaa2a70e05585bfec and repeat c885a1ad65f045038031c0db109723f4.
+An intervening job 2eac28156cf543448b5b0a216c12db32 stalled after two tests,
+editor had exited play; cleared orphan and retried, not counted as passing.
+Final full PlayMode job 22c1f5f20f144d0faab9b933ee2b22c0 passed 22/22 after forced
+asset refresh confirmed compiled fitting preset isolation methods.
+
+Isolation: existing ledger override BEFORE fitting/ship components, profile null
+and restored; added narrow LoadoutPresets Read/Write delegate seam. EditMode preset
+tests and both PlayMode fitting tests use memory and restore delegates. Initial
+PlayMode wrote one temporary isolated-* preset key; a repeat before forced refresh
+also left a temporary key. Both exact keys deleted, no gameplay registry restore.
+Final registry comparison after latest job: ONLY three Unity session metadata keys
+changed; no added keys or gameplay preference changes. All three real JSON hashes
+match baseline; final byte-hash comparison with backups also equal.
+Temp/SaveBackups/stage5 has baseline manifest and exports. Do not claim earlier
+runs were unchanged throughout: temporary preset writes above were corrected.
+
+Game View 1280x720 and 1920x1080 captured AND viewed, original Cobra equipment,
+API-issued two-point route in preparation. Temp/Stage5Acceptance/stage5-720.png and
+stage5-1080.png. Physical V/mouse/tactical input and C# Dev Kit UI remain manual.
+Final editor STOPPED, CombatSandbox restored, sceneDirty=false; generated test scenes
+removed after tests. No runtime previews saved. Final CombatSandbox validation:
+0 missing scripts / 0 broken prefabs; Console 0 errors. Not an all-project asset audit.
+Stage 5 complete with physical-input/IDE checks still manual; do not start stage 6.
+
+# Historical handoff: stage 4
+
+## Acceptance follow-up completed (no stage 5)
+
+Read the acceptance follow-up at the end of mount-geometry-core.md. Added one
+isolated PlayMode lifecycle test; targeted lifecycle/combat/cover/visual suites
+passed (4/4 plus lock/EMP 1/1). Production code unchanged in this follow-up.
+720p and rotated 1080p Game View screenshots actually captured AND viewed.
+Final CombatSandbox intentionally LEFT IN PLAY MODE, preparation, sectors ON,
+original Cobra definition/equipment loaded. Do not save runtime objects.
+Real save files match pre-acceptance hashes after restoring a documented temporary
+preview-ship persistence side effect. No global registry restore. IDE UI loading
+and physical V/mouse interaction remain manual checks, not failed automated tests.
+
+Read mount-geometry-core.md first. Stage 4 extraction connected; geometry owns
+angles by stable mount ID, adapters and fitting/visualizer share Core math.
+Actual baseline HEAD cbb4478/main clean; prior stages already committed by user.
+This task has not committed/pushed/switched branches. Root Unity solution and
+DotNet/Game.Core.sln separated, generation callback installed. No stage 5.
+Latest evidence and remaining acceptance limits are in mount-geometry-core.md.
+Historical stage-3 git/next-stage statements below are superseded.
+
+# Historical handoff: stage 3 - 2026-10-28
 
 Stage 3 production extraction is connected. Read combat-core.md first for exact
 ownership, shot sequence and known limitations. Core DamageState owns all hull,

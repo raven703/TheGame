@@ -1,5 +1,11 @@
 # Tactical weapon range display
 
+Stage 4: EffectiveSector, fixed-axis rotation and barrel direction now delegate to
+Game.Core.MountGeometry; fitting text uses the same sector calculation. Unity
+still renders/deduplicates existing shapes and owns the single toggle. No new
+range mode or per-item range. See mount-geometry-core.md for current evidence and
+explicit visual acceptance limits; historical counts below are not current runs.
+
 One UGUI button, `Дальность и секторы [V]`, toggles the existing
 FiringArcVisualizer. Off on scene entry; fitting hover does not change it.
 No separate weapon selection/detail mode is provided.

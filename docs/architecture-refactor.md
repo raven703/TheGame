@@ -1,4 +1,194 @@
-# Architecture refactor — stages 0–3
+# Architecture refactor — stages 0–6
+
+## Stage 6 final dependency audit
+
+This section supersedes historical ownership/next-stage statements below. The
+existing extraction was audited, not redesigned. The game is NOT Unity-independent:
+scenes, physics, rendering, audio, UI, input and lifecycle adapters remain Unity.
+Baseline and final branch/HEAD: main/cbb4478. Prior stage-4/5 local work retained;
+no checkout, commit or push. No scene/prefab edits or runtime scene saves retained.
+
+### Assemblies and dependency direction
+
+Unity Assembly-CSharp -> Game.Core -> netstandard. Editor/test assemblies consume
+the adapters; Core never consumes them. Assets/Game.Core is the only source tree;
+DotNet/Game.Core/Game.Core.csproj links that same tree, netstandard2.0, C# 9.
+Game.Core.asmdef keeps empty references and noEngineReferences=true. Live Unity
+reflection reports only netstandard 2.1 (Unity's host reference), not an engine
+reference; the independent artifact remains netstandard2.0. No imported Core DLL.
+CoreBoundaryTests checks assembly references/public signatures, shared source,
+forbidden engine/storage/clock/random access, project settings and imported DLLs.
+This is deliberately a small guard, not a general-purpose semantic analyzer.
+
+Root My project.slnx regenerated through SyncVS: 55 projects, zero DotNet entries,
+zero duplicate project names. UnitySolutionBoundary keeps external projects out.
+DotNet/Game.Core.sln remains independent; generated csproj files not hand-edited.
+No global VS Code settings changed. C# Dev Kit GUI loading remains manual.
+
+### Final state ownership
+
+| State | Authoritative owner | Unity facade | Consumers |
+|---|---|---|---|
+| Shared stock, installed instances, starter flag | Core PlayerEquipment | PlayerEquipment / ShipLoadoutManager | FittingWindow, presets, LoadoutApplier |
+| Hull/shield/module HP, destruction latch | Core DamageState | ShipData, ShipModule, ShipHealth | weapon resolution, abilities, HUD, registry |
+| Energy/heat/overheat | Core Reactor | ShipReactor | weapons, abilities, HUD |
+| Weapon ready-at deadlines by mount ID | Core WeaponCombat | ShipWeapon | shot admission |
+| Equipment stat calculation | Core StatMath | ShipStatsCalculator / adapters | physics tuning, HUD/fitting, reactor/HP maxima |
+| Aim angle by stable mount ID | Core MountGeometry | ShipWeapon | firing gate, barrel/sector rendering |
+| Order/queue/target ID, orientation, hold/braking, Flank phase | Core ShipOrders | ShipOrderController | ShipMovement, tactical UI, route visuals |
+| Personality decisions | Core PilotDecisions (stateless) | EnemyAI | same ShipOrders owner |
+| Physical detour/progress/retries | Unity ShipLocalNavigator | ShipOrderController | ShipMovement |
+| Lock progress/EMP and ability cooldowns | Unity ShipWeapon / ShipAbilities | same components | HUD, target selection, ability input |
+
+Detached inventory DTOs are mutable copies; immutable items and read-only route/HP
+snapshots cannot mutate owner collections. ShipData setters/ShipModule methods are
+compatible forwards to the same owner, not parallel damage rules. UI commands go
+through the ledger; renderers read angles/results and do not spend/apply damage.
+Save adapters parse/migrate/serialize; compatibility and ownership remain Core rules.
+
+### Lifecycle, clocks, randomness and physics
+
+ShipHealth.Awake initializes damage once. Reactor lazily initializes, so Configure
+before Awake does not reset it. LoadoutApplier.Start schedules existing preparation
+application after Awake; equipment refresh configures maxima/tuning without replacing
+damage/reactor/aim/reload owners. Ship change retains distinct mount IDs; removal
+and replacement preserve same-mount aim/reload as characterized. Disable/re-enable
+does not silently reset models; target availability rejects disabled/destroyed ships.
+Destruction latch reports once before deactivation; restart constructs fresh scene
+owners and explicitly clears EnemyRegistry. ConditionalWeakTable identities and
+weak target references do not transfer orders to recreated ShipHealth instances.
+
+FixedUpdate: observe AI -> Core decision -> order command/evaluation -> physical
+projection/avoidance -> unchanged forces/torques. Only Unity executes movement.
+ShipWeapon.Update advances lock then each occupied mount's aim before Core shot
+admission/spend/reload -> external nearest-cover Physics2D query -> damage -> visuals.
+Reactor.Update supplies scaled Time.deltaTime once. Deadlines receive Time.time;
+Core has no clock or singleton. UnityCombatRandom supplies hit/module rolls in
+existing order. Stage 6 removes Core Guid.NewGuid: starter identity factory is now
+explicit from the adapter (same GUID format); independent tests supply deterministic
+IDs. Constructor without a factory is usable for non-grant ledgers, but attempting
+actual starter issuance requires a supplied identity source.
+Queries/colliders, scene target search, transforms and asteroid generation stay Unity.
+
+### Replaced paths and compatibility
+
+No additional executable duplicate was proven safe to delete during this audit.
+Previously replaced aim/order/shot formulas remain replaced by Core delegates.
+Do not delete compatibility APIs just for file count: SelectMount is still called
+by fitting; orbitClockwise/manualMoveOrder remain serialized in both ship prefabs,
+but no longer own order state. ShipHealth/ShipData damage APIs forward to Core.
+No mass rename, asset reserialization, balance or presentation change was made.
+
+### Persistence and isolation
+
+v4 JSON, GUIDs, holes, legacy migration, atomic .pending/.previous replacement and
+pre-v4 backups stay unchanged; see shared-inventory.md. Presets keep v2 keys.
+Fitting fixture setup now installs a production-access failure guard, clears the
+cached ledger before components and uses memory preset delegates. Existing isolated
+file scenario writes only its unique OS-temp directory. Fixture teardown restores
+repository/profile/session/game flags, random/time, delegates, temporary definitions
+and directories; UnityTearDown unloads isolated scenes even after assertion failure.
+The new shortened battle uses the same isolation. Other physics tests instantiate
+ships without LoadoutApplier/profile/UI persistence; editor file tests use temp paths.
+The guard is fixture-scoped, not a claim that arbitrary future tests cannot bypass it.
+
+Baseline copies and registry exports: Temp/SaveBackups/stage6 (ignored). After full
+tests AND visual/restart preview all three real JSON files match byte-for-byte/SHA256:
+current A9B2264D9B97C730D9C26B79984D000CE00C0B644A25E630685F222FE20A6175;
+previous 987CE9BADEA4C154BF000A51C47D7AE9EDE6236BC66B9BB7806843ED7E3C242F;
+pre-v4 3F3CB9C51D0D3B96F43208D12AC9158AD7FF38F86111C193C142E780267814D5.
+Registry comparison changed only unity.player_session_count, unity.player_sessionid
+and unity_connect.session_id; no gameplay/preset/selection changes or temporary keys.
+No production-file restore was needed in stage 6. Historical stage-4/5 incidents
+remain documented and must not be described as unchanged-throughout runs.
+
+### Verification
+
+| Check | Actual result |
+|---|---|
+| Core Release | 0 warnings / 0 errors |
+| dotnet full | 89 passed / 0 failed / 0 skipped; DotNet/TestResults/stage6.trx |
+| EditMode full | 61/61, 0 failed/skipped; 0eb48e4d3cef4a7fa644684d81237c9e |
+| Initial PlayMode full | 22/22; 3c04b52685f04312a33bb16e2763f69d |
+| Final PlayMode full | 23/23, 0 failed/skipped; 54aa9f0e161e48d7ac4588acfdf0c227 |
+| All discovered scene/prefab assets | 5 scenes + 8 prefabs; missing scripts/broken prefabs 0/0 |
+| git diff --check | exit 0 |
+
+Production changes were covered by all suites. Subsequent executable changes were
+PlayMode fixture/new battle test only; final full PlayMode rerun covers those, so
+unchanged Core/EditMode suites were not pointlessly repeated. Final doc-only edits
+do not require another full test run. Existing obsolete Unity API warnings are not
+a warning-free Unity rebuild claim.
+
+The new shortened battle initially failed twice (adcb1402c6574dd08a05485753f84548,
+3076bcad2d4a40a1a93d57f1253846e4): fixture lacked GameState then facing command.
+Fixed fixture only; targeted 890ed86724f74fb1986e853c5437cd19 passed 1/1 before final
+23/23. No assertions weakened. No interrupted Unity test jobs in this stage.
+Tool-only attempts: internal SyncVS access and obsolete GetInstanceID failed to
+compile; corrected reflection/GetEntityId calls succeeded. One shell command had
+unobservable completion; a later persisted diff-check exit file explicitly gives 0.
+
+Integration suites cover two-ship stock, occupied refusal, atomic presets/failure,
+reload, stats/resources/abilities, Fixed/Turret fire gates, four personalities,
+asteroid cover/avoidance, route/Stop, destruction and recreation. Added real
+Update shots -> destruction callbacks -> registry removal -> two wave completions
+-> CombatManager victory. Intentionally shortened: two single stationary 1-HP
+enemies, 10000 fallback damage, API target/order commands; NOT unchanged normal combat.
+Preview used a memory copy of the real profile installed before components, temporary
+DisableDomainReload, then restored editor settings and explicitly reloaded scripts
+to clear substitutions. Actual RestartCombat returned fresh player identity,
+HoldPosition, empty queue/registry, no target, angle 0, energy 100 and heat 0.
+
+1280x720 and 1920x1080 route/HUD/tactical/sectors AND fitting screenshots captured
+and viewed: Temp/Stage6Acceptance/stage6-{720,1080}-{route,fitting}.png. No new overlap
+seen; inventory is intentionally clipped within its scroll viewport. Handlers/API,
+not physical clicks. Final normal Play preparation is for user manual acceptance.
+
+### Build and extension guide
+
+From C:\Personal\Unity\TheGame\My project\DotNet:
+`dotnet build Game.Core/Game.Core.csproj -c Release`
+and `dotnet test Game.Core.sln -c Release`. Unity Test Runner: run all EditMode,
+then all PlayMode, after refresh/compilation. Protect real storage before tests.
+
+New item: add serialized definition/snapshot data through existing FittingItem and
+adapter, preserve instance versus definition identity; never inject stock on UI open.
+New weapon: add existing data/enum mapping and Core WeaponStatMath/shot rule tests,
+retain stable hardpoint ID and Core resource/damage path; visual consumes ShotResult.
+New rule: implement in the owning Core model with plain values/explicit observations,
+add independent tests and Unity adapter characterization; do not query scene in Core.
+Storage-format change: version/migrate in adapter with verified backup and ownership
+validation before publication, not in Core and not by silently resetting progress.
+
+### Known issues / remaining manual acceptance
+
+- Existing standalone CombatSession.Started fallback is not set by ShipSpawner when
+  GameState is absent; normal scene contains GameState. Recorded, not refactor-fixed.
+- Existing direct Shoot pause behavior, railgun two notifications and frozen idle
+  barrels are retained compatibility (see combat-core.md / mount-geometry-core.md).
+- Lock/EMP/ability timers remain Unity gameplay adapters; this is not extraction of
+  every game rule. No standalone/IL2CPP build or exhaustive unchanged full battle.
+- Physical V toggle; mouse fitting open/close, drag/right-click; queued movement,
+  Stop, tactical/orientation and ability buttons remain manual checks.
+- VS Code: Reload Window -> C# Dev Kit Solution Explorer -> select root
+  C:\Personal\Unity\TheGame\My project\My project.slnx; confirm one Game.Core and
+  no duplicate-name/load error. Open DotNet/Game.Core.sln separately for SDK work.
+  IDE GUI unavailable to agent; not marked passed.
+
+## Stage 5 current status
+
+Orders and four AI personality decisions now use Core ShipOrders/PilotDecisions.
+Unity retains observations, target resolution, local physical navigator and forces.
+See orders-ai-core.md for ownership, update order, compatibility and verification.
+This supersedes historical stage-4/stage-3 ownership below. Stage 6 not started.
+
+## Stage 4 current status
+
+Mount geometry and stable-ID aiming state now live in Core MountGeometry.
+Root Unity / independent DotNet solutions separated; generator callback prevents
+external project reinsertion. See mount-geometry-core.md for exact ownership,
+coordinates, lifecycle, verification and acceptance limitations. Stage 5 not started.
+This supersedes historical ownership and git-state statements below.
 
 ## Current status: stage 3 (2026-10-28)
 

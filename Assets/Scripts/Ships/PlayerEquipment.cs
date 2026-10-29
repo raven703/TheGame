@@ -15,7 +15,8 @@ public sealed class PlayerEquipment
     {
         if (persist == null) throw new ArgumentNullException(nameof(persist));
         var data = Parse(json, true);
-        core = new Game.Core.PlayerEquipment(adapter.ToCore(data), snapshot => persist(JsonUtility.ToJson(adapter.FromCore(snapshot), true)));
+        core = new Game.Core.PlayerEquipment(adapter.ToCore(data), snapshot => persist(JsonUtility.ToJson(adapter.FromCore(snapshot), true)),
+            () => Guid.NewGuid().ToString("N"));
     }
     public bool EnsureShip(ShipDefinition def, List<FittingItem> starter, out string error) =>
         core.EnsureShip(EquipmentDataAdapter.Definition(def), adapter.ToCore(starter), EditingAllowed(true), out error);

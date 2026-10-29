@@ -99,7 +99,7 @@ namespace Game.Core.Tests
             fail = false; Assert.True(Move("a", 0)); before = Map(ledger.Snapshot); fail = true;
             Assert.False(ledger.Unequip("one", EquipmentCategory.Weapons, 0, "a", true, out _));
             Assert.False(ledger.ApplyPlan(definition, Ship("one"), true, out _)); Assert.AreEqual(before, Map(ledger.Snapshot));
-            var fresh = new PlayerEquipment(new EquipmentSnapshot(), _ => throw new Exception("disk failure"));
+            var fresh = new PlayerEquipment(new EquipmentSnapshot(), _ => throw new Exception("disk failure"), () => "issued");
             Assert.False(fresh.EnsureShip(definition, new List<EquipmentItem> { Item("template") }, true, out _));
             Assert.IsEmpty(fresh.Snapshot.Ships); Assert.False(fresh.Snapshot.StarterInventoryIssued);
         }
@@ -128,7 +128,8 @@ namespace Game.Core.Tests
         }
         [Test] public void StarterIssuedOnce_RepeatedReadsAndNewShipDoNotGrant()
         {
-            var fresh = new PlayerEquipment(new EquipmentSnapshot(), _ => { });
+            int issued = 0;
+            var fresh = new PlayerEquipment(new EquipmentSnapshot(), _ => { }, () => "issued-" + ++issued);
             var templates = new List<EquipmentItem> { Item("template"), Item("template") };
             Assert.True(fresh.EnsureShip(definition, templates, true, out _));
             string before = Map(fresh.Snapshot);

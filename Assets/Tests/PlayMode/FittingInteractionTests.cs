@@ -11,6 +11,57 @@ using UnityEngine.TestTools;
 /// <summary>Real UGUI drag handlers against an isolated, in-memory-owned ledger. Never writes player saves.</summary>
 public class FittingInteractionTests
 {
+    private object oldPresetRead, oldPresetWrite;
+    private object fixtureLedger, fixtureProfile, fixtureSession, fixtureGame, oldProductionGuard;
+    private bool fixtureStarted;
+    private Component battleGame;
+    private Scene fixtureScene;
+    private float fixtureScale;
+    private UnityEngine.Random.State fixtureRandom;
+    private readonly List<GameObject> fixtureActiveRoots = new List<GameObject>();
+    private readonly List<ScriptableObject> fixtureDefinitions = new List<ScriptableObject>();
+    private readonly List<string> fixtureDirectories = new List<string>();
+    private static FieldInfo ManagerField(string name) => T("ShipLoadoutManager").GetField(name,BindingFlags.Static|BindingFlags.NonPublic);
+    private static FieldInfo PresetStorage(string name) => T("LoadoutPresets").GetField(name,BindingFlags.Static|BindingFlags.NonPublic);
+    [SetUp] public void IsolatePresetStorage()
+    {
+        fixtureScene=SceneManager.GetActiveScene();fixtureScale=Time.timeScale;fixtureRandom=UnityEngine.Random.state;
+        fixtureActiveRoots.Clear();foreach(var root in fixtureScene.GetRootGameObjects())if(root.activeSelf)fixtureActiveRoots.Add(root);
+        fixtureLedger=ManagerField("ledger").GetValue(null);fixtureProfile=T("PlayerProfile").GetProperty("Instance").GetValue(null);
+        fixtureSession=T("CombatSession").GetProperty("Instance").GetValue(null);fixtureGame=T("GameState").GetProperty("Instance").GetValue(null);
+        fixtureStarted=fixtureGame!=null&&(bool)Field(fixtureGame,"isCombatStarted");
+        oldProductionGuard=ManagerField("BeforeProductionAccess").GetValue(null);
+        ManagerField("BeforeProductionAccess").SetValue(null,(Action)(()=>Assert.Fail("Test accessed production equipment storage before injecting its ledger.")));
+        // Do not allow an already cached production ledger to hide an accidental read.
+        ManagerField("ledger").SetValue(null,null);
+        oldPresetRead=PresetStorage("Read").GetValue(null);oldPresetWrite=PresetStorage("Write").GetValue(null);
+        var values=new Dictionary<string,string>();
+        PresetStorage("Read").SetValue(null,(Func<string,string>)(key=>values.TryGetValue(key,out var value)?value:""));
+        PresetStorage("Write").SetValue(null,(Action<string,string>)((key,value)=>values[key]=value));
+    }
+    [TearDown] public void RestorePresetStorage()
+    {
+        PresetStorage("Read").SetValue(null,oldPresetRead);PresetStorage("Write").SetValue(null,oldPresetWrite);
+        ManagerField("ledger").SetValue(null,fixtureLedger);ManagerField("BeforeProductionAccess").SetValue(null,oldProductionGuard);
+        T("PlayerProfile").GetProperty("Instance").SetValue(null,fixtureProfile);T("CombatSession").GetProperty("Instance").SetValue(null,fixtureSession);
+        if(fixtureGame!=null)Set(fixtureGame,"isCombatStarted",fixtureStarted);
+        if(battleGame!=null)UnityEngine.Object.DestroyImmediate(battleGame.gameObject);
+        T("GameState").GetProperty("Instance").SetValue(null,fixtureGame);battleGame=null;
+        Time.timeScale=fixtureScale;UnityEngine.Random.state=fixtureRandom;
+        foreach(var definition in fixtureDefinitions)if(definition!=null)UnityEngine.Object.DestroyImmediate(definition);fixtureDefinitions.Clear();
+        foreach(var directory in fixtureDirectories)if(System.IO.Directory.Exists(directory))System.IO.Directory.Delete(directory,true);fixtureDirectories.Clear();
+    }
+    [UnityTearDown] public IEnumerator CleanupAfterSetupOrAssertionFailure()
+    {
+        if(fixtureScene.IsValid())SceneManager.SetActiveScene(fixtureScene);
+        for(int i=SceneManager.sceneCount-1;i>=0;i--)
+        {
+            var candidate=SceneManager.GetSceneAt(i);
+            if(candidate.name=="isolated equipment integration"||candidate.name=="fitting interaction test")
+                yield return SceneManager.UnloadSceneAsync(candidate);
+        }
+        foreach(var root in fixtureActiveRoots)if(root!=null)root.SetActive(true);fixtureActiveRoots.Clear();
+    }
     private static Type T(string name)=>Type.GetType(name+", Assembly-CSharp",true);
     private static object Call(object value,string name,params object[] args)=>value.GetType().GetMethod(name).Invoke(value,args);
     private static object Field(object value,string name)=>value.GetType().GetField(name,BindingFlags.Public|BindingFlags.NonPublic|BindingFlags.Instance).GetValue(value);
@@ -20,6 +71,53 @@ public class FittingInteractionTests
     private static string LedgerJson(object ledger)=>(string)ledger.GetType().GetProperty("Json").GetValue(ledger);
     private static object NewNode(string name,Transform parent,Type type)
     {var go=new GameObject(name,typeof(RectTransform));go.transform.SetParent(parent,false);return go.AddComponent(type);}
+
+    [UnityTest] public IEnumerator ShortenedBattle_RealShotsDestructionRegistryAndWavesReachVictory()
+    {
+        var scene=SceneManager.CreateScene("isolated equipment integration");SceneManager.SetActiveScene(scene);
+        foreach(var root in fixtureActiveRoots)if(root!=null&&root.name!="Code-based tests runner")root.SetActive(false);
+        T("PlayerProfile").GetProperty("Instance").SetValue(null,null);
+        ManagerField("ledger").SetValue(null,Activator.CreateInstance(T("PlayerEquipment"),"{\"formatVersion\":4,\"starterInventoryIssued\":true,\"inventory\":[],\"loadouts\":[]}",(Action<string>)(_=>{})));
+        var registry=(IList)T("EnemyRegistry").GetField("enemies",BindingFlags.NonPublic|BindingFlags.Static).GetValue(null);
+        var prior=new object[registry.Count];registry.CopyTo(prior,0);registry.Clear();
+        try
+        {
+            if(T("GameState").GetProperty("Instance").GetValue(null)==null)battleGame=new GameObject("isolated game state").AddComponent(T("GameState"));
+            var session=new GameObject("isolated session").AddComponent(T("CombatSession"));
+            if(fixtureGame!=null)Set(fixtureGame,"isCombatStarted",false);
+            var field=session.GetComponent(T("AsteroidField"));if(field!=null)UnityEngine.Object.DestroyImmediate(field);
+            var player=new GameObject("audit player");player.tag="Player";
+            player.AddComponent<Rigidbody2D>();var playerHealth=player.AddComponent(T("ShipHealth"));
+            var movement=player.AddComponent(T("ShipMovement"));
+            var weapon=player.AddComponent(T("ShipWeapon"));Set(weapon,"useFallbackWeapon",true);Set(weapon,"fallbackDamage",10000f);Set(weapon,"firingArcAngle",360f);Set(weapon,"range",100f);
+            var definition=ScriptableObject.CreateInstance(T("ShipDefinition"));fixtureDefinitions.Add(definition);
+            Set(definition,"maxHullHP",1f);Set(definition,"baseShieldHP",0f);
+            var template=new GameObject("shortened stationary enemy template");template.SetActive(false);template.transform.position=new Vector3(1000,1000,0);
+            var enemy=template.AddComponent(T("ShipHealth"));Set(enemy,"shipDefinition",definition);template.SetActive(true);
+            var manager=new GameObject("audit manager").AddComponent(T("CombatManager"));Set(manager,"playerHealth",playerHealth);
+            var win=new GameObject("win evidence");Set(manager,"winPanel",win);
+            var spawner=new GameObject("audit spawner").AddComponent(T("ShipSpawner"));Set(spawner,"enemyPrefab",template);Set(spawner,"playerTransform",player.transform);
+            Set(spawner,"combatManager",manager);Set(spawner,"waveSizes",new[]{1,1});Set(spawner,"pauseBetweenWaves",.05f);Set(spawner,"spawnRadius",3f);
+            yield return null;Assert.True((bool)T("CombatSession").GetProperty("IsPreparing").GetValue(null));Assert.False(win.activeSelf);
+            Call(spawner,"StartCombat");int destroyed=0;var subscribed=new HashSet<object>();float deadline=Time.realtimeSinceStartup+15f;
+            while(!win.activeSelf&&Time.realtimeSinceStartup<deadline)
+            {
+                var alive=(IList)T("EnemyRegistry").GetMethod("GetAliveEnemies").Invoke(null,null);
+                foreach(var target in alive)if(subscribed.Add(target))target.GetType().GetEvent("OnDestroyed").AddEventHandler(target,(Action)(()=>destroyed++));
+                if(alive.Count>0)
+                {
+                    Call(weapon,"SetTargetImmediate",alive[0]);
+                    var orders=movement.GetType().GetProperty("Orders").GetValue(movement);
+                    Call(orders,"Tactical",Enum.Parse(T("ShipOrderMode"),"EngageTarget"),alive[0]);
+                }
+                yield return null;
+            }
+            Assert.True(win.activeSelf,"Real shot -> destruction -> registry -> wave completion -> victory did not finish");
+            Assert.AreEqual(2,destroyed);Assert.Zero(registry.Count);Assert.True((bool)Field(manager,"allWavesCleared"));Assert.True((bool)Field(manager,"isCombatOver"));
+            Assert.False((bool)playerHealth.GetType().GetProperty("Data").GetValue(playerHealth).GetType().GetProperty("IsDestroyed").GetValue(playerHealth.GetType().GetProperty("Data").GetValue(playerHealth)));
+        }
+        finally { registry.Clear();foreach(var entry in prior)registry.Add(entry); }
+    }
 
     [UnityTest] public IEnumerator EquipmentCommandsRefreshRealUIAndStatsOnlyAfterCommit_IsolatedFile()
     {
@@ -31,8 +129,10 @@ public class FittingInteractionTests
         bool started=game!=null&&(bool)Field(game,"isCombatStarted");
         var disabled=new List<GameObject>();foreach(var root in previous.GetRootGameObjects())if(root.activeSelf&&root.name!="Code-based tests runner"){disabled.Add(root);root.SetActive(false);}
         var first=ScriptableObject.CreateInstance(T("ShipDefinition"));var second=ScriptableObject.CreateInstance(T("ShipDefinition"));
+        fixtureDefinitions.Add(first);fixtureDefinitions.Add(second);
         string id="isolated-"+Guid.NewGuid().ToString("N"),key="TheGame.Loadout.v2."+id+".1";
         string directory=System.IO.Path.Combine(System.IO.Path.GetTempPath(),id);System.IO.Directory.CreateDirectory(directory);
+        fixtureDirectories.Add(directory);
         string path=System.IO.Path.Combine(directory,"ship_loadouts.json");bool fail=false;
         try
         {
@@ -83,7 +183,7 @@ public class FittingInteractionTests
         finally
         {
             ledgerField.SetValue(null,oldLedger);T("CombatSession").GetProperty("Instance").SetValue(null,oldSession);T("PlayerProfile").GetProperty("Instance").SetValue(null,profile);if(game!=null)Set(game,"isCombatStarted",started);
-            PlayerPrefs.DeleteKey(key);PlayerPrefs.Save();UnityEngine.Object.DestroyImmediate(first);UnityEngine.Object.DestroyImmediate(second);
+            UnityEngine.Object.DestroyImmediate(first);UnityEngine.Object.DestroyImmediate(second);
             UnityEngine.Random.state=randomState;Time.timeScale=previousScale;
             SceneManager.SetActiveScene(previous);foreach(var root in disabled)if(root!=null)root.SetActive(true);System.IO.Directory.Delete(directory,true);
         }
@@ -94,6 +194,8 @@ public class FittingInteractionTests
         var previous=SceneManager.GetActiveScene();var scene=SceneManager.CreateScene("fitting interaction test");
         SceneManager.SetActiveScene(scene);
         object oldLedger=T("ShipLoadoutManager").GetField("ledger",BindingFlags.NonPublic|BindingFlags.Static).GetValue(null);
+        object oldProfile=T("PlayerProfile").GetProperty("Instance").GetValue(null);
+        T("PlayerProfile").GetProperty("Instance").SetValue(null,null);
         object oldSession=T("CombatSession").GetProperty("Instance").GetValue(null);
         var game=T("GameState").GetProperty("Instance").GetValue(null);
         bool started=game!=null&&(bool)Field(game,"isCombatStarted");
@@ -104,6 +206,7 @@ public class FittingInteractionTests
         T("CombatSession").GetProperty("Instance").SetValue(null,session);
         if(game!=null)Set(game,"isCombatStarted",false);
         var definition=ScriptableObject.CreateInstance(T("ShipDefinition"));Set(definition,"shipId","ui-test");Set(definition,"weaponSlots",2);
+        fixtureDefinitions.Add(definition);
         var points=Array.CreateInstance(T("WeaponHardpoint"),2);
         for(int i=0;i<2;i++){var p=Activator.CreateInstance(T("WeaponHardpoint"));Set(p,"slotIndex",i);Set(p,"compatibility",Enum.ToObject(T("MountCompatibility"),i));points.SetValue(p,i);}
         Set(definition,"hardpoints",points);
@@ -156,6 +259,7 @@ public class FittingInteractionTests
         finally
         {
             T("ShipLoadoutManager").GetField("ledger",BindingFlags.NonPublic|BindingFlags.Static).SetValue(null,oldLedger);
+            T("PlayerProfile").GetProperty("Instance").SetValue(null,oldProfile);
             T("CombatSession").GetProperty("Instance").SetValue(null,oldSession);
             if(game!=null)Set(game,"isCombatStarted",started);
             UnityEngine.Object.DestroyImmediate(definition);

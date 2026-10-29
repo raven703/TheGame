@@ -152,10 +152,12 @@ namespace Game.Core
         private readonly Action<EquipmentSnapshot> persist;
         private readonly object gate = new object();
         private bool writing;
-        public PlayerEquipment(EquipmentSnapshot initial, Action<EquipmentSnapshot> persist)
+        private readonly Func<string> newInstanceId;
+        public PlayerEquipment(EquipmentSnapshot initial, Action<EquipmentSnapshot> persist, Func<string> newInstanceId = null)
         {
             EquipmentRules.ValidateOwnership(initial);
             state = initial.Copy(); this.persist = persist ?? throw new ArgumentNullException(nameof(persist));
+            this.newInstanceId = newInstanceId ?? (() => throw new InvalidOperationException("An identity source is required for starter issuance."));
         }
         public EquipmentSnapshot Snapshot { get { lock (gate) return state.Copy(); } }
         private static ShipEquipment Ship(EquipmentSnapshot data, string id) => data.Ships.Find(x => x.ShipId == id);
@@ -274,7 +276,7 @@ namespace Game.Core
                 if (grant)
                 {
                     if (starter != null) foreach (var template in starter)
-                        if (template != null && !string.IsNullOrEmpty(template.DefinitionId)) next.Inventory.Add(template.WithInstance(Guid.NewGuid().ToString("N")));
+                        if (template != null && !string.IsNullOrEmpty(template.DefinitionId)) next.Inventory.Add(template.WithInstance(newInstanceId()));
                     next.StarterInventoryIssued = true; changed = true;
                 }
                 foreach (var category in EquipmentRules.Categories) changed |= ship.Slots(category).Count != definition.Capacity(category);

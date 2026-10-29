@@ -1,121 +1,111 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using UnityEngine;
+using Game.Core;
 
 public enum HullOrientation { Course, OrderTarget }
-
 public enum ShipOrderMode { HoldPosition, MoveToPoint, EngageTarget, Orbit, KeepDistance, Flank }
 
-/// <summary>Single authoritative route/tactical order. Evaluated by ShipMovement's physics step.</summary>
+/// <summary>Unity observation/physics adapter. ShipOrders is the only order-state owner.</summary>
 [RequireComponent(typeof(ShipMovement))]
 public class ShipOrderController : MonoBehaviour
 {
-    private HullOrientation? orientationOverride;
-    private bool flankAttacking;
-    public HullOrientation Orientation => orientationOverride ?? ((Mode == ShipOrderMode.EngageTarget || Mode == ShipOrderMode.KeepDistance || (Mode == ShipOrderMode.Flank && flankAttacking)) ? HullOrientation.OrderTarget : HullOrientation.Course);
-    public bool SetOrientation(HullOrientation value)
-    {
-        if (value == HullOrientation.OrderTarget && !Available(OrderTarget)) return false;
-        orientationOverride = value;
-        return true;
-    }
-    public ShipOrderMode Mode { get; private set; }
-    public ShipHealth OrderTarget { get; private set; }
-    public float SpeedLimit { get; private set; } = 1f;
-    public readonly List<Vector2> Waypoints = new List<Vector2>();
-    public string Error { get; private set; }
-    public Vector2 Destination { get; private set; }
-    private Vector2 hold;
-    private bool initialized;
-    public bool IsBraking { get; private set; }
-    public float PreferredDistance { get; set; }
+    private readonly ShipOrders model = new ShipOrders();
+    // IDs live for one ShipHealth instance, not one Unity instance-ID value or ship definition.
+    private static readonly System.Runtime.CompilerServices.ConditionalWeakTable<ShipHealth, TargetIdentity> identities = new System.Runtime.CompilerServices.ConditionalWeakTable<ShipHealth, TargetIdentity>();
+    private sealed class TargetIdentity { public readonly string Id = Guid.NewGuid().ToString("N"); }
+    private readonly Dictionary<string, WeakReference<ShipHealth>> targets = new Dictionary<string, WeakReference<ShipHealth>>();
     private readonly ShipLocalNavigator navigator = new ShipLocalNavigator();
+    private int navigationRevision;
+    public HullOrientation Orientation => (HullOrientation)model.Orientation;
+    public ShipOrderMode Mode => (ShipOrderMode)model.Mode;
+    public ShipHealth OrderTarget
+    {
+        get { ShipHealth target; return model.TargetId != null && targets.TryGetValue(model.TargetId, out var reference) && reference.TryGetTarget(out target) && target != null ? target : null; }
+    }
+    public float SpeedLimit => model.SpeedLimit;
+    public IReadOnlyList<Vector2> Waypoints
+    {
+        get { var source=model.Waypoints;var result=new Vector2[source.Count];for(int i=0;i<source.Count;i++)result[i]=V(source[i]);return Array.AsReadOnly(result); }
+    }
+    public string Error => model.Error;
+    public Vector2 Destination => V(model.Destination);
+    public bool IsBraking => model.IsBraking;
+    public float PreferredDistance { get => model.PreferredDistance; set => model.PreferredDistance=value; }
     public bool Detouring { get; private set; }
     public int AvoidanceRetries => navigator.Retries;
     private float Radius => GetComponent<ShipMovement>().ShipRadius;
-    public Vector2 FacingDirection(Vector2 position, Vector2 fallback)
+    private static AimPoint P(Vector2 p) => new AimPoint(p.x,p.y);
+    private static Vector2 V(AimPoint p) => new Vector2(p.X,p.Y);
+    private void SynchronizeNavigator()
     {
-        return Orientation == HullOrientation.OrderTarget && Available(OrderTarget) ? (Vector2)OrderTarget.transform.position - position : fallback;
+        if(navigationRevision==model.NavigationRevision)return;
+        navigationRevision=model.NavigationRevision;navigator.Reset();
     }
-    public void SetSpeedLimit(float value) { SpeedLimit = Mathf.Clamp(value,.25f,1f); }
+    private string Register(ShipHealth target)
+    {
+        if(!Available(target))return null;
+        string id=identities.GetValue(target,_=>new TargetIdentity()).Id;
+        targets.Clear();targets[id]=new WeakReference<ShipHealth>(target);return id;
+    }
+    public bool SetOrientation(HullOrientation value) => model.SetOrientation((OrderOrientation)value,Available(OrderTarget));
+    public Vector2 FacingDirection(Vector2 position, Vector2 fallback) => V(model.Facing(Observe(position,Vector2.zero),P(fallback)));
+    public void SetSpeedLimit(float value) => model.SetSpeedLimit(value);
     public void MoveTo(Vector2 point, bool append = false)
     {
-        if(!append || Mode!=ShipOrderMode.MoveToPoint)Waypoints.Clear();
-        orientationOverride=null;flankAttacking=false;OrderTarget=null;Error=null;Mode=ShipOrderMode.MoveToPoint;IsBraking=false;
-        Vector2 actual = ShipLocalNavigator.AccessiblePoint(point, transform.position, Radius);
-        if ((actual-point).sqrMagnitude>.01f) CombatSession.Log("Точка внутри препятствия — назначена доступная точка рядом");
-        Waypoints.Add(actual);Destination=Waypoints[0];initialized=true;
-        navigator.Reset();
+        Vector2 actual=ShipLocalNavigator.AccessiblePoint(point,transform.position,Radius);
+        if((actual-point).sqrMagnitude>.01f)CombatSession.Log("Точка внутри препятствия — назначена доступная точка рядом");
+        model.MoveTo(P(actual),append);targets.Clear();SynchronizeNavigator();
     }
     public void Tactical(ShipOrderMode mode, ShipHealth target)
     {
         if(!Available(target))return;
-        if (Mode != mode || OrderTarget != target) { orientationOverride=null;flankAttacking=false; }
-        Waypoints.Clear();OrderTarget=target;Mode=mode;Error=null;initialized=true;IsBraking=false;navigator.Reset();
+        model.Tactical((OrderMode)mode,Register(target));SynchronizeNavigator();
+    }
+    public void ApplyDecision(PilotDecision decision, ShipHealth target)
+    {
+        decision.Apply(model,Available(target)?Register(target):null,P(transform.position));
+        SynchronizeNavigator();
     }
     public void Stop()
     {
-        orientationOverride=null;flankAttacking=false;Waypoints.Clear();OrderTarget=null;Mode=ShipOrderMode.HoldPosition;
-        hold=transform.position;Destination=hold;initialized=true;IsBraking=true;Error=null;Detouring=false;navigator.Reset();
+        model.Stop(P(transform.position));targets.Clear();Detouring=false;SynchronizeNavigator();
     }
     public static bool Available(ShipHealth target) => target!=null && target.isActiveAndEnabled && target.Data!=null && !target.Data.IsDestroyed;
+    private OrderObservation Observe(Vector2 position, Vector2 velocity)
+    {
+        var target=OrderTarget;var weapon=GetComponent<ShipWeapon>();
+        var movement=target!=null?target.GetComponent<ShipMovement>():null;
+        return new OrderObservation { Position=P(position),Velocity=P(velocity),TargetAvailable=Available(target),
+            TargetPosition=target!=null?P(target.transform.position):default(AimPoint),
+            TargetForward=target!=null?P(movement!=null?movement.GetForwardVector():(Vector2)target.transform.up):new AimPoint(0,1),
+            WeaponRange=weapon!=null?weapon.range:4f/.7f };
+    }
     public Vector2 Evaluate(Vector2 position, Vector2 velocity, out bool final)
     {
-        if(!initialized){hold=position;initialized=true;}
-        final=true;
+        var previousMode=Mode;
         if(Mode==ShipOrderMode.MoveToPoint)
         {
-            if(Waypoints.Count==0){Stop();return hold;}
-            if(Waypoints.Count>1 && Vector2.Distance(position,Waypoints[0])<.65f){Waypoints.RemoveAt(0);navigator.Reset();}
-            Waypoints[0]=ShipLocalNavigator.AccessiblePoint(Waypoints[0],position,Radius);
-            Destination=Waypoints[0];final=Waypoints.Count==1;
-            if(final && Vector2.Distance(position,Destination)<.18f && velocity.magnitude<.12f){Stop();return hold;}
-            return Navigate(position, velocity, Destination, ref final);
+            model.AdvanceRouteLeg(P(position));
+            var points=model.Waypoints;
+            if(points.Count>0)model.CorrectFirstWaypoint(P(ShipLocalNavigator.AccessiblePoint(V(points[0]),position,Radius)));
         }
+        Vector2 destination=V(model.Evaluate(Observe(position,velocity),out final,false));
+        SynchronizeNavigator();
         if(Mode==ShipOrderMode.HoldPosition)
         {
-            if(IsBraking)
-            {
-                hold=position;Destination=hold;
-                if(velocity.magnitude<.08f)IsBraking=false;
-            }
-            return hold;
+            if(previousMode!=ShipOrderMode.HoldPosition){Detouring=false;if(previousMode!=ShipOrderMode.MoveToPoint)CombatSession.Log("Цель приказа недоступна — торможение");}
+            return destination;
         }
-        if(!Available(OrderTarget)){Stop();CombatSession.Log("Цель приказа недоступна — торможение");return hold;}
-        var weapon=GetComponent<ShipWeapon>();
-        float distance=PreferredDistance>0f?PreferredDistance:weapon!=null?weapon.range*.7f:4f;
-        Vector2 target=OrderTarget.transform.position;
-        Vector2 away=(position-target).normalized;if(away.sqrMagnitude<.01f)away=Vector2.up;
-        if(Mode==ShipOrderMode.Flank)
-        {
-            var movement=OrderTarget.GetComponent<ShipMovement>();
-            Destination=target-(movement!=null?movement.GetForwardVector():(Vector2)OrderTarget.transform.up)*distance;
-            float flankError=Vector2.Distance(position,Destination);
-            if(flankError < .65f) flankAttacking=true;
-            else if(flankError > 1.4f) flankAttacking=false;
-        }
-        else if(Mode==ShipOrderMode.Orbit)
-        {
-            Destination=target+(Vector2)(Quaternion.Euler(0,0,20)*away)*distance;
-        }
-        else Destination=Mathf.Abs(Vector2.Distance(position,target)-distance)<.35f?position:target+away*distance;
-        // Tactical destination moves with the target: only stagnation, not total leg duration, applies.
-        return Navigate(position, velocity, Destination, ref final);
-    }
-    private Vector2 Navigate(Vector2 position, Vector2 velocity, Vector2 destination, ref bool final)
-    {
         var movement=GetComponent<ShipMovement>();
         if(!movement.EngineAvailable)return destination;
         bool detour;
         Vector2 steering=navigator.Steer(position,destination,velocity,Radius,movement.ForceAlong(-velocity)/Mathf.Max(.1f,movement.Rb.mass),Time.fixedDeltaTime,Mode==ShipOrderMode.MoveToPoint,out detour);
-        Detouring=detour;
-        if(detour)final=true;
+        Detouring=detour;if(detour)final=true;
         if(navigator.Failed)
         {
-            // Preserve failed and remaining waypoints for a visible error; never silently skip a leg.
-            OrderTarget=null;Mode=ShipOrderMode.HoldPosition;hold=position;IsBraking=true;Detouring=false;
-            Error="Нет прогресса после 3 попыток локального обхода";
-            CombatSession.Log("Маршрут недоступен: "+Error+". Выполнено торможение.");
-            return position;
+            model.NavigationFailed(P(position));Detouring=false;
+            CombatSession.Log("Маршрут недоступен: "+Error+". Выполнено торможение.");return position;
         }
         return steering;
     }

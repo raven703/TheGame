@@ -97,6 +97,62 @@ public class ReactorAdapterTests
         Call(weapon,"Shoot");Assert.AreEqual(93f,P(reactor,"Energy"),"empty physical slots cannot enable fallback");
         yield return null;
     }
+    [UnityTest] public IEnumerator MountLifecycle_ShipSwapRefreshRemovalHolesAndRecreation_AreIsolated()
+    {
+        var definitions=new List<UnityEngine.Object>();
+        Func<string,int,UnityEngine.Object> definition=(id,count)=>{
+            var def=ScriptableObject.CreateInstance(T("ShipDefinition"));definitions.Add(def);
+            Set(def,"shipId",id);Set(def,"weaponSlots",count);
+            var points=Array.CreateInstance(T("WeaponHardpoint"),count);
+            for(int i=0;i<count;i++){
+                var point=Activator.CreateInstance(T("WeaponHardpoint"));Set(point,"id",id+":weapon:"+i);
+                Set(point,"slotIndex",i);Set(point,"sector",360f);Set(point,"compatibility",Enum.ToObject(T("MountCompatibility"),2));points.SetValue(point,i);
+            }
+            Set(def,"hardpoints",points);return def;
+        };
+        var a=definition("isolated-A",3);var b=definition("isolated-B",1);
+        Func<GameObject> ship=()=>{
+            var node=new GameObject("lifecycle ship");node.SetActive(false);
+            node.AddComponent(T("ShipHealth"));node.AddComponent(T("ShipWeapon"));node.SetActive(true);
+            ((Behaviour)node.GetComponent(T("ShipWeapon"))).enabled=false;
+            ((Behaviour)node.GetComponent(T("ShipReactor"))).enabled=false;return node;
+        };
+        var go=ship();var health=go.GetComponent(T("ShipHealth"));var weapon=go.GetComponent(T("ShipWeapon"));
+        Set(health,"shipDefinition",a);
+        var reactor=go.GetComponent(T("ShipReactor"));Call(reactor,"Configure",100f,0f,0f,0f);
+        var enemy=new GameObject("lifecycle target");enemy.transform.position=new Vector3(3,0);
+        var target=enemy.AddComponent(T("ShipHealth"));Call(weapon,"SetTargetImmediate",target);
+        var loadout=JsonUtility.FromJson("{\"weaponSlots\":[null,null,{\"id\":\"isolated-turret\",\"mountType\":1,\"trackingSpeed\":90,\"aimTolerance\":1,\"damageBonus\":1}]}",T("ShipLoadout"));
+        var slots=(System.Collections.IList)loadout.GetType().GetField("weaponSlots").GetValue(loadout);
+        Call(weapon,"SetEquippedWeapons",slots);Call(weapon,"CanAim",2,slots[2],new Vector2(3,0),2f);
+        Call(weapon,"Shoot");
+        var combat=weapon.GetType().GetField("combat",BindingFlags.NonPublic|BindingFlags.Instance).GetValue(weapon);
+        var deadlines=(System.Collections.IDictionary)combat.GetType().GetField("readyAt",BindingFlags.NonPublic|BindingFlags.Instance).GetValue(combat);
+        Assert.AreEqual(1,deadlines.Count);Assert.True(deadlines.Contains("isolated-A:weapon:2"));
+        var deadline=deadlines["isolated-A:weapon:2"];float energy=P(reactor,"Energy");
+        float angle=(float)Call(weapon,"MountAngle",2);
+        Call(weapon,"SetEquippedWeapons",slots);Call(weapon,"Shoot");
+        Assert.AreEqual(angle,Call(weapon,"MountAngle",2));Assert.AreEqual(deadline,deadlines["isolated-A:weapon:2"]);Assert.AreEqual(energy,P(reactor,"Energy"));
+        var removed=slots[2];slots[2]=null;Call(weapon,"SetEquippedWeapons",slots);Set(weapon,"useFallbackWeapon",true);Call(weapon,"Shoot");
+        Assert.AreEqual(energy,P(reactor,"Energy"));Assert.AreEqual(3,Get(weapon,"EquippedSlotCount"));
+        Assert.IsNull(Call(weapon,"EquippedWeapon",0));Assert.IsNull(Call(weapon,"EquippedWeapon",1));
+        slots[2]=JsonUtility.FromJson(JsonUtility.ToJson(removed),T("FittingItem"));Call(weapon,"SetEquippedWeapons",slots);Call(weapon,"Shoot");
+        Assert.AreEqual(angle,Call(weapon,"MountAngle",2));Assert.AreEqual(deadline,deadlines["isolated-A:weapon:2"]);Assert.AreEqual(energy,P(reactor,"Energy"));
+        // Same runtime hull, different definition and hardpoint set, as fitting selection uses.
+        Set(health,"shipDefinition",b);slots.Clear();slots.Add(removed);Call(weapon,"SetEquippedWeapons",slots);
+        Assert.AreEqual(0f,Call(weapon,"MountAngle",0));Assert.False(deadlines.Contains("isolated-B:weapon:0"));
+        Assert.AreEqual("isolated-B:weapon:0",Call(weapon,"MountId",0));
+        Call(weapon,"CanAim",0,removed,new Vector2(3,0),2f);Call(weapon,"Shoot");
+        Assert.True(deadlines.Contains("isolated-B:weapon:0"));Assert.AreEqual(deadline,deadlines["isolated-A:weapon:2"]);
+        UnityEngine.Object.Destroy(go);yield return null;
+        var recreated=ship();var fresh=recreated.GetComponent(T("ShipWeapon"));Set(recreated.GetComponent(T("ShipHealth")),"shipDefinition",a);
+        Assert.AreEqual(0f,Call(fresh,"MountAngle",2));
+        var freshCombat=fresh.GetType().GetField("combat",BindingFlags.NonPublic|BindingFlags.Instance).GetValue(fresh);
+        Assert.AreNotSame(combat,freshCombat);
+        Assert.AreEqual(0,((System.Collections.IDictionary)freshCombat.GetType().GetField("readyAt",BindingFlags.NonPublic|BindingFlags.Instance).GetValue(freshCombat)).Count);
+        foreach(var def in definitions)UnityEngine.Object.Destroy(def);
+    }
+
     [UnityTest] public IEnumerator ShieldBoostHullPaymentAndModuleEffectsUseCore_DeathNotificationOnce()
     {
         var go=new GameObject("boost owner");go.SetActive(false);var movement=go.AddComponent(T("ShipMovement"));

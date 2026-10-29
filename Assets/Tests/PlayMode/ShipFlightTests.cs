@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Reflection;
@@ -89,7 +89,7 @@ public class ShipFlightTests
         float elapsed=0;while(elapsed<6 && (rb.linearVelocity.magnitude>.1f||Mathf.Abs(rb.angularVelocity)>1)){yield return new WaitForFixedUpdate();elapsed+=Time.fixedDeltaTime;}
         Assert.Less(rb.linearVelocity.magnitude,.1f);Assert.Less(Mathf.Abs(rb.angularVelocity),1);
         var hold=rb.position;yield return new WaitForSeconds(1);Assert.Less(Vector2.Distance(hold,rb.position),.2f);
-        Assert.AreEqual(0,((IList)orders.GetType().GetField("Waypoints").GetValue(orders)).Count);
+        Assert.AreEqual(0,((IList)orders.GetType().GetProperty("Waypoints").GetValue(orders)).Count);
     }
     [UnityTest] public IEnumerator LowerSpeedLimit_BrakesGradually()
     {
@@ -140,18 +140,19 @@ public class ShipFlightTests
         Call(orders,"MoveTo",new Vector2(10,0),false);Call(orders,"MoveTo",new Vector2(14,0),true);
         float elapsed=0;while(elapsed<45&&Get(orders,"Error")==null){yield return new WaitForFixedUpdate();elapsed+=Time.fixedDeltaTime;}
         Assert.IsNotNull(Get(orders,"Error"));Assert.AreEqual("HoldPosition",Get(orders,"Mode").ToString());
-        Assert.AreEqual(2,((IList)orders.GetType().GetField("Waypoints").GetValue(orders)).Count);
+        Assert.AreEqual(2,((IList)orders.GetType().GetProperty("Waypoints").GetValue(orders)).Count);
         yield return new WaitForSeconds(2);Assert.Less(rb.linearVelocity.magnitude,.15f);
     }
     [UnityTest] public IEnumerator QueuedCorner_IsTraversedInOrder_AndFinalPointStops()
     {
         Rigidbody2D rb;object orders;Ship(out rb,out orders);
         Call(orders,"MoveTo",new Vector2(4,0),false);Call(orders,"MoveTo",new Vector2(4,4),true);
-        var points=(IList)orders.GetType().GetField("Waypoints").GetValue(orders);
+        var points=(IList)orders.GetType().GetProperty("Waypoints").GetValue(orders);
         float elapsed=0;bool passed=false;
         while(elapsed<30 && Get(orders,"Mode").ToString()!="HoldPosition")
         {
             yield return new WaitForFixedUpdate();elapsed+=Time.fixedDeltaTime;
+            points=(IList)Get(orders,"Waypoints");
             if(!passed&&points.Count==1){passed=true;Assert.Less(Vector2.Distance(rb.position,new Vector2(4,0)),1f);}
         }
         Assert.IsTrue(passed);Assert.Less(Vector2.Distance(rb.position,new Vector2(4,4)),.35f);Assert.Less(rb.linearVelocity.magnitude,.15f);

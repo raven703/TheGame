@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Reflection;
@@ -172,10 +172,10 @@ public class ShipOrderTests
         Call(weapon,"SetTarget",other);Assert.AreSame(enemy,Get(orders,"OrderTarget"));
         Call(input,"IssueClick",false,new Vector2(2,3),null,true,false);
         Call(input,"IssueClick",false,new Vector2(4,5),null,true,false);
-        var points=(IList)T("ShipOrderController").GetField("Waypoints").GetValue(orders);
+        var points=(IList)T("ShipOrderController").GetProperty("Waypoints").GetValue(orders);
         Assert.AreEqual(2,points.Count);Assert.AreEqual(new Vector2(2,3),points[0]);Assert.AreEqual(new Vector2(4,5),points[1]);
         Call(input,"IssueClick",false,Vector2.zero,null,false,true);Assert.AreEqual(2,points.Count);
-        Call(orders,"Stop");Assert.AreEqual(0,points.Count);Assert.IsTrue((bool)Get(orders,"IsBraking"));
+        Call(orders,"Stop");Assert.AreEqual(0,((IList)Get(orders,"Waypoints")).Count);Assert.IsTrue((bool)Get(orders,"IsBraking"));
         Assert.AreSame(other,Get(weapon,"PendingTarget"));
     }
     [Test] public void UnselectedEnemyRmb_IsPositionSnapshot_AndSpeedLimitDoesNotEditEquipment()
@@ -197,6 +197,24 @@ public class ShipOrderTests
         Assert.AreEqual("HoldPosition",Get(orders,"Mode").ToString());Assert.IsTrue((bool)Get(orders,"IsBraking"));
         var data=Get(weapon.GetComponent(T("ShipHealth")),"Data");Call(data,"TakeModuleDamage",Enum.Parse(T("ModuleType"),"Engine"),1000f);
         Assert.AreEqual(0f,Get(movement,"AvailableForce"));
+    }
+    [Test] public void OrderCharacterization_InitialStopClampAndFlankHysteresis()
+    {
+        var weapon=Ship("characterization");var movement=weapon.GetComponent(T("ShipMovement"));var orders=Get(movement,"Orders");
+        Assert.AreEqual("HoldPosition",Get(orders,"Mode").ToString());Assert.IsFalse((bool)Get(orders,"IsBraking"));
+        Call(orders,"SetSpeedLimit",0f);Assert.AreEqual(.25f,Get(orders,"SpeedLimit"));
+        Call(orders,"SetSpeedLimit",2f);Assert.AreEqual(1f,Get(orders,"SpeedLimit"));
+        var enemy=Ship("characterization target").GetComponent(T("ShipHealth"));
+        T("ShipOrderController").GetProperty("PreferredDistance").SetValue(orders,4f);
+        Call(orders,"Tactical",Enum.Parse(T("ShipOrderMode"),"Flank"),enemy);
+        foreach(var sample in new[]{new Vector2(0,-3.5f),new Vector2(0,-3f),new Vector2(0,-2.5f)})
+        {
+            Call(orders,"Evaluate",new object[]{sample,Vector2.zero,true});
+            Assert.AreEqual(sample.y>-2.6f?"Course":"OrderTarget",Get(orders,"Orientation").ToString());
+        }
+        Call(orders,"Stop");Assert.IsTrue((bool)Get(orders,"IsBraking"));
+        Call(orders,"Evaluate",new object[]{new Vector2(2,3),Vector2.zero,true});
+        Assert.IsFalse((bool)Get(orders,"IsBraking"));Assert.AreEqual(new Vector2(2,3),Get(orders,"Destination"));
     }
     [Test] public void TacticalLayout_CanBeAppliedTwice_WithVisibleSpeedAndStopLabels()
     {

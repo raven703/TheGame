@@ -7,6 +7,7 @@ using UnityEngine;
 public static class ShipLoadoutManager
 {
     private static PlayerEquipment ledger;
+    internal static Action BeforeProductionAccess;
     private static string FilePath => Path.Combine(Application.persistentDataPath, "ship_loadouts.json");
     public static string GetSavePath() => FilePath;
     private static PlayerEquipment Ledger
@@ -14,6 +15,7 @@ public static class ShipLoadoutManager
         get
         {
             if (ledger != null) return ledger;
+            BeforeProductionAccess?.Invoke();
             if (!File.Exists(FilePath))
             {
                 ledger = new PlayerEquipment(JsonUtility.ToJson(new ShipLoadoutSaveFile { formatVersion = 4 }), WriteAtomic);

@@ -5,6 +5,9 @@ using UnityEngine;
 /// <summary>Presets retain item IDs and resolve them against the ship's owned equipment.</summary>
 public static class LoadoutPresets
 {
+    // Narrow storage seam: tests replace these before creating any fitting components.
+    internal static Func<string, string> Read = key => PlayerPrefs.GetString(key, "");
+    internal static Action<string, string> Write = (key, value) => { PlayerPrefs.SetString(key, value); PlayerPrefs.Save(); };
     [Serializable] private class Preset
     {
         public int formatVersion = 3;
@@ -26,13 +29,13 @@ public static class LoadoutPresets
         if (loadout == null || string.IsNullOrEmpty(loadout.shipId)) return false;
         var preset = new Preset { shipId = loadout.shipId, weapons = Ids(loadout.weaponSlots),
             shields = Ids(loadout.shieldSlots), engines = Ids(loadout.engineSlots) };
-        PlayerPrefs.SetString(Key(loadout.shipId, slot), JsonUtility.ToJson(preset));
-        PlayerPrefs.Save(); return true;
+        Write(Key(loadout.shipId, slot), JsonUtility.ToJson(preset));
+        return true;
     }
     public static ShipLoadout Load(ShipLoadout owned, int slot)
     {
         if (!CombatSession.IsPreparing || owned == null) return null;
-        string json = PlayerPrefs.GetString(Key(owned.shipId, slot), "");
+        string json = Read(Key(owned.shipId, slot));
         if (string.IsNullOrEmpty(json)) return null;
         Preset preset;
         try { preset = JsonUtility.FromJson<Preset>(json); }

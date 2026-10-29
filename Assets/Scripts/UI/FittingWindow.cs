@@ -79,7 +79,7 @@ public class FittingWindow : MonoBehaviour
                 int index = currentLoadout.weaponSlots.IndexOf(item);
                 float sector = targetShipWeapon != null ? targetShipWeapon.MountSector(index) : 60f;
                 statsLabel.text += $"{item.name} / {w.kind} / {(item.mountType == WeaponMountType.Turret ? "Турель" : "Курсовая")}\nКрепление {index + 1}: сектор {sector:0}°" +
-                    (item.mountType == WeaponMountType.Turret ? $"; {item.trackingSpeed:0} °/с; вращение ограничено креплением" : $"; собственный сектор {item.FixedFireSector:0}°; итог ±{Mathf.Min(sector,item.FixedFireSector)*.5f:0}°") +
+                    (item.mountType == WeaponMountType.Turret ? $"; {item.trackingSpeed:0} °/с; вращение ограничено креплением" : $"; собственный сектор {item.FixedFireSector:0}°; итог ±{Game.Core.MountGeometry.EffectiveSector(sector,(Game.Core.WeaponMountType)(int)item.mountType,item.FixedFireSector)*.5f:0}°") +
                     $"\nУрон {w.damage:0.#}; DPS* {w.NominalDps:0.#}; КД {w.cooldown:0.##} с\nЭнергия {w.energy:0.#}; нагрев {ShipReactor.CalculateHeat(w.heat,s.resistance):0.#} (база {w.heat:0.#})\n";
             }
         statsLabel.text += "\n* Номинальный DPS без ограничений энергии,\nперегрева, точности и защиты цели.\nОбщий DPS не суммируется.";

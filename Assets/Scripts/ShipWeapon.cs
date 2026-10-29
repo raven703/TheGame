@@ -29,16 +29,18 @@ public class ShipWeapon : MonoBehaviour
         [Range(0f,360f)] public float sector = 60f;
     }
     public Mount[] mounts;
-    private readonly Dictionary<int,float> mountAngles = new Dictionary<int,float>();
+    private readonly Game.Core.MountGeometry geometry = new Game.Core.MountGeometry();
     private readonly Dictionary<int,LineRenderer> turretVisuals = new Dictionary<int,LineRenderer>();
     // Fitting hover no longer creates a competing world-space sector.
     public void SelectMount(int index) { }
     public int EquippedSlotCount => activeWeapons.Count;
     public FittingItem EquippedWeapon(int index) => index>=0 && index<activeWeapons.Count && activeWeapons[index]!=null && !string.IsNullOrEmpty(activeWeapons[index].id)?activeWeapons[index]:null;
     public Vector3 MountOrigin(int index) => firePoints!=null && index>=0 && index<firePoints.Length && firePoints[index]!=null?firePoints[index].position:transform.position;
-    public float EffectiveSector(int index,FittingItem item) => Mathf.Min(Mathf.Clamp(MountSector(index),0,360),item==null || item.mountType==WeaponMountType.Fixed?(item!=null?item.FixedFireSector:60):360);
-    public Vector2 BarrelDirection(int index) => Quaternion.Euler(0,0,MountAngle(index))*MountAxis(index);
-    public float MountAngle(int index) => mountAngles.TryGetValue(index, out float angle) ? angle : 0f;
+    public float EffectiveSector(int index,FittingItem item) => Game.Core.MountGeometry.EffectiveSector(MountSector(index), item != null ? (Game.Core.WeaponMountType)(int)item.mountType : Game.Core.WeaponMountType.Fixed, item != null ? item.FixedFireSector : 60f);
+    private static Game.Core.AimPoint CorePoint(Vector2 value) => new Game.Core.AimPoint(value.x, value.y);
+    private static Vector2 UnityPoint(Game.Core.AimPoint value) => new Vector2(value.X, value.Y);
+    public Vector2 BarrelDirection(int index) => UnityPoint(Game.Core.MountGeometry.Rotate(CorePoint(MountAxis(index)), MountAngle(index)));
+    public float MountAngle(int index) => geometry.Angle(MountId(index));
     private ShipDefinition Definition => GetComponent<ShipHealth>() != null ? GetComponent<ShipHealth>().shipDefinition : null;
     public string MountId(int index) => WeaponMountRules.Get(Definition,index).id;
     public MountCompatibility Compatibility(int index) => WeaponMountRules.Get(Definition,index).compatibility;
@@ -47,25 +49,24 @@ public class ShipWeapon : MonoBehaviour
     {
         Vector2 forward = shipMovement != null ? shipMovement.GetForwardVector() : (Vector2)transform.up;
         float angle = Definition != null ? WeaponMountRules.Get(Definition,index).localAxis : mounts != null && index < mounts.Length && mounts[index] != null ? mounts[index].directionOffset : 0f;
-        return Quaternion.Euler(0,0,angle) * forward;
+        return UnityPoint(Game.Core.MountGeometry.FixedAxis(CorePoint(forward), angle));
     }
     public bool CanAim(int index, FittingItem item, Vector2 targetPosition, float dt)
     {
+        return AdvanceAim(index, item, targetPosition, dt).Ready;
+    }
+
+    // Called once per installation by Shoot, before the existing Core shot path.
+    // Read-only visual consumers use MountAngle/BarrelDirection, never this method.
+    public Game.Core.AimResult AdvanceAim(int index, FittingItem item, Vector2 targetPosition, float dt)
+    {
         Vector3 origin = MountOrigin(index);
-        if (item != null && Definition != null && !WeaponMountRules.Fits(Definition,index,item)) return false;
         Vector2 axis = MountAxis(index);
-        Vector2 delta = targetPosition - (Vector2)origin;
-        float desired = Vector2.SignedAngle(axis, delta);
-        float half = Mathf.Clamp(MountSector(index),0f,360f)*.5f;
-        bool inside = Mathf.Abs(desired) <= half;
-        if (item == null || item.mountType == WeaponMountType.Fixed) return inside && Mathf.Abs(desired) <= EffectiveSector(index,item)*.5f + .0001f && delta.magnitude <= range;
-        float current = MountAngle(index);
-        float goal = Mathf.Clamp(desired,-half,half);
-        // Partial sectors are a bounded interval, not a circle: never cross the forbidden rear arc.
-        current = half >= 180f ? Mathf.MoveTowardsAngle(current,goal,Mathf.Max(0f,item.trackingSpeed)*dt)
-            : Mathf.MoveTowards(current,goal,Mathf.Max(0f,item.trackingSpeed)*dt);
-        mountAngles[index] = Mathf.DeltaAngle(0f,current);
-        if (Application.isPlaying)
+        var result = geometry.Advance(MountId(index), CorePoint(origin), CorePoint(axis), CorePoint(targetPosition),
+            range, MountSector(index), item != null ? (Game.Core.WeaponMountType)(int)item.mountType : Game.Core.WeaponMountType.Fixed,
+            item != null ? item.FixedFireSector : 60f, item != null ? item.trackingSpeed : 0f,
+            item != null ? item.aimTolerance : 0f, dt, item == null || Definition == null || WeaponMountRules.Fits(Definition,index,item));
+        if (Application.isPlaying && item != null && item.mountType == WeaponMountType.Turret && result.Refusal != Game.Core.AimRefusal.Incompatible)
         {
             if (!turretVisuals.TryGetValue(index, out var barrel) || barrel == null)
             {
@@ -79,12 +80,12 @@ public class ShipWeapon : MonoBehaviour
                 barrel.sortingOrder = 6;
                 turretVisuals[index] = barrel;
             }
-            Vector3 direction = Quaternion.Euler(0,0,current) * axis;
+            Vector3 direction = BarrelDirection(index);
             barrel.SetPosition(0, origin - direction * .06f);
             barrel.SetPosition(1, origin);
             barrel.SetPosition(2, origin + direction * .3f);
         }
-        return inside && delta.magnitude <= range && Mathf.Abs(Mathf.DeltaAngle(current,desired)) <= Mathf.Clamp(item.aimTolerance,0f,15f);
+        return result;
     }
 
      public float bulletSpeed = 15f;
@@ -314,15 +315,6 @@ public class ShipWeapon : MonoBehaviour
     // ============ COMBAT TACTICS ============
 
 
-
-    private bool IsTargetInFiringArc(Vector3 targetPos)
-    {
-        Vector2 dirToTarget = (targetPos - transform.position).normalized;
-        Vector2 forward = shipMovement != null ? shipMovement.GetForwardVector() : (Vector2)transform.up;
-
-        float angle = Vector2.Angle(forward, dirToTarget);
-        return angle <= (firingArcAngle * 0.5f);
-    }
 
     // ============ SHOOT ============
 

@@ -1,4 +1,4 @@
-using UnityEngine;
+﻿using UnityEngine;
 
 /// <summary>
 /// Minimal combat AI for the enemy ship: hunt the player, hold the optimal firing
@@ -12,9 +12,6 @@ public enum AIPersonality { Brawler, Sniper, Flanker, Cautious }
 
 public class EnemyAI : MonoBehaviour
 {
-    /// <summary>Orbit speed in degrees per second while holding the optimal distance.</summary>
-    private const float OrbitSpeedDegrees = 25f;
-
     [Tooltip("Movement component of this ship.")]
     public ShipMovement shipMovement;
 
@@ -28,7 +25,6 @@ public class EnemyAI : MonoBehaviour
     public float optimalDistance = 4.5f;
 
     public AIPersonality personality = AIPersonality.Brawler;
-    private float orbitAngle;
 
     private void Awake()
     {
@@ -44,8 +40,6 @@ public class EnemyAI : MonoBehaviour
                 playerTarget = playerObject.GetComponent<ShipHealth>();
         }
 
-        if (playerTarget != null)
-            orbitAngle = BearingFromTarget();
     }
 
     private void Start()
@@ -64,24 +58,17 @@ public class EnemyAI : MonoBehaviour
         var orders = shipMovement.Orders;
         if (!ShipOrderController.Available(playerTarget))
         {
-            if (orders.Mode != ShipOrderMode.HoldPosition) orders.Stop();
+            orders.ApplyDecision(Game.Core.PilotDecisions.Decide((Game.Core.PilotPersonality)personality,
+                false,false,0,0,shipWeapon.range,optimalDistance),null);
             return;
         }
         if (shipWeapon.Target != playerTarget && shipWeapon.PendingTarget != playerTarget) shipWeapon.SetTarget(playerTarget);
         var health = GetComponent<ShipHealth>();
-        bool retreat = personality == AIPersonality.Cautious && health != null && health.Data != null && health.Data.currentHullHP < health.Data.maxHullHP * .35f;
-        orders.PreferredDistance = retreat ? shipWeapon.range * 1.4f : personality == AIPersonality.Sniper ? shipWeapon.range * .85f : personality == AIPersonality.Flanker ? shipWeapon.range * .5f : optimalDistance;
-        var mode=personality == AIPersonality.Flanker ? ShipOrderMode.Flank : personality == AIPersonality.Sniper || retreat ? ShipOrderMode.KeepDistance : ShipOrderMode.Orbit;
-        if(orders.Mode!=mode || orders.OrderTarget!=playerTarget)orders.Tactical(mode,playerTarget);
+        var decision = Game.Core.PilotDecisions.Decide((Game.Core.PilotPersonality)personality,
+            ShipOrderController.Available(playerTarget), health != null && health.Data != null,
+            health != null && health.Data != null ? health.Data.currentHullHP : 0f,
+            health != null && health.Data != null ? health.Data.maxHullHP : 0f, shipWeapon.range, optimalDistance);
+        orders.ApplyDecision(decision, playerTarget);
     }
 
-    /// <summary>Bearing in degrees from the player towards this ship.</summary>
-    private float BearingFromTarget()
-    {
-        if (playerTarget == null)
-            return 0f;
-
-        var delta = transform.position - playerTarget.transform.position;
-        return Mathf.Atan2(delta.y, delta.x) * Mathf.Rad2Deg;
-    }
 }

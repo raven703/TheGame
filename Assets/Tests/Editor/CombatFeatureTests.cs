@@ -10,8 +10,9 @@ public class CombatFeatureTests
     private readonly List<GameObject> objects = new List<GameObject>();
     private float oldScale;
     private const string PresetKey = "TheGame.Loadout.v2.test-ship.987";
-    private string oldPreset;
-    private bool hadPreset;
+    private object oldRead, oldWrite;
+    private readonly Dictionary<string,string> presets = new Dictionary<string,string>();
+    private static FieldInfo Storage(string name) => RuntimeType("LoadoutPresets").GetField(name,BindingFlags.Static|BindingFlags.NonPublic);
     private static Type RuntimeType(string name) => Type.GetType(name + ", Assembly-CSharp", true);
     private Component Add(string type)
     {
@@ -37,16 +38,16 @@ public class CombatFeatureTests
     [SetUp] public void SetUp()
     {
         oldScale = Time.timeScale;
-        hadPreset = PlayerPrefs.HasKey(PresetKey);
-        oldPreset = PlayerPrefs.GetString(PresetKey);
+        presets.Clear();oldRead=Storage("Read").GetValue(null);oldWrite=Storage("Write").GetValue(null);
+        Storage("Read").SetValue(null,(Func<string,string>)(key=>presets.TryGetValue(key,out var value)?value:""));
+        Storage("Write").SetValue(null,(Action<string,string>)((key,value)=>presets[key]=value));
     }
     [TearDown] public void TearDown()
     {
         for (int i = objects.Count - 1; i >= 0; i--) if (objects[i] != null) UnityEngine.Object.DestroyImmediate(objects[i]);
         objects.Clear();
         Time.timeScale = oldScale;
-        if (hadPreset) PlayerPrefs.SetString(PresetKey, oldPreset); else PlayerPrefs.DeleteKey(PresetKey);
-        PlayerPrefs.Save();
+        Storage("Read").SetValue(null,oldRead);Storage("Write").SetValue(null,oldWrite);
     }
 
     [Test] public void Reactor_RejectsPreparationAndInsufficientEnergy_WithoutSpending()
@@ -83,18 +84,17 @@ public class CombatFeatureTests
         object owned = OwnedLoadout();
         Assert.IsTrue((bool)PresetCall("Save", owned, 987));
         Assert.IsNotNull(PresetCall("Load", owned, 987));
-        string saved = PlayerPrefs.GetString(PresetKey);
+        string saved = presets[PresetKey];
         BeginCombat(session);
         Assert.IsNull(PresetCall("Load", owned, 987));
-        Assert.AreEqual(saved, PlayerPrefs.GetString(PresetKey));
+        Assert.AreEqual(saved, presets[PresetKey]);
     }
 
     [Test] public void Fitting_RejectsUnavailableDuplicateItemsWithoutChangingEquipment()
     {
         Add("CombatSession");
         object owned = OwnedLoadout();
-        PlayerPrefs.SetString(PresetKey,
-            "{\"shipId\":\"test-ship\",\"weapons\":[\"w1\",\"w1\"],\"shields\":[],\"engines\":[]}");
+        presets[PresetKey] = "{\"shipId\":\"test-ship\",\"weapons\":[\"w1\",\"w1\"],\"shields\":[],\"engines\":[]}";
         Assert.IsNull(PresetCall("Load", owned, 987));
         Assert.IsTrue((bool)PresetCall("Save", owned, 987));
         var loaded = PresetCall("Load", owned, 987);
