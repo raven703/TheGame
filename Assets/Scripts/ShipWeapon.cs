@@ -38,6 +38,19 @@ public class ShipWeapon : MonoBehaviour
     public void SelectMount(int index) { }
     public int EquippedSlotCount => activeWeapons.Count;
     public FittingItem EquippedWeapon(int index) => index>=0 && index<activeWeapons.Count && activeWeapons[index]!=null && !string.IsNullOrEmpty(activeWeapons[index].id)?activeWeapons[index]:null;
+    public WeaponStats StatsFor(FittingItem item)=>WeaponStatsCalculator.Calculate(item,baseCooldown,fallbackDamage,range);
+    public float MountRange(int index)=>StatsFor(EquippedWeapon(index)).range;
+    public float WorkingRange(Game.Core.CombatRole? role=null)
+    {
+        var weapons=new List<Game.Core.DistanceWeapon>();
+        for(int i=0;i<EquippedSlotCount;i++)
+        {
+            var item=EquippedWeapon(i);if(item==null)continue;var stats=StatsFor(item);
+            weapons.Add(new Game.Core.DistanceWeapon {DefinitionId=item.id,MountId=MountId(i),Turret=item.mountType==WeaponMountType.Turret,
+                Stats=new Game.Core.WeaponStatValues {Kind=(Game.Core.WeaponKind)(int)stats.kind,Range=stats.range,Damage=stats.damage,Cooldown=stats.cooldown}});
+        }
+        return Game.Core.LoadoutCombatDistance.Range(weapons,range,role);
+    }
     public Vector3 MountOrigin(int index) => firePoints!=null && index>=0 && index<firePoints.Length && firePoints[index]!=null?firePoints[index].position:transform.position;
     public float EffectiveSector(int index,FittingItem item) => Game.Core.MountGeometry.EffectiveSector(MountSector(index), item != null ? (Game.Core.WeaponMountType)(int)item.mountType : Game.Core.WeaponMountType.Fixed, item != null ? item.FixedFireSector : 60f);
     private static Game.Core.AimPoint CorePoint(Vector2 value) => new Game.Core.AimPoint(value.x, value.y);
@@ -66,7 +79,7 @@ public class ShipWeapon : MonoBehaviour
         Vector3 origin = MountOrigin(index);
         Vector2 axis = MountAxis(index);
         var result = geometry.Advance(MountId(index), CorePoint(origin), CorePoint(axis), CorePoint(targetPosition),
-            range, MountSector(index), item != null ? (Game.Core.WeaponMountType)(int)item.mountType : Game.Core.WeaponMountType.Fixed,
+            StatsFor(item).range, MountSector(index), item != null ? (Game.Core.WeaponMountType)(int)item.mountType : Game.Core.WeaponMountType.Fixed,
             item != null ? item.FixedFireSector : 60f, item != null ? item.trackingSpeed : 0f,
             item != null ? item.aimTolerance : 0f, dt, item == null || Definition == null || WeaponMountRules.Fits(Definition,index,item));
         if (Application.isPlaying && item != null && item.mountType == WeaponMountType.Turret && result.Refusal != Game.Core.AimRefusal.Incompatible)
@@ -346,7 +359,7 @@ public class ShipWeapon : MonoBehaviour
             if(useFitting && (weaponModule==null || string.IsNullOrEmpty(weaponModule.id)))continue;
 
             if (!CanAim(i, weaponModule, Target.transform.position, Time.deltaTime)) continue;
-            var stats = WeaponStatsCalculator.Calculate(weaponModule, baseCooldown, fallbackDamage);
+            var stats = StatsFor(weaponModule);
             float currentDamage = stats.damage;
             Color shotColor = weaponModule != null ? weaponModule.iconColor : fallbackColor;
             WeaponVisualType visual = weaponModule != null ? weaponModule.visualType : fallbackVisual;
@@ -368,7 +381,7 @@ public class ShipWeapon : MonoBehaviour
             float evasion = Target.Data != null ? Target.Data.GetTotalEvasion(speed) : 0f;
             Asteroid cover = null;
             var coreStats = new Game.Core.WeaponStatValues { Kind=(Game.Core.WeaponKind)(int)kind, Damage=stats.damage,
-                Cooldown=stats.cooldown,Energy=stats.energy,Heat=stats.heat };
+                Cooldown=stats.cooldown,Energy=stats.energy,Heat=stats.heat,Range=stats.range };
             float hullBefore=Target.Data.Damage.Hull,shieldBefore=Target.Data.Damage.Shield,moduleBefore=0;
             foreach(var module in Target.Data.Damage.Modules)moduleBefore+=module.Current;
             var shot = combat.TryFire(key,Time.time,coreStats,true,true,

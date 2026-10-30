@@ -1,3 +1,13 @@
+# Individual weapon range and compact controls (October 30, 2026)
+
+- Loadout and I open fitting during preparation; the redundant yellow Fitting presentation is removed, not its controller. Combat equipment editing remains prohibited.
+- V / compact icon in the right tactical panel toggles sectors. Each mount uses its actual firePoint and own range; equal overview rings merge. Overview rings are ship-centred guides only.
+- Shield ▲ / • / ▼ beside player shield shift forward / reset50:50 / shift rear. W/S retain single-step behavior, including tactical pause; displayed percentage is the desired forward share while paused. X remains Stop.
+- Plasma10, pulse laser12, standard laser turret10, railgun18 units; ordinary fixed Laser T1(w1)12. Other legacy/custom definitions with missing/zero range retain owning ship fallback. In particular w5 rapid laser and legacy demo turret are not the standard pulse/turret IDs.
+- Player Engage/KeepDistance/Orbit use existing maneuver factors over highest-nominal-DPS fixed weapon, or highest-DPS turret if none fixed. Stable ordinal ID/mount tie-break. Explicit distance remains authoritative. Tooltip distance is a maneuver preference, not simultaneous fire assurance.
+- Role preference: interceptor pulse, artillery rail (.8), escort turret (.65); missing preferred type uses actual primary equipment. Safety margins, relative velocity and persistent maneuvers still apply.
+- EMP has an independent8-unit centre-to-centre limit, validated on actual activation for player and NPC, including queued activation after pause. Weapon range cannot extend it. Other EMP costs/timings unchanged.
+
 # Тактическое управление
 
 ## Тактическая пауза и щиты

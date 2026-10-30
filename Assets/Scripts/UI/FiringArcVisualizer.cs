@@ -37,9 +37,15 @@ public class FiringArcVisualizer : MonoBehaviour
         var layout=FindFirstObjectByType<CombatInterfaceLayout>();
         if(layout!=null)
         {
-            button=CombatUIStyle.Button("WeaponRangeToggle",layout.transform,"Дальность и секторы [V]",Toggle);
-            CombatUIStyle.Rect(button.transform,new Vector2(.5f,0),new Vector2(.5f,0),new Vector2(-125,16),new Vector2(125,48));
-            var hint=button.gameObject.AddComponent<WeaponRangeHint>();hint.owner=this;
+            button=CombatUIStyle.Button("WeaponRangeToggle",layout.transform,"",Toggle);
+            CombatUIStyle.Rect(button.transform,Vector2.one,Vector2.one,new Vector2(-79,-604),new Vector2(-21,-558));
+            var icon=CombatUIStyle.Panel("SectorIcon",button.transform,Color.white);icon.raycastTarget=false;
+            icon.sprite=Resources.Load<Sprite>("TacticalIcons/distance");icon.preserveAspect=true;
+            CombatUIStyle.Box(icon.transform,18,7,22,22);
+            var label=button.GetComponentInChildren<TMPro.TextMeshProUGUI>();label.text="V";label.fontSize=10;
+            CombatUIStyle.Box(label.transform,0,29,58,15);
+            var hint=button.gameObject.AddComponent<TacticalTooltip>();hint.panel=FindFirstObjectByType<TacticalCommandPanel>();
+            hint.description="Секторы [V]. Дальность каждого ствола от его крепления; кольца — ориентиры. Укрытия блокируют огонь.";
             CombatUIStyle.ToggleVisual(button,false);
         }
     }
@@ -67,6 +73,7 @@ public class FiringArcVisualizer : MonoBehaviour
             {
                 var item=weapon.EquippedWeapon(i);hash=hash*31+(item==null?0:item.id.GetHashCode());
                 if(item==null)continue;
+                hash=hash*31+weapon.MountRange(i).GetHashCode();
                 hash=hash*31+weapon.EffectiveSector(i,item).GetHashCode();
                 hash=hash*31+(weapon.MountId(i)??i.ToString()).GetHashCode();
                 hash=hash*31+item.mountType.GetHashCode();
@@ -123,8 +130,8 @@ public class FiringArcVisualizer : MonoBehaviour
         Clear();var rings=new HashSet<float>();var shapes=new HashSet<string>();
         for(int i=0;i<weapon.EquippedSlotCount;i++)
         {
-            var item=weapon.EquippedWeapon(i);if(item==null || weapon.range<=0)continue;
-            float range=weapon.range,sector=weapon.EffectiveSector(i,item);
+            var item=weapon.EquippedWeapon(i);if(item==null)continue;
+            float range=weapon.MountRange(i),sector=weapon.EffectiveSector(i,item);
             if(rings.Add(range))
             {
                 var ring=Node("Range ring",root.transform);var line=Line(ring,cyan);line.loop=true;line.positionCount=128;

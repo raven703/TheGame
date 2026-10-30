@@ -34,6 +34,7 @@ MonoBehaviour:
     weaponInterval: 0
     weaponEnergy: 0
     weaponHeat: 0
+    weaponRange: 12
     energyBonus: 0
     regenerationBonus: 0
     coolingBonus: 0
@@ -68,6 +69,7 @@ MonoBehaviour:
     weaponInterval: 0
     weaponEnergy: 0
     weaponHeat: 0
+    weaponRange: 12
     energyBonus: 0
     regenerationBonus: 0
     coolingBonus: 0
@@ -103,6 +105,7 @@ MonoBehaviour:
     weaponInterval: 0
     weaponEnergy: 0
     weaponHeat: 0
+    weaponRange: 0
     energyBonus: 0
     regenerationBonus: 0
     coolingBonus: 0
@@ -136,6 +139,7 @@ MonoBehaviour:
     weaponInterval: 0
     weaponEnergy: 0
     weaponHeat: 0
+    weaponRange: 0
     energyBonus: 0
     regenerationBonus: 0
     coolingBonus: 0
@@ -170,6 +174,7 @@ MonoBehaviour:
     weaponInterval: 0
     weaponEnergy: 0
     weaponHeat: 0
+    weaponRange: 0
     energyBonus: 0
     regenerationBonus: 0
     coolingBonus: 0
@@ -204,6 +209,7 @@ MonoBehaviour:
     weaponInterval: 0
     weaponEnergy: 0
     weaponHeat: 0
+    weaponRange: 0
     energyBonus: 0
     regenerationBonus: 0
     coolingBonus: 0
@@ -238,6 +244,7 @@ MonoBehaviour:
     weaponInterval: 0
     weaponEnergy: 0
     weaponHeat: 0
+    weaponRange: 0
     energyBonus: 0
     regenerationBonus: 0
     coolingBonus: 0
@@ -272,6 +279,7 @@ MonoBehaviour:
     weaponInterval: 0
     weaponEnergy: 0
     weaponHeat: 0
+    weaponRange: 0
     energyBonus: 0
     regenerationBonus: 0
     coolingBonus: 0
@@ -306,6 +314,7 @@ MonoBehaviour:
     weaponInterval: 0
     weaponEnergy: 0
     weaponHeat: 0
+    weaponRange: 0
     energyBonus: 0
     regenerationBonus: 0
     coolingBonus: 0

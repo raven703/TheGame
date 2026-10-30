@@ -78,7 +78,7 @@ namespace Game.Core
             bool retreat=current.Maneuver==CombatManeuver.Exit||current.Maneuver==CombatManeuver.Approach||current.Maneuver==CombatManeuver.Recover;
             current.Boost=o.EngineAvailable&&retreat&&o.BoostReady&&o.Energy-25f>=o.MaxEnergy*.2f;
             current.Shield=o.ShieldReady&&o.ShieldFraction<.35f&&o.HullFraction>.4f&&o.Hull>10f&&o.Energy>=30f&&o.HeatFraction<1f;
-            current.Emp=o.EmpReady&&o.TargetAvailable&&!o.TargetSuppressed&&distance<=o.Range&&o.Energy>=35f&&o.HeatFraction<1f;
+            current.Emp=o.EmpReady&&o.TargetAvailable&&!o.TargetSuppressed&&AbilityRanges.EmpInRange(distance)&&o.Energy>=35f&&o.HeatFraction<1f;
             return current;
         }
         private CombatRoleDecision Choose(CombatRole role,CombatRoleObservation o,float distance)

@@ -45,6 +45,7 @@ public class FittingItem
     public int balanceVersion;
     public bool explicitWeaponStats;
     public float weaponInterval, weaponEnergy, weaponHeat;
+    public float weaponRange; // Missing/zero in legacy or custom snapshots: ShipWeapon.range fallback.
     public float energyBonus, regenerationBonus, coolingBonus;
     public float speedPercent, thrustPercent, reversePercent, lateralPercent, afterburnerHeatPercent;
     public float shieldBonus;

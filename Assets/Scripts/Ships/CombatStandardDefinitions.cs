@@ -38,6 +38,13 @@ public static class CombatStandardDefinitions
     public static bool Upgrade(FittingItem item)
     {
         if(item==null || item.balanceVersion>=CombatArchetypeCatalog.Version)return false;
+        bool rangeKnown=item.allowedGroup==SlotGroup.Top_Weapons&&CombatArchetypeCatalog.TryRange(item.id,out _);
+        if(rangeKnown)
+        {
+            CombatArchetypeCatalog.TryRange(item.id,out float range);item.weaponRange=range;
+            // The ordinary w1 laser is range-only: preserve every other legacy parameter.
+            if(item.id=="w1"){item.balanceVersion=CombatArchetypeCatalog.Version;return true;}
+        }
         bool weapon=CombatArchetypeCatalog.TryWeapon(item.id,out var w);
         bool module=CombatArchetypeCatalog.TryModule(item.id,out var m);
         if(!weapon&&!module)return false;
@@ -46,7 +53,7 @@ public static class CombatStandardDefinitions
         // Version 2 changes only shield capacity/regeneration. Do not reapply old balance to v1 items.
         if(item.balanceVersion>=1)
         {
-            if(IsShield(item.id)){item.shieldBonus=m.Shield;item.shieldRegenPerSecond=m.ShieldRegenPerSecond;}
+            if(item.balanceVersion<2&&IsShield(item.id)){item.shieldBonus=m.Shield;item.shieldRegenPerSecond=m.ShieldRegenPerSecond;}
             item.balanceVersion=CombatArchetypeCatalog.Version;return true;
         }
         if(weapon)

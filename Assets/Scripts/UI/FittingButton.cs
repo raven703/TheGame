@@ -24,6 +24,9 @@ public class FittingButton : MonoBehaviour
 
         if (button != null)
             button.onClick.AddListener(OnClick);
+        // Keep this live controller for I and PreCombatPanel, remove only its legacy presentation.
+        foreach(var graphic in GetComponentsInChildren<Graphic>(true)){graphic.enabled=false;graphic.raycastTarget=false;}
+        if(button!=null)button.enabled=false;
     }
 
     private void Update()

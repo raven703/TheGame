@@ -99,6 +99,8 @@ public class ShipAbilities : MonoBehaviour
             shipHealth==null || shipHealth.Data.GetModule(ModuleType.Weapon).isDestroyed)
             return false;
 
+        if(!Game.Core.AbilityRanges.EmpInRange(Vector2.Distance(transform.position,target.transform.position)))return false;
+
         var enemyWeapon = target.GetComponent<ShipWeapon>();
         if (enemyWeapon == null)
             return false;

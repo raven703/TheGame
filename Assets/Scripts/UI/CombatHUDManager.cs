@@ -35,7 +35,7 @@ public class CombatHUDManager : MonoBehaviour
         CombatUIStyle.Box(playerTitleLabel.transform,12,8,296,22);
         CombatUIStyle.Box(playerHullText.transform,12,30,296,20);
         CombatUIStyle.Box(playerHullBarFill.transform.parent,12,51,296,8);
-        CombatUIStyle.Box(playerShieldText.transform,12,62,296,20);
+        CombatUIStyle.Box(playerShieldText.transform,12,62,174,20);
         CombatUIStyle.Box(playerShieldBarFill.transform.parent,12,83,296,8);
         energyText=CombatUIStyle.Text("EnergyText",panel,"Энергия: —",15);
         heatText=CombatUIStyle.Text("HeatText",panel,"Нагрев: —",15);
@@ -145,7 +145,7 @@ public class CombatHUDManager : MonoBehaviour
         {
             var shield=playerHealth.Data.Damage.Shields;
             float fraction=TimeController.IsPaused?shield.Desired:shield.Fraction;
-            playerShieldText.text=$"Щит: {playerHealth.Data.currentShieldHP:0}/{playerHealth.Data.maxShieldHP:0} · перед {fraction:P0} / корма {1-fraction:P0}";
+            playerShieldText.text=$"Щит: {playerHealth.Data.currentShieldHP:0}/{playerHealth.Data.maxShieldHP:0} · {fraction:P0}";
             playerShieldText.fontSize=12;
         }
 

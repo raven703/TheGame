@@ -103,7 +103,7 @@ public class ShipOrderController : MonoBehaviour
         return new OrderObservation { Position=P(position),Velocity=P(velocity),TargetAvailable=Available(target),
             TargetPosition=target!=null?P(target.transform.position):default(AimPoint),
             TargetForward=target!=null?P(movement!=null?movement.GetForwardVector():(Vector2)target.transform.up):new AimPoint(0,1),
-            WeaponRange=weapon!=null?weapon.range:4f/.7f };
+            WeaponRange=weapon!=null?weapon.WorkingRange():4f/.7f };
     }
     public Vector2 Evaluate(Vector2 position, Vector2 velocity, out bool final)
     {

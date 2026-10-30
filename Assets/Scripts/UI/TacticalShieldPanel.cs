@@ -33,12 +33,12 @@ public class TacticalShieldPanel : MonoBehaviour
         var resume=CombatUIStyle.Button("Resume",strip.transform,"Продолжить",()=>TimeController.Instance?.TogglePause());
         CombatUIStyle.Box(resume.transform,380,22,128,30);
         var panel=CombatUIStyle.Panel("ShieldDistribution",transform,CombatUIStyle.Surface);
-        CombatUIStyle.Rect(panel.transform,Vector2.one,Vector2.one,new Vector2(-570,-714),new Vector2(-298,-652));
-        status=CombatUIStyle.Text("ShieldStatus",panel.transform,"",12);CombatUIStyle.Box(status.transform,8,4,256,22);
-        var forward=CombatUIStyle.Button("ShieldForward",panel.transform,"Вперёд [W]",()=>Shift(1));
-        var even=CombatUIStyle.Button("ShieldEven",panel.transform,"Поровну",()=>Shield()?.SetDesired(.5f));
-        var rear=CombatUIStyle.Button("ShieldRear",panel.transform,"Назад [S]",()=>Shift(-1));
-        CombatUIStyle.Box(forward.transform,8,28,86,28);CombatUIStyle.Box(even.transform,98,28,70,28);CombatUIStyle.Box(rear.transform,172,28,92,28);
+        panel.color=Color.clear;panel.raycastTarget=false;
+        CombatUIStyle.Rect(panel.transform,Vector2.up,Vector2.up,new Vector2(207,-98),new Vector2(325,-76));
+        var forward=CombatUIStyle.Button("ShieldForward",panel.transform,"▲",()=>Shift(1));
+        var even=CombatUIStyle.Button("ShieldEven",panel.transform,"•",()=>Shield()?.SetDesired(.5f));
+        var rear=CombatUIStyle.Button("ShieldRear",panel.transform,"▼",()=>Shift(-1));
+        CombatUIStyle.Box(forward.transform,0,0,36,22);CombatUIStyle.Box(even.transform,40,0,36,22);CombatUIStyle.Box(rear.transform,80,0,36,22);
         foreach(var button in new[]{forward,even,rear})
         {
             var tip=CombatUIStyle.Ensure<TacticalTooltip>(button.gameObject);
@@ -63,7 +63,6 @@ public class TacticalShieldPanel : MonoBehaviour
             if(Keyboard.current.sKey.wasPressedThisFrame)Shift(-1);
         }
         var s=Shield();
-        if(s!=null)status.text=!TimeController.IsPaused&&s.Transferring?"Перенос":"Распределение щита";
         pauseBar.SetActive(TimeController.IsPaused);
         if(!TimeController.IsPaused)return;
         var player=GameObject.FindGameObjectWithTag("Player");var orders=player!=null?player.GetComponent<ShipOrderController>():null;

@@ -65,7 +65,7 @@ public class EnemyAI : MonoBehaviour
         if (!ShipOrderController.Available(playerTarget))
         {
             orders.ApplyDecision(Game.Core.PilotDecisions.Decide((Game.Core.PilotPersonality)personality,
-                false,false,0,0,shipWeapon.range,optimalDistance),null);
+                false,false,0,0,shipWeapon.WorkingRange(),optimalDistance),null);
             return;
         }
         if (shipWeapon.Target != playerTarget && shipWeapon.PendingTarget != playerTarget) shipWeapon.SetTarget(playerTarget);
@@ -73,7 +73,7 @@ public class EnemyAI : MonoBehaviour
         var decision = Game.Core.PilotDecisions.Decide((Game.Core.PilotPersonality)personality,
             ShipOrderController.Available(playerTarget), health != null && health.Data != null,
             health != null && health.Data != null ? health.Data.currentHullHP : 0f,
-            health != null && health.Data != null ? health.Data.maxHullHP : 0f, shipWeapon.range, optimalDistance);
+            health != null && health.Data != null ? health.Data.maxHullHP : 0f, shipWeapon.WorkingRange(), shipWeapon.WorkingRange()*.75f);
         orders.ApplyDecision(decision, playerTarget);
     }
 
@@ -98,7 +98,7 @@ public class EnemyAI : MonoBehaviour
             TargetPosition=new Game.Core.AimPoint(targetPosition.x,targetPosition.y),TargetVelocity=new Game.Core.AimPoint(velocity.x,velocity.y),
             TargetForward=new Game.Core.AimPoint(targetForward.x,targetForward.y),TargetAvailable=available,
             EngineAvailable=shipMovement.EngineAvailable,WeaponAvailable=data!=null&&!data.GetModule(ModuleType.Weapon).isDestroyed,
-            LineBlocked=blocked,Range=shipWeapon.range,Energy=reactor!=null?reactor.Energy:0,MaxEnergy=reactor!=null?reactor.maxEnergy:0,
+            LineBlocked=blocked,Range=shipWeapon.WorkingRange(combatRole),Energy=reactor!=null?reactor.Energy:0,MaxEnergy=reactor!=null?reactor.maxEnergy:0,
             EnergyFraction=reactor!=null?reactor.Energy/Mathf.Max(1,reactor.maxEnergy):0,HeatFraction=reactor!=null?reactor.Heat/100f:0,
             Hull=data!=null?data.currentHullHP:0,HullFraction=data!=null?data.currentHullHP/Mathf.Max(1,data.maxHullHP):0,
             ShieldFraction=data!=null?data.currentShieldHP/Mathf.Max(1,data.maxShieldHP):1,

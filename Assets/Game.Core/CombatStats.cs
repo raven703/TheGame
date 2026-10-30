@@ -55,11 +55,13 @@ namespace Game.Core
     public struct WeaponStatValues
     {
         public WeaponKind Kind;
-        public float Damage, Cooldown, Energy, Heat;
+        public float Damage, Cooldown, Energy, Heat, Range;
         public float NominalDps => Damage/Cooldown;
     }
     public static class WeaponStatRules
     {
+        // Zero is the legacy snapshot sentinel, not a zero-range weapon.
+        public static float EffectiveRange(float savedRange,float shipFallback) => savedRange>0?savedRange:Math.Max(.01f,shipFallback);
         public static WeaponKind EffectiveKind(string id,WeaponKind savedKind,bool plasmaVisual) => savedKind!=WeaponKind.Laser ? savedKind :
             id=="w3" ? WeaponKind.Railgun : id=="w2" || plasmaVisual ? WeaponKind.Plasma : WeaponKind.Laser;
         public static WeaponStatValues Calculate(WeaponKind kind,float damage,float cooldownBonus,float laserCooldown)

@@ -574,10 +574,10 @@ public class FittingWindow : MonoBehaviour
         if(detailsLabel==null)return;
         if(item.allowedGroup==SlotGroup.Top_Weapons)
         {
-            var w=WeaponStatsCalculator.Calculate(item,targetShipWeapon!=null?targetShipWeapon.baseCooldown:.6f);
+            var w=WeaponStatsCalculator.Calculate(item,targetShipWeapon!=null?targetShipWeapon.baseCooldown:.6f,.5f,targetShipWeapon!=null?targetShipWeapon.range:6f);
             detailsLabel.text=$"{item.name} · {(item.mountType==WeaponMountType.Fixed?"Курсовое":"Турель")}\n"+
                 $"Урон {w.damage:0.#} · интервал {w.cooldown:0.##} с · DPS, номинальный {w.NominalDps:0.##}\n"+
-                $"Энергия {w.energy:0.#} · базовый нагрев {w.heat:0.#} за выстрел\n"+
+                $"Дальность: {w.range:0.#} юн.\nЭнергия {w.energy:0.#} · базовый нагрев {w.heat:0.#} за выстрел\n"+
                 (item.mountType==WeaponMountType.Fixed?$"Сектор {item.FixedFireSector:0}° · курсовое/универсальное крепление":$"Наведение {item.trackingSpeed:0}°/с · турельное/универсальное крепление");
             detailsLabel.text+="\nDPS без промахов, секторов, защиты, энергии и перегрева.";
         }

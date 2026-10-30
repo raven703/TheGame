@@ -6,6 +6,17 @@ using UnityEngine;
 
 public class CombatCatalogMigrationTests
 {
+    [Test] public void RangeMigrationPreservesOwnershipAndOtherWeaponParameters()
+    {
+        var itemType=T("FittingItem");
+        var item=UnityEngine.JsonUtility.FromJson("{\"id\":\"w3\",\"instanceId\":\"owned\",\"allowedGroup\":0,\"balanceVersion\":2,\"damageBonus\":123,\"weaponInterval\":2,\"weaponEnergy\":20,\"weaponHeat\":25}",itemType);
+        var upgrade=T("CombatStandardDefinitions").GetMethod("Upgrade");
+        Assert.AreEqual(true,upgrade.Invoke(null,new[]{item}));
+        Assert.AreEqual(18f,Field(item,"weaponRange"));Assert.AreEqual(123f,Field(item,"damageBonus"));Assert.AreEqual("owned",Field(item,"instanceId"));
+        var once=JsonUtility.ToJson(item);Assert.AreEqual(false,upgrade.Invoke(null,new[]{item}));Assert.AreEqual(once,JsonUtility.ToJson(item));
+        var custom=JsonUtility.FromJson("{\"id\":\"custom\",\"balanceVersion\":0,\"weaponRange\":3}",itemType);
+        Assert.AreEqual(false,upgrade.Invoke(null,new[]{custom}));Assert.AreEqual(3f,Field(custom,"weaponRange"));
+    }
     [Test] public void RadarUsesParentMaskRatherThanOversizedContainer()
     {
         var root=new GameObject("radar mask",typeof(RectTransform),typeof(UnityEngine.UI.Image),typeof(UnityEngine.UI.Mask));
