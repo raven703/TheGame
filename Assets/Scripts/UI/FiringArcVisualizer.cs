@@ -40,6 +40,7 @@ public class FiringArcVisualizer : MonoBehaviour
             button=CombatUIStyle.Button("WeaponRangeToggle",layout.transform,"Дальность и секторы [V]",Toggle);
             CombatUIStyle.Rect(button.transform,new Vector2(.5f,0),new Vector2(.5f,0),new Vector2(-125,16),new Vector2(125,48));
             var hint=button.gameObject.AddComponent<WeaponRangeHint>();hint.owner=this;
+            CombatUIStyle.ToggleVisual(button,false);
         }
     }
     public void Toggle()=>SetVisible(!Visible);
@@ -47,7 +48,7 @@ public class FiringArcVisualizer : MonoBehaviour
     {
         Visible=value;
         if(root!=null)root.SetActive(value);
-        if(button!=null)button.GetComponent<Image>().color=value?new Color(.14f,.40f,.47f):CombatUIStyle.Card;
+        CombatUIStyle.ToggleVisual(button,value);
     }
     private void Update()
     {
@@ -128,7 +129,7 @@ public class FiringArcVisualizer : MonoBehaviour
             {
                 var ring=Node("Range ring",root.transform);var line=Line(ring,cyan);line.loop=true;line.positionCount=128;
                 for(int k=0;k<128;k++){float a=k*Mathf.PI*2/128;line.SetPosition(k,new Vector3(Mathf.Cos(a),Mathf.Sin(a))*range);}RingCount++;
-                var label=Node("Range label",root.transform).AddComponent<TMPro.TextMeshPro>();label.text=range.ToString("0.#")+" ед.";
+                var label=Node("Range label",root.transform).AddComponent<TMPro.TextMeshPro>();label.text=range.ToString("0.#")+" юн.";
                 label.fontSize=4f;label.color=cyan;label.alignment=TMPro.TextAlignmentOptions.Left;label.rectTransform.sizeDelta=new Vector2(2,.5f);
                 labels.Add(label.transform);labelRanges.Add(range);
             }

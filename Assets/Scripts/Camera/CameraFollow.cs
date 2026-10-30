@@ -36,6 +36,10 @@ public class CameraFollow : MonoBehaviour
     [SerializeField] private float zoomOutTime=.5f;
     [SerializeField] private float zoomInTime=1f;
     private Camera view;
+    [Header("Manual zoom")]
+    [SerializeField] private float minimumSize=3f,maximumSize=30f,scrollSensitivity=.12f;
+    private float pausedMultiplier=1f;
+    private bool wasPaused;
     private ShipMovement movement;
     private float baseSize, lastWrittenSize, smoothedSpeed, speedVelocity, zoomVelocity;
     public float BaseSize => baseSize;
@@ -59,7 +63,7 @@ public class CameraFollow : MonoBehaviour
     private void LateUpdate()
     {
         if (target == null) return;
-        UpdateZoom(Time.deltaTime);
+        UpdateZoom(Time.unscaledDeltaTime);
 
         // 1. Вычисляем желаемое смещение по скорости
         Vector2 desiredLookAhead = Vector2.zero;
@@ -106,8 +110,16 @@ public class CameraFollow : MonoBehaviour
         // Preserve an external/manual zoom as a user base, not as a competing writer.
         if(!Mathf.Approximately(view.orthographicSize,lastWrittenSize))
             baseSize=Mathf.Max(.01f,view.orthographicSize/(lastWrittenSize/Mathf.Max(.01f,baseSize)));
+        bool paused=Time.timeScale<=0;
+        if(paused&&!wasPaused)pausedMultiplier=lastWrittenSize/Mathf.Max(.01f,baseSize);
+        wasPaused=paused;
+        if(UnityEngine.InputSystem.Mouse.current!=null&&!PlayerInputHandler.IsPointerOverUI()&&!TimeController.TextInputFocused)
+        {
+            float scroll=UnityEngine.InputSystem.Mouse.current.scroll.ReadValue().y;
+            if(scroll!=0)baseSize=Mathf.Clamp(baseSize*Mathf.Exp(-Mathf.Sign(scroll)*scrollSensitivity),Mathf.Max(.1f,minimumSize),Mathf.Max(minimumSize,maximumSize)/Mathf.Max(1,maximumZoomMultiplier));
+        }
         smoothedSpeed=Mathf.SmoothDamp(smoothedSpeed,targetRb.linearVelocity.magnitude,ref speedVelocity,Mathf.Max(.01f,speedSmoothing),Mathf.Infinity,deltaTime);
-        float desired=baseSize*SpeedZoomMultiplier(smoothedSpeed,movement!=null?movement.maxSpeed:referenceSpeed,zoomStartFraction,cruiseZoomMultiplier,maximumZoomMultiplier);
+        float desired=Mathf.Clamp(baseSize*(paused?pausedMultiplier:SpeedZoomMultiplier(smoothedSpeed,movement!=null?movement.maxSpeed:referenceSpeed,zoomStartFraction,cruiseZoomMultiplier,maximumZoomMultiplier)),minimumSize,maximumSize);
         float smoothing=desired>view.orthographicSize?zoomOutTime:zoomInTime;
         view.orthographicSize=Mathf.SmoothDamp(view.orthographicSize,desired,ref zoomVelocity,Mathf.Max(.01f,smoothing),Mathf.Infinity,deltaTime);
         lastWrittenSize=view.orthographicSize;

@@ -224,7 +224,7 @@ public class TacticalCommandPanel : MonoBehaviour
             SetButtonColor(courseButton, orders.Orientation == HullOrientation.Course ? activeColor : normalColor);
             SetButtonColor(targetFacingButton, orders.Orientation == HullOrientation.OrderTarget ? activeColor : normalColor);
             var movement=orders.GetComponent<ShipMovement>();
-            if(movementStatus!=null)movementStatus.text=$"{orders.Status}\nСкорость {movement.Rb.linearVelocity.magnitude:F1} / {movement.maxSpeed*movement.SpeedMultiplier*orders.SpeedLimit:F1} ({orders.SpeedLimit:P0})"+(movement.EngineAvailable?"":"\nДвигатель выбит: активное торможение недоступно");
+            if(movementStatus!=null)movementStatus.text=$"{orders.Status}\nСкорость {movement.Rb.linearVelocity.magnitude:F1} / {movement.maxSpeed*movement.SpeedMultiplier*orders.SpeedLimit:F1} юн./с ({orders.SpeedLimit:P0})"+(movement.EngineAvailable?"":"\nДвигатель выбит: активное торможение недоступно");
             for(int i=0;i<4;i++)if(speedButtons[i]!=null)SetButtonColor(speedButtons[i],Mathf.Abs(orders.SpeedLimit-(i+1)*.25f)<.01f?activeColor:normalColor);
         }
 
@@ -270,13 +270,7 @@ public class TacticalCommandPanel : MonoBehaviour
     private void SetButtonColor(Button btn, Color color)
     {
         if(btn==null)return;
-        var cb = btn.colors;
-        cb.normalColor = color;
-        cb.selectedColor = color;
-        cb.highlightedColor = color * 1.1f;
-        btn.colors = cb;
-        var border=btn.GetComponent<Outline>();
-        if(border!=null)border.effectColor=color==activeColor?activeColor:new Color(.22f,.29f,.36f);
+        CombatUIStyle.ToggleVisual(btn,color==activeColor);
     }
 
     private void UpdateAbilityButton(Button btn, TextMeshProUGUI label, string baseLabel, float cooldown)

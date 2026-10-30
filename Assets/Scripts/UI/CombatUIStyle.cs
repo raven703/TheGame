@@ -5,6 +5,20 @@ using TMPro;
 /// <summary>Shared Canvas-space layout and palette. Never changes item/weapon data.</summary>
 public static class CombatUIStyle
 {
+    public static void ToggleVisual(Button button,bool active)
+    {
+        if(button==null)return;
+        var image=button.targetGraphic as Image;
+        if(image!=null)image.color=Color.white;
+        Color fill=active?new Color(.06f,.48f,.6f):Card;
+        var colors=button.colors;colors.normalColor=fill;colors.selectedColor=fill;
+        colors.highlightedColor=Color.Lerp(fill,new Color(.3f,.65f,.75f),.25f);
+        colors.pressedColor=Color.Lerp(fill,Color.white,.15f);colors.disabledColor=new Color(.12f,.15f,.18f,.6f);colors.colorMultiplier=1;
+        button.colors=colors;
+        var border=Ensure<Outline>(button.gameObject);border.effectDistance=Vector2.one;
+        border.effectColor=active?new Color(.5f,.94f,1):new Color(.22f,.29f,.36f);
+        foreach(var label in button.GetComponentsInChildren<TextMeshProUGUI>(true))label.color=button.interactable?Color.white:new Color(.5f,.56f,.6f);
+    }
     public static T Ensure<T>(GameObject go) where T : Component
     {
         var component=go.GetComponent<T>();

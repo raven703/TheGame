@@ -10,6 +10,7 @@ using UnityEngine.InputSystem;
 /// - Tab — циклически по живым врагам.
 /// - No implicit target selection: only an explicit Tab changes weapon selection.
 /// </summary>
+[DefaultExecutionOrder(-100)]
 public class TargetSwitcher : MonoBehaviour
 {
     [Tooltip("Weapon игрока.")]
@@ -17,13 +18,21 @@ public class TargetSwitcher : MonoBehaviour
 
     [Tooltip("Клавиша переключения.")]
     public KeyCode switchKey = KeyCode.Tab;
+    private bool restoreNavigation;
+    private UnityEngine.EventSystems.EventSystem navigationSystem;
+    private void LateUpdate(){if(restoreNavigation&&navigationSystem!=null)navigationSystem.sendNavigationEvents=true;restoreNavigation=false;}
 
     private void Update()
     {
-        if (playerWeapon == null || FittingWindow.OpenWindow != null || PlayerInputHandler.IsPointerOverUI()) return;
+        if (playerWeapon == null || FittingWindow.OpenWindow != null || TimeController.TextInputFocused) return;
 
 #if ENABLE_INPUT_SYSTEM
         bool switchPressed = Keyboard.current != null && Keyboard.current.tabKey.wasPressedThisFrame;
+        if(Keyboard.current!=null&&Keyboard.current.tabKey.isPressed)
+        {
+            navigationSystem=UnityEngine.EventSystems.EventSystem.current;
+            if(navigationSystem!=null&&navigationSystem.sendNavigationEvents){navigationSystem.sendNavigationEvents=false;restoreNavigation=true;}
+        }
 #else
         bool switchPressed = Input.GetKeyDown(switchKey);
 #endif
@@ -33,6 +42,11 @@ public class TargetSwitcher : MonoBehaviour
         // === Tab — циклическое переключение ===
         if (switchPressed && alive.Count > 0)
         {
+            alive.RemoveAll(enemy=>!ShipOrderController.Available(enemy));
+            if(alive.Count==0)return;
+            // Registration order is stable; keyboard UI navigation must not consume Tab too.
+            if(UnityEngine.EventSystems.EventSystem.current!=null)
+                UnityEngine.EventSystems.EventSystem.current.SetSelectedGameObject(null);
             playerWeapon.SetTarget(GetNextEnemy(alive));
         }
     }

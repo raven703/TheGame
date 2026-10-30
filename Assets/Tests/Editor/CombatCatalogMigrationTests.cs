@@ -6,6 +6,16 @@ using UnityEngine;
 
 public class CombatCatalogMigrationTests
 {
+    [Test] public void RadarProjectionPreservesEightDirectionsAndContainsDistantIcons()
+    {
+        var method=T("EnemyRadar").GetMethod("ProjectOffset");
+        foreach(var direction in new[]{Vector2.up,Vector2.down,Vector2.left,Vector2.right,new Vector2(1,1),new Vector2(-1,1),new Vector2(1,-1),new Vector2(-1,-1)})
+        {
+            var distant=(Vector2)method.Invoke(null,new object[]{direction.normalized*100,25f,120f,10f});
+            Assert.AreEqual(110,distant.magnitude,.001f);Assert.Greater(Vector2.Dot(direction.normalized,distant.normalized),.999f);
+            var near=(Vector2)method.Invoke(null,new object[]{direction.normalized*12.5f,25f,120f,10f});Assert.AreEqual(55,near.magnitude,.001f);
+        }
+    }
     private static Type T(string name)=>Type.GetType(name+", Assembly-CSharp",true);
     private static object Field(object item,string name)=>item.GetType().GetField(name).GetValue(item);
     [Test] public void ShieldV2Migration_PreservesPlacementIdentitiesOtherStatsAndCustomItems()

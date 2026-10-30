@@ -66,7 +66,7 @@ public class FittingWindow : MonoBehaviour
         var s = ShipStatsCalculator.Calculate(shipDefinition, currentLoadout);
         statsLabel.text = "ХАРАКТЕРИСТИКИ КОРАБЛЯ\nБаза → оснащение (без боевых эффектов)\n" +
             $"Корпус: {b.hull:0.#} → {s.hull:0.#}\nЩит: {b.shield:0.#} → {s.shield:0.#}\n" +
-            $"Реген щита: {b.shieldRegenPerSecond:0.#} → {s.shieldRegenPerSecond:0.#} HP/с\nМасса: {b.mass:0.##} → {s.mass:0.##}\nСкорость: {b.speed:0.#} → {s.speed:0.#}\n" +
+            $"Реген щита: {b.shieldRegenPerSecond:0.#} → {s.shieldRegenPerSecond:0.#} HP/с\nМасса: {b.mass:0.##} → {s.mass:0.##}\nСкорость: {b.speed:0.#} → {s.speed:0.#} юн./с\n" +
             $"Маршевая сила: {b.thrust:0.#} → {s.thrust:0.#}\nНазад: {b.reverseThrust:0.#} → {s.reverseThrust:0.#}\nВбок: {b.lateralThrust:0.#} → {s.lateralThrust:0.#}\nПоворот: {b.turn:0.#} → {s.turn:0.#} °/с\n" +
             $"Захват: {b.lockTime:0.##} → {s.lockTime:0.##} с\nЭнергия макс.: {b.energy:0.#} → {s.energy:0.#}\n" +
             $"Восстановление энергии: {b.regeneration:0.#} → {s.regeneration:0.#} ед./с\nУстойчивость к перегреву: {b.resistance:P0} → {s.resistance:P0}\n" +
@@ -586,7 +586,7 @@ public class FittingWindow : MonoBehaviour
             detailsLabel.text=item.name;
             void Field(string title,float value,string unit="") {if(value!=0)detailsLabel.text+=$" · {title} {value:+0.##;-0.##}{unit}";}
             Field("Щит",item.shieldBonus);Field("Реген щита",item.shieldRegenPerSecond," HP/с");
-            Field("Скорость",item.speedBonus);Field("Тяга",item.accelBonus);Field("Масса",item.massBonus);
+            Field("Скорость",item.speedBonus," юн./с");Field("Тяга",item.accelBonus);Field("Масса",item.massBonus);
             Field("Энергия",item.energyBonus);Field("Восстановление энергии",item.regenerationBonus,"/с");
             Field("Охлаждение",item.coolingBonus);Field("Устойчивость",item.EffectiveHeatResistanceBonus*100," п.п.");
             Field("Скорость",item.speedPercent*100,"%");Field("Тяга",item.thrustPercent*100,"%");
