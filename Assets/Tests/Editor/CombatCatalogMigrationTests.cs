@@ -6,6 +6,51 @@ using UnityEngine;
 
 public class CombatCatalogMigrationTests
 {
+    [Test] public void RadarUsesParentMaskRatherThanOversizedContainer()
+    {
+        var root=new GameObject("radar mask",typeof(RectTransform),typeof(UnityEngine.UI.Image),typeof(UnityEngine.UI.Mask));
+        var prefab=new GameObject("point",typeof(RectTransform),typeof(UnityEngine.UI.Image));
+        try
+        {
+            root.GetComponent<RectTransform>().sizeDelta=new Vector2(208,208);
+            var child=new GameObject("oversized",typeof(RectTransform));child.transform.SetParent(root.transform,false);
+            var rect=child.GetComponent<RectTransform>();rect.sizeDelta=new Vector2(260,260);
+            var radar=root.AddComponent(T("EnemyRadar"));
+            radar.GetType().GetField("dotsContainer").SetValue(radar,rect);
+            radar.GetType().GetField("enemyDotPrefab").SetValue(radar,prefab.GetComponent<UnityEngine.UI.Image>());
+            var radius=(float)radar.GetType().GetMethod("VisibleRadius",BindingFlags.NonPublic|BindingFlags.Instance).Invoke(radar,null);
+            Assert.AreEqual(104,radius,.001f);
+            var method=T("EnemyRadar").GetMethod("ProjectOffset");
+            foreach(float distance in new[]{.9f,1.1f,2f,5f,10f})for(int i=0;i<8;i++)
+            {
+                var direction=new Vector2(Mathf.Cos(i*Mathf.PI/4),Mathf.Sin(i*Mathf.PI/4));
+                float padding=new Vector2(12,14).magnitude*.5f+4;
+                var point=(Vector2)method.Invoke(null,new object[]{direction*distance*25,25f,radius,padding});
+                Assert.LessOrEqual(point.magnitude+padding,104.001f);
+                if(distance>1)Assert.AreEqual(radius-padding,point.magnitude,.001f);
+            }
+        }
+        finally{UnityEngine.Object.DestroyImmediate(root);UnityEngine.Object.DestroyImmediate(prefab);}
+    }
+    [Test] public void SupportTimerHasHysteresisPauseResetAndPreparationGuard()
+    {
+        var root=new GameObject("isolated support timer");
+        try
+        {
+            var type=T("BattleArena");var arena=root.AddComponent(type);
+            type.GetMethod("Initialize",BindingFlags.NonPublic|BindingFlags.Instance).Invoke(arena,null);
+            var tick=type.GetMethod("TickSupport");
+            Action<Vector2,float,bool> step=(p,dt,active)=>tick.Invoke(arena,new object[]{p,dt,active,null});
+            step(new Vector2(91,0),4,false);Assert.AreEqual(0,type.GetProperty("OutsideSeconds").GetValue(arena));
+            step(new Vector2(91,0),4,true);Assert.AreEqual(4,type.GetProperty("OutsideSeconds").GetValue(arena));
+            step(new Vector2(89,0),0,true);Assert.AreEqual(true,type.GetProperty("OutsideSupport").GetValue(arena));
+            Assert.AreEqual(4,type.GetProperty("OutsideSeconds").GetValue(arena));
+            step(new Vector2(87,0),0,true);Assert.AreEqual(0,type.GetProperty("OutsideSeconds").GetValue(arena));
+            step(new Vector2(91,0),3,true);step(Vector2.zero,0,false);
+            Assert.AreEqual(false,type.GetProperty("OutsideSupport").GetValue(arena));
+        }
+        finally{UnityEngine.Object.DestroyImmediate(root);}
+    }
     [Test] public void SeededFieldRepeatsPlacementAndRespectsPairClearance()
     {
         Vector3[] first=null;

@@ -39,12 +39,20 @@ public class AsteroidField : MonoBehaviour
         var random=new System.Random(ActualSeed);
         var placed=new System.Collections.Generic.List<Vector3>();
         var ships = FindObjectsByType<ShipHealth>(FindObjectsSortMode.None);
+        var arena=BattleArena.Ensure();
+        Vector2 arenaCenter=new Vector2(arena.Area.Center.X,arena.Area.Center.Y);
+        float largest=1;
+        foreach(var ship in ships){var movement=ship.GetComponent<ShipMovement>();if(movement!=null)largest=Mathf.Max(largest,movement.ShipRadius);}
+        float passage=Mathf.Max(minimumGap,largest*2+2);
         int index=0;
         for(int attempt=0;attempt<Mathf.Clamp(count,0,200)*Mathf.Clamp(attemptsPerRock,1,500)&&index<count;attempt++)
         {
             float size=Mathf.Lerp(Mathf.Max(.1f,sizeRange.x),Mathf.Max(sizeRange.x,sizeRange.y),(float)random.NextDouble());
             float radius=.96f*size;
-            Vector2 point=new Vector2(Mathf.Lerp(area.xMin+radius,area.xMax-radius,(float)random.NextDouble()),Mathf.Lerp(area.yMin+radius,area.yMax-radius,(float)random.NextDouble()));
+            float angle=(float)random.NextDouble()*Mathf.PI*2;
+            float distance=Mathf.Sqrt((float)random.NextDouble())*(arena.Area.Radius-radius);
+            Vector2 point=arenaCenter+new Vector2(Mathf.Cos(angle),Mathf.Sin(angle))*distance;
+            if(distance<arena.InitialRange*1.25f+radius)continue;
             bool occupied = false;
             foreach (var ship in ships)
             {
@@ -52,7 +60,7 @@ public class AsteroidField : MonoBehaviour
                 float shipRadius=collider!=null?collider.bounds.extents.magnitude:1;
                 if(Vector2.Distance(point,ship.transform.position)<radius+shipRadius+shipClearance)occupied=true;
             }
-            foreach(var previous in placed)if(Vector2.Distance(point,previous)<radius+previous.z+minimumGap)occupied=true;
+            foreach(var previous in placed)if(Vector2.Distance(point,previous)<radius+previous.z+passage)occupied=true;
             if (occupied) continue;
             placed.Add(new Vector3(point.x,point.y,radius));
             var rock = new GameObject("Asteroid");

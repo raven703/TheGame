@@ -152,14 +152,15 @@ public class ShipSpawner : MonoBehaviour
 
     private Vector3 GetSpawnPosition(int index, int total)
     {
-        Vector3 center = playerTransform != null ? playerTransform.position : Vector3.zero;
+        var arena=BattleArena.Ensure();
+        Vector3 center = new Vector3(arena.Area.Center.X,arena.Area.Center.Y,0);
         float baseAngle = Random.Range(0f, Mathf.PI * 2f);
         float angleStep = (Mathf.PI * 2f) / Mathf.Max(1, total);
         float angle = baseAngle + angleStep * index;
 
         return center + new Vector3(
-            Mathf.Cos(angle) * spawnRadius,
-            Mathf.Sin(angle) * spawnRadius,
+            Mathf.Cos(angle) * Mathf.Min(spawnRadius,arena.Area.Radius-4),
+            Mathf.Sin(angle) * Mathf.Min(spawnRadius,arena.Area.Radius-4),
             0f);
     }
 

@@ -39,6 +39,20 @@ public class EnemyRadar : MonoBehaviour
     private Sprite triangle;
     private Texture2D triangleTexture;
     private Sprite pointSprite;
+    private float VisibleRadius()
+    {
+        float radius=Mathf.Min(radarRadiusPixels,Mathf.Min(dotsContainer.rect.width,dotsContainer.rect.height)*.5f);
+        foreach(var mask in dotsContainer.GetComponentsInParent<Mask>())
+        {
+            if(!mask.isActiveAndEnabled)continue;
+            var rect=mask.GetComponent<RectTransform>();
+            var corners=new Vector3[4];rect.GetWorldCorners(corners);
+            for(int i=0;i<4;i++)corners[i]=dotsContainer.InverseTransformPoint(corners[i]);
+            var center=dotsContainer.InverseTransformPoint(rect.TransformPoint(rect.rect.center));
+            radius=Mathf.Min(radius,Mathf.Min(Vector3.Distance(corners[0],corners[1]),Vector3.Distance(corners[1],corners[2]))*.5f-((Vector2)center).magnitude);
+        }
+        return Mathf.Max(0,radius);
+    }
     public static Vector2 ProjectOffset(Vector2 delta,float range,float radius,float padding=10f)
     {
         float edge=Mathf.Max(0,radius-padding);
@@ -92,9 +106,16 @@ public class EnemyRadar : MonoBehaviour
             float dist = delta2D.magnitude;
 
             bool distant=dist>radarRangeWorld;
-            Vector2 pixelOffset=ProjectOffset(delta2D,radarRangeWorld,radarRadiusPixels);
+            // Circumscribed radius includes every rotated corner plus the selected outline.
+            Vector2 iconSize=distant?new Vector2(12,14):enemyDotPrefab.rectTransform.sizeDelta;
+            float padding=iconSize.magnitude*.5f+4f;
+            Vector2 pixelOffset=ProjectOffset(delta2D,radarRangeWorld,VisibleRadius(),padding);
 
             dot.rectTransform.anchoredPosition = pixelOffset;
+            dot.rectTransform.anchorMin=dot.rectTransform.anchorMax=new Vector2(.5f,.5f);
+            dot.rectTransform.localScale=Vector3.one;
+            dot.rectTransform.pivot=new Vector2(.5f,.5f);
+            dot.enabled=true;
             dot.sprite=distant?triangle:pointSprite;
             dot.type=Image.Type.Simple;
             dot.rectTransform.sizeDelta=distant?new Vector2(12,14):enemyDotPrefab.rectTransform.sizeDelta;

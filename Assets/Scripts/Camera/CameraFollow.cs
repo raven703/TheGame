@@ -49,6 +49,11 @@ public class CameraFollow : MonoBehaviour
     private void ClampPan()
     {
         if(view==null)return;
+        if(BattleArena.Current!=null)
+        {
+            var area=BattleArena.Current.Area;float extent=area.Radius+Mathf.Max(view.orthographicSize,view.orthographicSize*view.aspect)*.5f;
+            panBounds=new Rect(area.Center.X-extent,area.Center.Y-extent,extent*2,extent*2);
+        }
         float halfY=view.orthographicSize,halfX=halfY*view.aspect;var p=transform.position;
         p.x=panBounds.width<halfX*2?panBounds.center.x:Mathf.Clamp(p.x,panBounds.xMin+halfX,panBounds.xMax-halfX);
         p.y=panBounds.height<halfY*2?panBounds.center.y:Mathf.Clamp(p.y,panBounds.yMin+halfY,panBounds.yMax-halfY);transform.position=p;

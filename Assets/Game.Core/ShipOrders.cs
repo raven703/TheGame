@@ -3,6 +3,18 @@ using System.Collections.Generic;
 
 namespace Game.Core
 {
+    public sealed class BattleArea
+    {
+        public AimPoint Center { get; }
+        public float Radius { get; }
+        public BattleArea(AimPoint center,float radius){Center=center;Radius=Math.Max(1,radius);}
+        public bool Contains(AimPoint point,float margin=0)=>ShipOrders.Length(ShipOrders.Subtract(point,Center))<=Math.Max(0,Radius-margin);
+        public AimPoint Clamp(AimPoint point,float margin=0)
+        {
+            var d=ShipOrders.Subtract(point,Center);float length=ShipOrders.Length(d),limit=Math.Max(0,Radius-margin);
+            return length<=limit?point:new AimPoint(Center.X+d.X/length*limit,Center.Y+d.Y/length*limit);
+        }
+    }
     public enum OrderMode { HoldPosition, MoveToPoint, EngageTarget, Orbit, KeepDistance, Flank, FollowCursor }
     public enum OrderOrientation { Course, OrderTarget }
     public enum PilotPersonality { Brawler, Sniper, Flanker, Cautious }

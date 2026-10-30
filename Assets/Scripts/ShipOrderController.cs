@@ -17,6 +17,7 @@ public class ShipOrderController : MonoBehaviour
     private readonly Dictionary<string, WeakReference<ShipHealth>> targets = new Dictionary<string, WeakReference<ShipHealth>>();
     private readonly ShipLocalNavigator navigator = new ShipLocalNavigator();
     private int navigationRevision;
+    private bool arenaRecovery;
     public HullOrientation Orientation => (HullOrientation)model.Orientation;
     public ShipOrderMode Mode => (ShipOrderMode)model.Mode;
     public ShipHealth OrderTarget
@@ -67,12 +68,14 @@ public class ShipOrderController : MonoBehaviour
     public void SetSpeedLimit(float value) => model.SetSpeedLimit(value);
     public void MoveTo(Vector2 point, bool append = false)
     {
+        if(BattleArena.Current!=null&&GetComponent<EnemyAI>()!=null)point=BattleArena.Current.SafePoint(point,Radius+2);
         Vector2 actual=ShipLocalNavigator.AccessiblePoint(point,transform.position,Radius);
         if((actual-point).sqrMagnitude>.01f)CombatSession.Log("Точка внутри препятствия — назначена доступная точка рядом");
         model.MoveTo(P(actual),append);targets.Clear();SynchronizeNavigator();
     }
     public void BeginFollowCursor(Vector2 point)
     {
+        if(BattleArena.Current!=null&&GetComponent<EnemyAI>()!=null)point=BattleArena.Current.SafePoint(point,Radius+2);
         model.BeginFollowCursor(P(ShipLocalNavigator.AccessiblePoint(point,transform.position,Radius)));
         targets.Clear();SynchronizeNavigator();
     }
@@ -104,6 +107,12 @@ public class ShipOrderController : MonoBehaviour
     }
     public Vector2 Evaluate(Vector2 position, Vector2 velocity, out bool final)
     {
+        var arena=BattleArena.Current;
+        if(arena!=null&&GetComponent<EnemyAI>()!=null)
+        {
+            if(!arena.Area.Contains(P(position),Radius))arenaRecovery=true;
+            else if(arena.Area.Contains(P(position),Radius+4))arenaRecovery=false;
+        }
         var previousMode=Mode;
         if(Mode==ShipOrderMode.MoveToPoint || Mode==ShipOrderMode.FollowCursor)
         {
@@ -112,8 +121,13 @@ public class ShipOrderController : MonoBehaviour
             if(points.Count>0)model.CorrectFirstWaypoint(P(ShipLocalNavigator.AccessiblePoint(V(points[0]),position,Radius)));
         }
         Vector2 destination=V(model.Evaluate(Observe(position,velocity),out final,false));
+        if(arena!=null&&GetComponent<EnemyAI>()!=null)
+        {
+            destination=arena.SafePoint(arenaRecovery?position:destination,Radius+(arenaRecovery?6:2));
+            if(arenaRecovery)final=true;
+        }
         SynchronizeNavigator();
-        if(Mode==ShipOrderMode.HoldPosition)
+        if(Mode==ShipOrderMode.HoldPosition&&!arenaRecovery)
         {
             if(previousMode!=ShipOrderMode.HoldPosition){Detouring=false;if(previousMode!=ShipOrderMode.MoveToPoint)CombatSession.Log("Цель приказа недоступна — торможение");}
             return destination;

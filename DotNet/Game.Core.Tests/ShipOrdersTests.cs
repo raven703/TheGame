@@ -5,6 +5,14 @@ using NUnit.Framework;
 
 public class ShipOrdersTests
 {
+    [Test] public void BattleCircleClampsWithMarginAndNeverMovesItsCenter()
+    {
+        var area=new BattleArea(new AimPoint(3,4),48);
+        var point=area.Clamp(new AimPoint(103,4),3);
+        Assert.AreEqual(48,point.X,.0001f);Assert.AreEqual(4,point.Y);
+        Assert.True(area.Contains(point,3));Assert.False(area.Contains(new AimPoint(52,4)));
+        Assert.AreEqual(3,area.Center.X);Assert.AreEqual(48,area.Radius);
+    }
     [Test] public void ExplicitFacingTargetPreservesRouteSpeedAndNavigationRevision()
     {
         var order=new ShipOrders();order.MoveTo(P(8,4));order.MoveTo(P(12,6),true);order.SetSpeedLimit(.5f);

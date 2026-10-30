@@ -12,6 +12,23 @@ public class CombatManager : MonoBehaviour
 
     private bool isCombatOver = false;
     private bool allWavesCleared = false;
+    public bool IsCombatOver => isCombatOver;
+    public string DefeatReason { get; private set; }
+    public void FailOutsideSupport()
+    {
+        if(CombatSession.IsPreparing || isCombatOver)return;
+        DefeatReason="Операция провалена: покинута зона поддержки";
+        CombatSession.Log(DefeatReason);
+        EndCombat(false);
+        if(losePanel!=null)
+        {
+            var text=losePanel.GetComponent<TMPro.TextMeshProUGUI>();
+            if(text==null)text=System.Array.Find(losePanel.GetComponentsInChildren<TMPro.TextMeshProUGUI>(true),t=>t.GetComponentInParent<UnityEngine.UI.Button>()==null);
+            if(text!=null)text.text=DefeatReason;
+            var legacy=System.Array.Find(losePanel.GetComponentsInChildren<UnityEngine.UI.Text>(true),t=>t.GetComponentInParent<UnityEngine.UI.Button>()==null);
+            if(legacy!=null)legacy.text=DefeatReason;
+        }
+    }
 
     private void Start()
     {
@@ -46,12 +63,14 @@ public class CombatManager : MonoBehaviour
     /// </summary>
     public void NotifyAllWavesCleared()
     {
+        if(isCombatOver)return;
         allWavesCleared = true;
         Debug.Log("[CombatManager] Все волны уничтожены — победа!");
     }
 
     private void EndCombat(bool playerWon)
     {
+        if(isCombatOver)return;
         isCombatOver = true;
 
         if (playerWon)
