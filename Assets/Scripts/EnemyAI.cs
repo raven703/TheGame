@@ -92,6 +92,9 @@ public class EnemyAI : MonoBehaviour
         bool blocked=available&&Asteroid.FindCover(position,targetPosition,out _ )!=null;
         var observation=new Game.Core.CombatRoleObservation {
             Position=new Game.Core.AimPoint(position.x,position.y),Forward=new Game.Core.AimPoint(forward.x,forward.y),
+            Velocity=new Game.Core.AimPoint(shipMovement.Rb.linearVelocity.x,shipMovement.Rb.linearVelocity.y),
+            Radius=GetComponent<Collider2D>()!=null?GetComponent<Collider2D>().bounds.extents.magnitude:.5f,
+            TargetRadius=available&&playerTarget.GetComponent<Collider2D>()!=null?playerTarget.GetComponent<Collider2D>().bounds.extents.magnitude:.5f,
             TargetPosition=new Game.Core.AimPoint(targetPosition.x,targetPosition.y),TargetVelocity=new Game.Core.AimPoint(velocity.x,velocity.y),
             TargetForward=new Game.Core.AimPoint(targetForward.x,targetForward.y),TargetAvailable=available,
             EngineAvailable=shipMovement.EngineAvailable,WeaponAvailable=data!=null&&!data.GetModule(ModuleType.Weapon).isDestroyed,

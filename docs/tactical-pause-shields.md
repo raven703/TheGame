@@ -1,3 +1,7 @@
+## Clarity follow-up (partial implementation, 2026-10-29)
+
+Player shield arcs preview desired capacity bands while paused. Brightness projects total current filling onto that plan; this does not change HP, capacity or protection. Running view uses actual allocation. Fitting summary now sums installed common-calculator nominal DPS and separates shield regeneration from energy recovery. Bottom hover card and NPC passing changes await in-game acceptance; see newest handoff for outstanding checks.
+
 # Тактическая пауза и направленные щиты
 
 ## Пауза и план

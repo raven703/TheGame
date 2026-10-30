@@ -42,13 +42,16 @@ public class ShieldArcs : MonoBehaviour
         }
         for(int side=0;side<2;side++)for(int band=0;band<8;band++)
         {
-            float share=side==0?s.Fraction:1-s.Fraction;
+            bool preview=player && TimeController.IsPaused;
+            float fraction=preview?s.Desired:s.Fraction;
+            float share=side==0?fraction:1-fraction;
             float count=share*8,coverage=Mathf.Clamp01(count-band);
             var line=arcs[side,band];
             line.enabled=isActiveAndEnabled&&!d.Destroyed&&!d.Module(Game.Core.CombatModule.Shield).Destroyed&&coverage>0f;
             if(!line.enabled)continue;
             float hp=side==0?s.Front:s.Rear,capacity=side==0?s.FrontCapacity:s.RearCapacity;
-            float filled=Mathf.Clamp01((capacity>0f?hp/capacity:0f)*count-band);
+            float filling=preview?(s.Front+s.Rear)/Mathf.Max(.001f,s.FrontCapacity+s.RearCapacity):(capacity>0f?hp/capacity:0f);
+            float filled=Mathf.Clamp01(filling*count-band);
             float flash=(side==0?s.FrontFlash:s.RearFlash)/.22f;
             float shimmer=.94f+.06f*Mathf.Sin(Time.time*2f+band*.6f);
             float alpha=coverage*(.05f+.28f*filled)*shimmer*(player||selected?1f:.28f);

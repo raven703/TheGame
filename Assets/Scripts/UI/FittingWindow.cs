@@ -66,23 +66,18 @@ public class FittingWindow : MonoBehaviour
         var s = ShipStatsCalculator.Calculate(shipDefinition, currentLoadout);
         statsLabel.text = "ХАРАКТЕРИСТИКИ КОРАБЛЯ\nБаза → оснащение (без боевых эффектов)\n" +
             $"Корпус: {b.hull:0.#} → {s.hull:0.#}\nЩит: {b.shield:0.#} → {s.shield:0.#}\n" +
-            $"Масса: {b.mass:0.##} → {s.mass:0.##}\nСкорость: {b.speed:0.#} → {s.speed:0.#}\n" +
-            $"Маршевая сила: {b.thrust:0.#} → {s.thrust:0.#}\nНазад: {s.reverseThrust:0.#}; вбок: {s.lateralThrust:0.#}\nПоворот: {b.turn:0.#} → {s.turn:0.#} °/с\n" +
+            $"Реген щита: {b.shieldRegenPerSecond:0.#} → {s.shieldRegenPerSecond:0.#} HP/с\nМасса: {b.mass:0.##} → {s.mass:0.##}\nСкорость: {b.speed:0.#} → {s.speed:0.#}\n" +
+            $"Маршевая сила: {b.thrust:0.#} → {s.thrust:0.#}\nНазад: {b.reverseThrust:0.#} → {s.reverseThrust:0.#}\nВбок: {b.lateralThrust:0.#} → {s.lateralThrust:0.#}\nПоворот: {b.turn:0.#} → {s.turn:0.#} °/с\n" +
             $"Захват: {b.lockTime:0.##} → {s.lockTime:0.##} с\nЭнергия макс.: {b.energy:0.#} → {s.energy:0.#}\n" +
-            $"Восстановление: {b.regeneration:0.#} → {s.regeneration:0.#}/с\nУстойчивость: {b.resistance:P0} → {s.resistance:P0}\n" +
-            $"Охлаждение: {b.cooling:0.#} → {s.cooling:0.#}/с\n\nОРУЖИЕ (каждый слот отдельно)\n";
-        if (currentLoadout?.weaponSlots != null)
-            foreach (var item in currentLoadout.weaponSlots)
-            {
-                if (item == null || string.IsNullOrEmpty(item.id)) continue;
-                var w = WeaponStatsCalculator.Calculate(item, targetShipWeapon != null ? targetShipWeapon.baseCooldown : .6f);
-                int index = currentLoadout.weaponSlots.IndexOf(item);
-                float sector = targetShipWeapon != null ? targetShipWeapon.MountSector(index) : 60f;
-                statsLabel.text += $"{item.name} / {w.kind} / {(item.mountType == WeaponMountType.Turret ? "Турель" : "Курсовая")}\nКрепление {index + 1}: сектор {sector:0}°" +
-                    (item.mountType == WeaponMountType.Turret ? $"; {item.trackingSpeed:0} °/с; вращение ограничено креплением" : $"; собственный сектор {item.FixedFireSector:0}°; итог ±{Game.Core.MountGeometry.EffectiveSector(sector,(Game.Core.WeaponMountType)(int)item.mountType,item.FixedFireSector)*.5f:0}°") +
-                    $"\nУрон {w.damage:0.#}; DPS* {w.NominalDps:0.#}; КД {w.cooldown:0.##} с\nЭнергия {w.energy:0.#}; нагрев {ShipReactor.CalculateHeat(w.heat,s.resistance):0.#} (база {w.heat:0.#})\n";
-            }
-        statsLabel.text += "\n* Номинальный DPS без ограничений энергии,\nперегрева, точности и защиты цели.\nОбщий DPS не суммируется.";
+            $"Восстановление энергии: {b.regeneration:0.#} → {s.regeneration:0.#} ед./с\nУстойчивость к перегреву: {b.resistance:P0} → {s.resistance:P0}\n" +
+            $"Охлаждение: {b.cooling:0.#} → {s.cooling:0.#}/с\n";
+        float dps=0;
+        if(currentLoadout?.weaponSlots!=null)
+            foreach(var item in currentLoadout.weaponSlots)
+                if(item!=null&&!string.IsNullOrEmpty(item.id))
+                    dps+=WeaponStatsCalculator.Calculate(item,targetShipWeapon!=null?targetShipWeapon.baseCooldown:.6f).NominalDps;
+        statsLabel.text += $"DPS, номинальный: — → {dps:0.##}";
+
     }
     private Canvas modalCanvas;
     public static FittingWindow OpenWindow { get; private set; }
@@ -117,7 +112,7 @@ public class FittingWindow : MonoBehaviour
         }
         var inventoryTitle=CombatUIStyle.Text("InventoryHeading",transform,"ИНВЕНТАРЬ",17);CombatUIStyle.Box(inventoryTitle.transform,508,122,280,25);
         var statsPanel=CombatUIStyle.Node("StatisticsScroll",transform);
-        CombatUIStyle.Box(statsPanel.transform,808,112,350,490);
+        CombatUIStyle.Box(statsPanel.transform,808,112,350,378);
         var statsScroll=CombatUIStyle.Ensure<ScrollRect>(statsPanel);
         statsScroll.horizontal=false;statsScroll.vertical=true;
         var statsViewport=CombatUIStyle.Node("Viewport",statsPanel.transform);
@@ -135,7 +130,7 @@ public class FittingWindow : MonoBehaviour
         RefreshStats();
         foreach(var text in GetComponentsInChildren<TextMeshProUGUI>(true))
             if(text!=titleLabel && (text.text.Contains("ГРУППА")||text.text.Contains("ГРУППЫ")||text.text.Contains("ИНВЕНТАРЬ МОДУЛЕЙ")))text.gameObject.SetActive(false);
-        detailsLabel=CombatUIStyle.Text("ModuleDescription",transform,"",14);CombatUIStyle.Box(detailsLabel.transform,508,510,280,84);ShowDescription(null);
+        detailsLabel=CombatUIStyle.Text("ModuleDescription",transform,"",12);CombatUIStyle.Box(detailsLabel.transform,508,502,650,100);ShowDescription(null);
         var presets=CombatUIStyle.Node("PresetButtons",transform);CombatUIStyle.Box(presets.transform,24,548,466,42);
         for (int slot = 1; slot <= 3; slot++)
         {
@@ -165,6 +160,7 @@ public class FittingWindow : MonoBehaviour
     }
     private void CancelDrags()
     {
+        ShowDescription(null);
         HideSlotTooltip();
         HighlightDestinations(null,null);
         foreach(var view in GetComponentsInChildren<FittingItemView>(true))view.CancelDrag();
@@ -549,6 +545,14 @@ public class FittingWindow : MonoBehaviour
     public void HideSlotTooltip(){if(slotTooltip!=null)slotTooltip.transform.parent.gameObject.SetActive(false);}
     public void DescribeSlot(FittingSlot slot)
     {
+        if(slot.Item!=null && draggedItem==null)
+        {
+            if(slot.group==SlotGroup.Top_Weapons)targetShipWeapon?.SelectMount(slot.index);
+            DescribeItem(slot.Item,(RectTransform)slot.transform);
+            if(slot.group==SlotGroup.Top_Weapons)
+                detailsLabel.text+=$"\nКрепление: сектор {WeaponMountRules.Get(shipDefinition,slot.index).sector:0}°";
+            return;
+        }
         string text;
         if(slot.group==SlotGroup.Top_Weapons)
         {
@@ -566,10 +570,29 @@ public class FittingWindow : MonoBehaviour
     public void DescribeItem(FittingItem item, RectTransform target)
     {
         if(item==null || draggedItem!=null)return;
-        string text=item.allowedGroup!=SlotGroup.Top_Weapons?item.name:
-            item.mountType==WeaponMountType.Fixed?"Курсовое орудие. Сектор "+item.FixedFireSector.ToString("0")+"°":
-            "Турель. Наведение "+item.trackingSpeed.ToString("0")+"°/с";
-        ShowTooltip(text,target);
+        HideSlotTooltip();
+        if(detailsLabel==null)return;
+        if(item.allowedGroup==SlotGroup.Top_Weapons)
+        {
+            var w=WeaponStatsCalculator.Calculate(item,targetShipWeapon!=null?targetShipWeapon.baseCooldown:.6f);
+            detailsLabel.text=$"{item.name} · {(item.mountType==WeaponMountType.Fixed?"Курсовое":"Турель")}\n"+
+                $"Урон {w.damage:0.#} · интервал {w.cooldown:0.##} с · DPS, номинальный {w.NominalDps:0.##}\n"+
+                $"Энергия {w.energy:0.#} · базовый нагрев {w.heat:0.#} за выстрел\n"+
+                (item.mountType==WeaponMountType.Fixed?$"Сектор {item.FixedFireSector:0}° · курсовое/универсальное крепление":$"Наведение {item.trackingSpeed:0}°/с · турельное/универсальное крепление");
+            detailsLabel.text+="\nDPS без промахов, секторов, защиты, энергии и перегрева.";
+        }
+        else
+        {
+            detailsLabel.text=item.name;
+            void Field(string title,float value,string unit="") {if(value!=0)detailsLabel.text+=$" · {title} {value:+0.##;-0.##}{unit}";}
+            Field("Щит",item.shieldBonus);Field("Реген щита",item.shieldRegenPerSecond," HP/с");
+            Field("Скорость",item.speedBonus);Field("Тяга",item.accelBonus);Field("Масса",item.massBonus);
+            Field("Энергия",item.energyBonus);Field("Восстановление энергии",item.regenerationBonus,"/с");
+            Field("Охлаждение",item.coolingBonus);Field("Устойчивость",item.EffectiveHeatResistanceBonus*100," п.п.");
+            Field("Скорость",item.speedPercent*100,"%");Field("Тяга",item.thrustPercent*100,"%");
+            Field("Обратная тяга",item.reversePercent*100,"%");Field("Боковая тяга",item.lateralPercent*100,"%");
+            Field("Нагрев форсажа",item.afterburnerHeatPercent*100,"%");Field("Захват",item.lockTimeBonus," с");
+        }
     }
     private void ShowTooltip(string text, RectTransform target)
     {

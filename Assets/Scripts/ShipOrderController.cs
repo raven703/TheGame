@@ -110,6 +110,21 @@ public class ShipOrderController : MonoBehaviour
         bool detour;
         Vector2 steering=navigator.Steer(position,destination,velocity,Radius,movement.ForceAlong(-velocity)/Mathf.Max(.1f,movement.Rb.mass),Time.fixedDeltaTime,Mode==ShipOrderMode.MoveToPoint,out detour);
         Detouring=detour;if(detour)final=true;
+        if(GetComponent<EnemyAI>()!=null)
+        {
+            var nearby=Physics2D.OverlapCircleAll(position,Radius+velocity.magnitude*1.2f+3f);
+            foreach(var collider in nearby)
+            {
+                var other=collider.GetComponentInParent<ShipHealth>();
+                if(other==null||other.gameObject==gameObject||other.Data==null||other.Data.Damage.Destroyed)continue;
+                var body=other.GetComponent<Rigidbody2D>();
+                if(body==null)continue;
+                var adjusted=CombatRolePilot.AvoidShip(P(position),P(velocity),P(body.position),P(body.linearVelocity),Radius,
+                    collider.bounds.extents.magnitude,P(steering));
+                var point=V(adjusted);
+                if((point-steering).sqrMagnitude>.001f){steering=point;final=false;break;}
+            }
+        }
         if(navigator.Failed)
         {
             model.NavigationFailed(P(position));Detouring=false;

@@ -35,6 +35,7 @@ public class TacticalCommandPanel : MonoBehaviour
     private TextMeshProUGUI tooltip;
     private GameObject tooltipPopup;
     private Button stopButton;
+    private Button engageButton;
     private readonly Button[] speedButtons = new Button[4];
     private TextMeshProUGUI movementStatus;
     public bool PointerInsideTooltip(Vector2 screen)
@@ -71,6 +72,8 @@ public class TacticalCommandPanel : MonoBehaviour
             if(ShipOrderController.Available(selected))PlayerOrders()?.Tactical(ShipOrderMode.EngageTarget,selected);
         });
         CombatUIStyle.Box(engage.transform,134,8,130,18);
+        engageButton=engage;
+        var engageTip=CombatUIStyle.Ensure<TacticalTooltip>(engage.gameObject);engageTip.panel=this;
         Group("PriorityHeading","ПРИОРИТЕТ ЦЕЛИ",78);
         Group("AbilitiesHeading","СПОСОБНОСТИ",148);
         Setup(orbitButton,"orbit","Орбита","Орбита — движение вокруг захваченной цели.",0,28);
@@ -187,7 +190,16 @@ public class TacticalCommandPanel : MonoBehaviour
         var orders=PlayerOrders();
         if(orders!=null)
         {
+            SetButtonColor(stopButton,orders.Mode==ShipOrderMode.HoldPosition?activeColor:normalColor);
             targetFacingButton.interactable = ShipOrderController.Available(orders.OrderTarget);
+            var facingTip=CombatUIStyle.Ensure<TacticalTooltip>(targetFacingButton.gameObject);facingTip.panel=this;
+            facingTip.description=targetFacingButton.interactable?"Ориентация на цель приказа.":"Нужна действующая цель приказа.";
+            if(engageButton!=null)
+            {
+                engageButton.interactable=ShipOrderController.Available(playerWeapon.PendingTarget!=null?playerWeapon.PendingTarget:playerWeapon.Target);
+                engageButton.GetComponent<TacticalTooltip>().description=engageButton.interactable?"Вступить в бой с выбранной целью.":"Нужна выбранная цель.";
+                SetButtonColor(engageButton,orders.Mode==ShipOrderMode.EngageTarget?activeColor:normalColor);
+            }
             SetButtonColor(courseButton, orders.Orientation == HullOrientation.Course ? activeColor : normalColor);
             SetButtonColor(targetFacingButton, orders.Orientation == HullOrientation.OrderTarget ? activeColor : normalColor);
             var movement=orders.GetComponent<ShipMovement>();
@@ -215,6 +227,8 @@ public class TacticalCommandPanel : MonoBehaviour
         var orders=PlayerOrders();
         var selected=playerWeapon.PendingTarget!=null?playerWeapon.PendingTarget:playerWeapon.Target;
         btn.interactable=ShipOrderController.Available(selected);
+        var tip=btn.GetComponent<TacticalTooltip>();
+        if(tip!=null)tip.description=(behavior==CombatBehavior.KeepDistance?"Держать дистанцию до выбранной цели.":behavior==CombatBehavior.Orbit?"Орбита вокруг выбранной цели.":"Заход с кормы выбранной цели.")+(btn.interactable?"":" Нужна выбранная цель.");
         var mode=behavior==CombatBehavior.Orbit?ShipOrderMode.Orbit:behavior==CombatBehavior.KeepDistance?ShipOrderMode.KeepDistance:ShipOrderMode.Flank;
         bool isActive = orders!=null && orders.Mode==mode;
         SetButtonColor(btn, isActive ? activeColor : normalColor);
@@ -234,6 +248,7 @@ public class TacticalCommandPanel : MonoBehaviour
 
     private void SetButtonColor(Button btn, Color color)
     {
+        if(btn==null)return;
         var cb = btn.colors;
         cb.normalColor = color;
         cb.selectedColor = color;
@@ -253,6 +268,9 @@ public class TacticalCommandPanel : MonoBehaviour
             cooldown>0f?$"{Mathf.CeilToInt(cooldown)} с":reactor.Overheated?"Перегрев":reactor.Energy<cost?"Нет энергии":
             btn==empButton&&(playerWeapon==null||playerWeapon.Target==null)?"Нет цели":"";
         btn.interactable=TimeController.IsPaused || state=="";
+        var abilityTip=btn.GetComponent<TacticalTooltip>();
+        if(abilityTip!=null)abilityTip.description=(btn==afterburnerButton?"Форсаж: скорость ×2 на 2 с.":btn==shieldBoostButton?"Щит+: +30 щита, −10 корпуса.":"РЭБ: подавление захвата на 3 с.")+
+            (state==""?"":" "+state+".")+(TimeController.IsPaused?" Нажатие добавляет или снимает с плана.":"");
         if(TimeController.IsPaused && TimeController.Instance!=null)
         {
             var kind=btn==afterburnerButton?Game.Core.AbilityCommandKind.Afterburner:btn==shieldBoostButton?Game.Core.AbilityCommandKind.ShieldBoost:Game.Core.AbilityCommandKind.Emp;

@@ -25,6 +25,38 @@ public class CombatRolePilotTests
         o.EnergyFraction=.6f;o.HeatFraction=.5f;Assert.AreEqual(CombatManeuver.Recover,pilot.Decide(CombatRole.Artillery,"t",o,2).Maneuver);
         o.HeatFraction=.44f;Assert.AreEqual(CombatManeuver.Attack,pilot.Decide(CombatRole.Artillery,"t",o,2).Maneuver);
     }
+    [Test] public void AttackPassRetainsPointBeyondTargetInsteadOfEngagingItsCentre()
+    {
+        var pilot=new CombatRolePilot();var o=Observation();
+        pilot.Decide(CombatRole.Interceptor,"t",o,0);
+        var attack=pilot.Decide(CombatRole.Interceptor,"t",o,1.6f);
+        Assert.True(attack.UseWaypoint);
+        Assert.Less(attack.Waypoint.Y,o.TargetPosition.Y);
+        o.TargetPosition=new AimPoint(1,0);
+        var retained=pilot.Decide(CombatRole.Interceptor,"t",o,.1f);
+        Assert.False(retained.NewCommand);
+        Assert.AreEqual(attack.Waypoint.X,retained.Waypoint.X);
+        Assert.AreEqual(attack.Waypoint.Y,retained.Waypoint.Y);
+    }
+    [Test] public void SizedInterceptorPassHasLateralClearance()
+    {
+        var pilot=new CombatRolePilot();var o=Observation();o.Radius=.5f;o.TargetRadius=.8f;
+        pilot.Decide(CombatRole.Interceptor,"t",o,0);
+        var d=pilot.Decide(CombatRole.Interceptor,"t",o,1.6f);
+        float dx=d.Waypoint.X-o.Position.X,dy=d.Waypoint.Y-o.Position.Y;
+        float clearance=System.Math.Abs(dx*(o.TargetPosition.Y-o.Position.Y)-dy*(o.TargetPosition.X-o.Position.X))/
+            (float)System.Math.Sqrt(dx*dx+dy*dy);
+        Assert.Greater(clearance,o.Radius+o.TargetRadius);
+    }
+    [Test] public void HeadOnAvoidancePassesOppositeSidesAndSeparatingShipsKeepDestination()
+    {
+        var destination=new AimPoint(0,-10);
+        var a=CombatRolePilot.AvoidShip(new AimPoint(0,3),new AimPoint(0,-3),new AimPoint(0,-3),new AimPoint(0,3),1,1,destination);
+        var b=CombatRolePilot.AvoidShip(new AimPoint(0,-3),new AimPoint(0,3),new AimPoint(0,3),new AimPoint(0,-3),1,1,new AimPoint(0,10));
+        Assert.Less(a.X,0);Assert.Greater(b.X,0);
+        var separating=CombatRolePilot.AvoidShip(new AimPoint(0,3),new AimPoint(0,3),new AimPoint(0,-3),new AimPoint(0,-3),1,1,destination);
+        Assert.AreEqual(destination.X,separating.X);Assert.AreEqual(destination.Y,separating.Y);
+    }
     [Test] public void EscortCreatesPeriodicFixedWeaponWindow()
     {
         var pilot=new CombatRolePilot();var o=Observation();
