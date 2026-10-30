@@ -2,6 +2,17 @@ using Game.Core;
 using NUnit.Framework;
 public class DirectionalShieldTests
 {
+    [TestCase(.5f)] [TestCase(.75f)] [TestCase(1f)] [TestCase(0f)]
+    public void DesiredPreviewDoesNotChangeHpOrCapacity_TransferConservesTotal(float desired)
+    {
+        var s=new DirectionalShield();s.Initialize(125);s.SetTotal(63);
+        float front=s.Front,rear=s.Rear,capacity=s.FrontCapacity;
+        s.SetDesired(desired);s.Tick(0,true);
+        Assert.AreEqual(front,s.Front);Assert.AreEqual(rear,s.Rear);
+        Assert.AreEqual(capacity,s.FrontCapacity);Assert.AreEqual(.5f,s.Fraction);
+        for(int i=0;i<100;i++){s.Tick(.01f,true);Assert.That(s.Total,Is.EqualTo(63).Within(.0001f));}
+        Assert.AreEqual(desired,s.Fraction);Assert.AreEqual(125,s.FrontCapacity+s.RearCapacity);
+    }
     private sealed class Random : ICombatRandom { public float Value()=>1f;public int Index(int n)=>0; }
     [Test] public void SideBoundary_EmptySideDoesNotBorrow_RailgunBypasses()
     {

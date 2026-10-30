@@ -25,33 +25,37 @@ public class CombatHUDManager : MonoBehaviour
     public Image playerHullBarFill;
     public Image playerShieldBarFill;
     private Image energyFill, heatFill;
-    private TextMeshProUGUI energyText, heatText, effectsText;
+    private TextMeshProUGUI energyText, heatText, effectsText, shieldDistributionText;
     public void ConfigurePlayerPanel()
     {
         if (playerTitleLabel == null) return;
         var panel = playerTitleLabel.transform.parent;
-        CombatUIStyle.Rect(panel, Vector2.up, Vector2.up, new Vector2(16,-292), new Vector2(336,-16));
+        CombatUIStyle.Rect(panel, Vector2.up, Vector2.up, new Vector2(16,-320), new Vector2(336,-16));
         // Keep all original module indicators, only reposition the existing resource rows.
         CombatUIStyle.Box(playerTitleLabel.transform,12,8,296,22);
         CombatUIStyle.Box(playerHullText.transform,12,30,296,20);
         CombatUIStyle.Box(playerHullBarFill.transform.parent,12,51,296,8);
         CombatUIStyle.Box(playerShieldText.transform,12,62,174,20);
         CombatUIStyle.Box(playerShieldBarFill.transform.parent,12,83,296,8);
+        shieldDistributionText=CombatUIStyle.Text("ShieldDistributionText",panel,"Перед 50% / Корма 50%",14);
+        shieldDistributionText.raycastTarget=false;
+        shieldDistributionText.textWrappingMode=TextWrappingModes.NoWrap;
+        CombatUIStyle.Box(shieldDistributionText.transform,12,94,296,20);
         energyText=CombatUIStyle.Text("EnergyText",panel,"Энергия: —",15);
         heatText=CombatUIStyle.Text("HeatText",panel,"Нагрев: —",15);
-        CombatUIStyle.Box(energyText.transform,12,94,296,20);
-        CombatUIStyle.Box(heatText.transform,12,126,296,20);
-        energyFill=ResourceBar(panel,"Energy",115);
-        heatFill=ResourceBar(panel,"Heat",147);
+        CombatUIStyle.Box(energyText.transform,12,122,296,20);
+        CombatUIStyle.Box(heatText.transform,12,154,296,20);
+        energyFill=ResourceBar(panel,"Energy",143);
+        heatFill=ResourceBar(panel,"Heat",175);
         var moduleRow=panel.Find("PlayerModulesRow");
-        if(moduleRow!=null)CombatUIStyle.Box(moduleRow,12,174,120,20);
+        if(moduleRow!=null)CombatUIStyle.Box(moduleRow,12,202,120,20);
         var moduleLabel=panel.Find("PlayerModulesLabel");
-        if(moduleLabel!=null)CombatUIStyle.Box(moduleLabel,140,174,140,20);
-        if(playerWeaponBoxImage!=null) CombatUIStyle.Box(playerWeaponBoxImage.transform,12,162,24,20);
-        if(playerShieldBoxImage!=null) CombatUIStyle.Box(playerShieldBoxImage.transform,42,162,24,20);
-        if(playerEngineBoxImage!=null) CombatUIStyle.Box(playerEngineBoxImage.transform,72,162,24,20);
+        if(moduleLabel!=null)CombatUIStyle.Box(moduleLabel,140,202,140,20);
+        if(playerWeaponBoxImage!=null) CombatUIStyle.Box(playerWeaponBoxImage.transform,12,190,24,20);
+        if(playerShieldBoxImage!=null) CombatUIStyle.Box(playerShieldBoxImage.transform,42,190,24,20);
+        if(playerEngineBoxImage!=null) CombatUIStyle.Box(playerEngineBoxImage.transform,72,190,24,20);
         effectsText=CombatUIStyle.Text("Effects",panel,"",13);
-        CombatUIStyle.Box(effectsText.transform,12,210,296,64);
+        CombatUIStyle.Box(effectsText.transform,12,238,296,64);
     }
     private Image ResourceBar(Transform parent,string name,float y)
     {
@@ -145,7 +149,8 @@ public class CombatHUDManager : MonoBehaviour
         {
             var shield=playerHealth.Data.Damage.Shields;
             float fraction=TimeController.IsPaused?shield.Desired:shield.Fraction;
-            playerShieldText.text=$"Щит: {playerHealth.Data.currentShieldHP:0}/{playerHealth.Data.maxShieldHP:0} · {fraction:P0}";
+            playerShieldText.text=$"Щит: {playerHealth.Data.currentShieldHP:0} / {playerHealth.Data.maxShieldHP:0}";
+            if(shieldDistributionText!=null)shieldDistributionText.text=$"Перед {fraction:P0} / Корма {1-fraction:P0}";
             playerShieldText.fontSize=12;
         }
 

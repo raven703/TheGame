@@ -45,22 +45,22 @@ public class ShieldArcs : MonoBehaviour
             bool preview=player && TimeController.IsPaused;
             float fraction=preview?s.Desired:s.Fraction;
             float share=side==0?fraction:1-fraction;
-            float count=share*8,coverage=Mathf.Clamp01(count-band);
+            // Preview only redistributes the actual total; never writes HP or capacities.
+            float hp=preview?s.Total*share:(side==0?s.Front:s.Rear);
+            float coverage=s.Maximum>0f?Mathf.Clamp01(hp/s.Maximum*8f-band):0f;
             var line=arcs[side,band];
             line.enabled=isActiveAndEnabled&&!d.Destroyed&&!d.Module(Game.Core.CombatModule.Shield).Destroyed&&coverage>0f;
             if(!line.enabled)continue;
-            float hp=side==0?s.Front:s.Rear,capacity=side==0?s.FrontCapacity:s.RearCapacity;
-            float filling=preview?(s.Front+s.Rear)/Mathf.Max(.001f,s.FrontCapacity+s.RearCapacity):(capacity>0f?hp/capacity:0f);
-            float filled=Mathf.Clamp01(filling*count-band);
             float flash=(side==0?s.FrontFlash:s.RearFlash)/.22f;
             float shimmer=.94f+.06f*Mathf.Sin(Time.time*2f+band*.6f);
-            float alpha=coverage*(.05f+.28f*filled)*shimmer*(player||selected?1f:.28f);
-            alpha=Mathf.Max(alpha,flash*.65f*coverage);
+            float alpha=.4f*shimmer*(player||selected?1f:.28f);
+            alpha=Mathf.Max(alpha,flash*.65f);
             line.startColor=line.endColor=new Color(.4f,.9f,1f,alpha);
             float r=radius+band*.055f;
             for(int point=0;point<33;point++)
             {
-                float a=angle+(side==0?0:Mathf.PI)-Mathf.PI*.48f+point/32f*Mathf.PI*.96f;
+                // Shorten the final band symmetrically; no empty-capacity background arc.
+                float a=angle+(side==0?0:Mathf.PI)+(point/32f-.5f)*Mathf.PI*.96f*coverage;
                 line.SetPosition(point,transform.position+new Vector3(Mathf.Cos(a),Mathf.Sin(a),0)*r);
             }
         }
