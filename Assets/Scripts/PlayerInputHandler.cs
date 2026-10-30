@@ -28,12 +28,15 @@ public class PlayerInputHandler : MonoBehaviour
     private bool rightGesture, following;
     private float pressedAt;
     private ShipMovement gestureShip;
+    private bool pauseGesture,pauseDragging,pauseShift;
+    private Vector2 pauseScreen,pauseAnchor;
     private void OnApplicationFocus(bool focus) { if(!focus) EndGesture(); }
     private void OnDisable() => EndGesture();
     public void EndGesture()
     {
         if(gestureShip!=null)gestureShip.Orders.EndFollowCursor();
         rightGesture=false;following=false;gestureShip=null;
+        pauseGesture=false;pauseDragging=false;
     }
     public void ProcessRightPointer(bool pressed, bool held, bool released, bool shift, bool blocked, Vector2 world, float now)
     {
@@ -69,13 +72,35 @@ public class PlayerInputHandler : MonoBehaviour
         if(mainCamera==null){EndGesture();return;}
         Vector2 screen=mouse.position.ReadValue();
         bool blocked=!mainCamera.pixelRect.Contains(screen) || IsScreenPointOverUI(screen);
+        if(TimeController.TextInputFocused){EndGesture();return;}
         var ray=mainCamera.ScreenPointToRay(screen);
         float distance;
         bool valid=new Plane(Vector3.forward,Vector3.zero).Raycast(ray,out distance);
         Vector2 world=valid?(Vector2)ray.GetPoint(distance):Vector2.zero;
         blocked|=!valid;
         bool shift=Keyboard.current!=null && (Keyboard.current.leftShiftKey.isPressed || Keyboard.current.rightShiftKey.isPressed);
-        ProcessRightPointer(mouse.rightButton.wasPressedThisFrame,mouse.rightButton.isPressed,
+        if(!mainCamera.pixelRect.Contains(screen)){EndGesture();return;}
+        if(TimeController.IsPaused)
+        {
+            if(mouse.rightButton.wasPressedThisFrame)
+            {
+                EndGesture();
+                if(!blocked){pauseGesture=true;pauseScreen=screen;pauseAnchor=world;pauseShift=shift;pressedAt=Time.unscaledTime;}
+            }
+            if(pauseGesture)
+            {
+                if(!pauseShift&&(screen-pauseScreen).sqrMagnitude>=49)pauseDragging=true;
+                if(pauseDragging&&mouse.rightButton.isPressed&&!blocked)
+                    mainCamera.GetComponent<CameraFollow>()?.Pan(pauseAnchor-world);
+                if(mouse.rightButton.wasReleasedThisFrame)
+                {
+                    if(!pauseDragging&&!blocked&&(pauseShift||Time.unscaledTime-pressedAt<.2f))
+                        IssueClick(false,world,null,pauseShift,false);
+                    EndGesture();
+                }
+            }
+        }
+        else ProcessRightPointer(mouse.rightButton.wasPressedThisFrame,mouse.rightButton.isPressed,
             mouse.rightButton.wasReleasedThisFrame,shift,blocked,world,Time.unscaledTime);
         if(mouse.leftButton.wasPressedThisFrame && !blocked)
             IssueClick(true,world,PickEnemy(mainCamera,screen,12f),false,false);

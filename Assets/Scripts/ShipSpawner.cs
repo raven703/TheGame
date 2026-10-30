@@ -107,6 +107,19 @@ public class ShipSpawner : MonoBehaviour
         for (int i = 0; i < count; i++)
         {
             Vector3 pos = GetSpawnPosition(i, count);
+            bool safe=false;
+            float clearance=2.5f;
+            var prefabCollider=enemyPrefab.GetComponentInChildren<Collider2D>();
+            if(prefabCollider!=null)clearance=Mathf.Max(clearance,prefabCollider.bounds.extents.magnitude+.5f);
+            for(int attempt=0;attempt<48;attempt++)
+            {
+                safe=true;
+                foreach(var collider in Physics2D.OverlapCircleAll(pos,clearance))
+                    if(collider.GetComponentInParent<Asteroid>()!=null||collider.GetComponentInParent<ShipHealth>()!=null){safe=false;break;}
+                if(safe)break;
+                pos=GetSpawnPosition(i+attempt+1,count);
+            }
+            if(!safe){Debug.LogWarning("[ShipSpawner] No safe position after 48 attempts; ship skipped.");continue;}
             GameObject go = Instantiate(enemyPrefab, pos, Quaternion.identity);
             go.name = $"EnemyShip_W{currentWaveIndex + 1}_{i + 1}";
 

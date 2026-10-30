@@ -37,7 +37,22 @@ public class CameraFollow : MonoBehaviour
     [SerializeField] private float zoomInTime=1f;
     private Camera view;
     [Header("Manual zoom")]
-    [SerializeField] private float minimumSize=3f,maximumSize=30f,scrollSensitivity=.12f;
+    [SerializeField] private float minimumSize=3f,maximumSize=37.5f,scrollSensitivity=.12f;
+    [SerializeField] private Rect panBounds=new Rect(-50,-35,100,70);
+    private bool panned,returning;
+    public void ReturnToPlayer(){panned=false;returning=true;}
+    public void Pan(Vector2 worldDelta)
+    {
+        if(!TimeController.IsPaused||FittingWindow.OpenWindow!=null)return;
+        panned=true;returning=false;transform.position+=new Vector3(worldDelta.x,worldDelta.y,0);ClampPan();
+    }
+    private void ClampPan()
+    {
+        if(view==null)return;
+        float halfY=view.orthographicSize,halfX=halfY*view.aspect;var p=transform.position;
+        p.x=panBounds.width<halfX*2?panBounds.center.x:Mathf.Clamp(p.x,panBounds.xMin+halfX,panBounds.xMax-halfX);
+        p.y=panBounds.height<halfY*2?panBounds.center.y:Mathf.Clamp(p.y,panBounds.yMin+halfY,panBounds.yMax-halfY);transform.position=p;
+    }
     private float pausedMultiplier=1f;
     private bool wasPaused;
     private ShipMovement movement;
@@ -58,12 +73,24 @@ public class CameraFollow : MonoBehaviour
         movement=target!=null?target.GetComponent<ShipMovement>():null;
         view=GetComponent<Camera>();
         if(view!=null)baseSize=lastWrittenSize=view.orthographicSize;
+        var layout=FindFirstObjectByType<CombatInterfaceLayout>();
+        if(layout!=null)
+        {
+            var button=CombatUIStyle.Button("CameraHome",layout.transform,"К игроку",ReturnToPlayer);
+            CombatUIStyle.Rect(button.transform,new Vector2(.5f,1),new Vector2(.5f,1),new Vector2(90,-42),new Vector2(190,-12));
+            homeButton=button;
+        }
     }
+    private UnityEngine.UI.Button homeButton;
+    private void OnDestroy(){if(homeButton!=null)Destroy(homeButton.gameObject);}
 
     private void LateUpdate()
     {
         if (target == null) return;
         UpdateZoom(Time.unscaledDeltaTime);
+        if(homeButton!=null)homeButton.gameObject.SetActive(TimeController.IsPaused);
+        if(!TimeController.IsPaused&&panned)ReturnToPlayer();
+        if(TimeController.IsPaused&&panned){ClampPan();return;}
 
         // 1. Вычисляем желаемое смещение по скорости
         Vector2 desiredLookAhead = Vector2.zero;
@@ -102,7 +129,8 @@ public class CameraFollow : MonoBehaviour
         transform.position = Vector3.Lerp(
             transform.position,
             desiredPosition,
-            smoothSpeed * Time.deltaTime);
+            smoothSpeed * (returning?Time.unscaledDeltaTime:Time.deltaTime));
+        if(returning&&(transform.position-desiredPosition).sqrMagnitude<.001f)returning=false;
     }
     private void UpdateZoom(float deltaTime)
     {

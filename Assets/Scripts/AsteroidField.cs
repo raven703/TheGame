@@ -3,6 +3,13 @@ using UnityEngine;
 /// <summary>Deterministic scene-local cover, without modifying the scene asset.</summary>
 public class AsteroidField : MonoBehaviour
 {
+    public int count=15,seed=12345,attemptsPerRock=80;
+    public bool randomizeSeed=true;
+    public Vector2 sizeRange=new Vector2(.6f,1.6f);
+    public Rect area=new Rect(-16,-11,32,22);
+    public float minimumGap=1.2f,shipClearance=4f;
+    public int ActualSeed {get;private set;}
+    public int ActualCount {get;private set;}
     private readonly System.Collections.Generic.List<Texture2D> textures = new System.Collections.Generic.List<Texture2D>();
     private readonly System.Collections.Generic.List<Sprite> sprites = new System.Collections.Generic.List<Sprite>();
     private void Start()
@@ -28,19 +35,29 @@ public class AsteroidField : MonoBehaviour
         texture.Apply();
         textures.Add(texture);sprites.Add(Sprite.Create(texture,new Rect(0,0,128,128),new Vector2(.5f,.5f),64f));
         }
-        Vector2[] positions = { new Vector2(-3, 2), new Vector2(3, -2), new Vector2(0, 4), new Vector2(0, -4) };
+        ActualSeed=randomizeSeed?System.Guid.NewGuid().GetHashCode():seed;
+        var random=new System.Random(ActualSeed);
+        var placed=new System.Collections.Generic.List<Vector3>();
         var ships = FindObjectsByType<ShipHealth>(FindObjectsSortMode.None);
         int index=0;
-        foreach (Vector2 point in positions)
+        for(int attempt=0;attempt<Mathf.Clamp(count,0,200)*Mathf.Clamp(attemptsPerRock,1,500)&&index<count;attempt++)
         {
+            float size=Mathf.Lerp(Mathf.Max(.1f,sizeRange.x),Mathf.Max(sizeRange.x,sizeRange.y),(float)random.NextDouble());
+            float radius=.96f*size;
+            Vector2 point=new Vector2(Mathf.Lerp(area.xMin+radius,area.xMax-radius,(float)random.NextDouble()),Mathf.Lerp(area.yMin+radius,area.yMax-radius,(float)random.NextDouble()));
             bool occupied = false;
             foreach (var ship in ships)
-                if (Vector2.Distance(point, ship.transform.position) < 2.5f) occupied = true;
+            {
+                var collider=ship.GetComponentInChildren<Collider2D>();
+                float shipRadius=collider!=null?collider.bounds.extents.magnitude:1;
+                if(Vector2.Distance(point,ship.transform.position)<radius+shipRadius+shipClearance)occupied=true;
+            }
+            foreach(var previous in placed)if(Vector2.Distance(point,previous)<radius+previous.z+minimumGap)occupied=true;
             if (occupied) continue;
+            placed.Add(new Vector3(point.x,point.y,radius));
             var rock = new GameObject("Asteroid");
             rock.transform.SetParent(transform);
             rock.transform.position = point;
-            float size = .65f + index * .23f;
             rock.transform.localScale = Vector3.one * size;
             rock.AddComponent<SpriteRenderer>().sprite = sprites[index++%sprites.Count];
             rock.AddComponent<CircleCollider2D>().radius = .9f;
@@ -49,8 +66,11 @@ public class AsteroidField : MonoBehaviour
             body.gravityScale = 0f; body.mass = 8f * size * size;
             body.linearDamping = 0f; body.angularDamping = 0f;
             body.collisionDetectionMode = CollisionDetectionMode2D.Continuous;
-            rock.AddComponent<AsteroidDrift>().Initialize(new Vector2(Mathf.Cos(index*2.4f),Mathf.Sin(index*2.4f)) * (.15f+.07f*index), (index%2==0?1:-1)*(3f+index));
+            int driftVariant=1+(index-1)%4;
+            rock.AddComponent<AsteroidDrift>().Initialize(new Vector2(Mathf.Cos(index*2.4f),Mathf.Sin(index*2.4f)) * (.15f+.07f*driftVariant), (index%2==0?1:-1)*(3f+driftVariant));
         }
+        ActualCount=index;
+        Debug.Log($"[AsteroidField] seed={ActualSeed}; created={ActualCount}/{count}; sizes={sizeRange.x:0.##}–{sizeRange.y:0.##}");
     }
     private void OnDestroy()
     {

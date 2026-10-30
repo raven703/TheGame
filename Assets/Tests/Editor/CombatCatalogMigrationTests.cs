@@ -6,6 +6,31 @@ using UnityEngine;
 
 public class CombatCatalogMigrationTests
 {
+    [Test] public void SeededFieldRepeatsPlacementAndRespectsPairClearance()
+    {
+        Vector3[] first=null;
+        for(int run=0;run<2;run++)
+        {
+            var root=new GameObject("isolated seeded field");
+            try
+            {
+                var field=root.AddComponent(T("AsteroidField"));
+                field.GetType().GetField("randomizeSeed").SetValue(field,false);
+                field.GetType().GetField("seed").SetValue(field,732);
+                field.GetType().GetMethod("Start",BindingFlags.Instance|BindingFlags.NonPublic).Invoke(field,null);
+                Assert.LessOrEqual(root.transform.childCount,15);Assert.Greater(root.transform.childCount,0);
+                var snapshot=new Vector3[root.transform.childCount];
+                for(int i=0;i<snapshot.Length;i++)
+                {
+                    var rock=root.transform.GetChild(i);snapshot[i]=new Vector3(rock.position.x,rock.position.y,rock.localScale.x);
+                    Assert.That(rock.localScale.x,Is.InRange(.6f,1.6f));
+                    for(int j=0;j<i;j++)Assert.GreaterOrEqual(Vector2.Distance(snapshot[i],snapshot[j]),.96f*(snapshot[i].z+snapshot[j].z)+1.2f-.0001f);
+                }
+                if(first==null)first=snapshot;else CollectionAssert.AreEqual(first,snapshot);
+            }
+            finally{UnityEngine.Object.DestroyImmediate(root);}
+        }
+    }
     [Test] public void RadarProjectionPreservesEightDirectionsAndContainsDistantIcons()
     {
         var method=T("EnemyRadar").GetMethod("ProjectOffset");
