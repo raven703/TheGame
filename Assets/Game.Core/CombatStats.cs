@@ -6,7 +6,7 @@ namespace Game.Core
     public enum WeaponKind { Laser = 0, Plasma = 1, Railgun = 2 }
     public struct ShipStatValues
     {
-        public float Hull, Shield, Mass, Speed, Thrust, Turn, LockTime;
+        public float Hull, Shield, ShieldRegenPerSecond, Mass, Speed, Thrust, Turn, LockTime;
         public float Energy, Regeneration, Cooling, Resistance;
         public float ReverseThrust, LateralThrust, AfterburnerHeatMultiplier;
         public static ShipStatValues Fallback => new ShipStatValues { Hull=100f, Shield=50f, Mass=2f, Speed=5f,
@@ -15,7 +15,7 @@ namespace Game.Core
     // Calculation-only values, not owned items or an inventory.
     public struct EquipmentStatBonus
     {
-        public float Shield, Mass, Speed, Thrust, LockTime, Resistance;
+        public float Shield, ShieldRegenPerSecond, Mass, Speed, Thrust, LockTime, Resistance;
         public float Energy, Regeneration, Cooling, ReverseThrust, LateralThrust;
         public float SpeedPercent, ThrustPercent, ReversePercent, LateralPercent, AfterburnerHeatPercent;
     }
@@ -31,7 +31,7 @@ namespace Game.Core
             result.LateralThrust=basis.LateralThrust>0f?basis.LateralThrust:basis.Thrust*.35f;
             if(installed!=null)foreach(var bonus in installed)
             {
-                result.Shield+=bonus.Shield;result.Mass+=bonus.Mass;result.Speed+=bonus.Speed;
+                result.Shield+=bonus.Shield;result.ShieldRegenPerSecond+=bonus.ShieldRegenPerSecond;result.Mass+=bonus.Mass;result.Speed+=bonus.Speed;
                 result.Thrust+=bonus.Thrust;result.LockTime+=bonus.LockTime;result.Resistance+=bonus.Resistance;
                 result.Energy+=bonus.Energy;result.Regeneration+=bonus.Regeneration;result.Cooling+=bonus.Cooling;
                 // Preserve legacy additive engine effects on all axes; new forward percentages do not leak.

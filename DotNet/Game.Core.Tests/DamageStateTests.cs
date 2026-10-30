@@ -21,7 +21,7 @@ namespace Game.Core.Tests
             Assert.True(shield.ShieldOnly);Assert.That(state.Shield,Is.EqualTo(30));
             var hit=state.Damage(100,CombatModule.Weapon,random);
             Assert.True(hit.ModuleDestroyed);Assert.That(state.Module(CombatModule.Weapon).Current,Is.Zero);
-            Assert.That(state.Hull,Is.EqualTo(100));Assert.That(state.Shield,Is.Zero);
+            Assert.That(state.Hull,Is.EqualTo(100));Assert.That(state.Shield,Is.EqualTo(25),"Untouched rear hemisphere remains intact");
             hit=state.Damage(20,CombatModule.Weapon,random);
             Assert.False(hit.ModuleDestroyed);Assert.That(hit.HullDamage,Is.EqualTo(10));Assert.That(state.Hull,Is.EqualTo(90));
             Assert.That(random.Values,Is.Zero);Assert.That(random.Indices,Is.Zero);
@@ -46,7 +46,7 @@ namespace Game.Core.Tests
             Assert.That(state.Module(CombatModule.Shield).Current,Is.EqualTo(shieldModule));Assert.That(state.Hull,Is.EqualTo(hull));
         }
         [TestCase(WeaponKind.Laser,30f,100f,1)]
-        [TestCase(WeaponKind.Plasma,20f,100f,1)]
+        [TestCase(WeaponKind.Plasma,25f,100f,1)]
         [TestCase(WeaponKind.Railgun,38f,92f,2)]
         public void SpecialWeaponsPreserveTwoPhaseNotifications(WeaponKind kind,float shield,float hull,int count)
         {

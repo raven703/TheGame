@@ -4,7 +4,7 @@ using UnityEngine;
 /// <summary>Equipment-only snapshot. Never reads temporary combat multipliers.</summary>
 public sealed class ShipStats
 {
-    public float hull, shield, mass, speed, thrust, turn, lockTime;
+    public float hull, shield, shieldRegenPerSecond, mass, speed, thrust, turn, lockTime;
     public float energy, regeneration, cooling, resistance;
     public float reverseThrust, lateralThrust, afterburnerHeatMultiplier;
 }
@@ -14,7 +14,7 @@ public static class ShipStatsCalculator
     public static ShipStats Calculate(ShipDefinition definition, ShipLoadout loadout)
     {
         var s = Game.Core.StatMath.Calculate(StatsDataAdapter.Basis(definition), StatsDataAdapter.Installed(loadout));
-        return new ShipStats { hull=s.Hull,shield=s.Shield,mass=s.Mass,speed=s.Speed,thrust=s.Thrust,turn=s.Turn,
+        return new ShipStats { hull=s.Hull,shield=s.Shield,shieldRegenPerSecond=s.ShieldRegenPerSecond,mass=s.Mass,speed=s.Speed,thrust=s.Thrust,turn=s.Turn,
             lockTime=s.LockTime,energy=s.Energy,regeneration=s.Regeneration,cooling=s.Cooling,resistance=s.Resistance,
             reverseThrust=s.ReverseThrust,lateralThrust=s.LateralThrust,afterburnerHeatMultiplier=s.AfterburnerHeatMultiplier };
     }
@@ -48,6 +48,7 @@ public static class ShipStatsCalculator
         var s = Calculate(definition, loadout);
         var data = health.Data;
         data.ApplyMaximums(s.hull, s.shield);
+        data.Damage.Shields.RegenPerSecond=s.shieldRegenPerSecond;
         data.mass = s.mass; data.lockTime = s.lockTime;
         var movement = health.GetComponent<ShipMovement>();
         if (movement != null)

@@ -40,7 +40,7 @@ namespace Game.Core
             bool occupied,bool weaponOperational,Reactor reactor,float accuracy,float evasion,ICombatRandom random,
             Func<CoverState> queryCover,DamageState target,CombatModule? selected,
             Action<DamageResult> primaryNotification=null,Action<float> bypassNotification=null,Action<ReactorTransition> reactorNotification=null,
-            Action<CoverState,bool> coverNotification=null)
+            Action<CoverState,bool> coverNotification=null,ShieldSide side=ShieldSide.Front)
         {
             ShotRefusal reason= !externalAllowed?ShotRefusal.ExternalConditions:!occupied?ShotRefusal.EmptySlot:
                 !weaponOperational?ShotRefusal.WeaponDestroyed:gameSeconds<ReadyAt(mountId)?ShotRefusal.Reloading:
@@ -59,7 +59,7 @@ namespace Game.Core
             }
             if(target!=null&&random.Value()<HitChance(accuracy,evasion,stats.Kind))
             {
-                var damage=target.WeaponDamage(stats.Damage,stats.Kind,selected,random,true,primaryNotification,bypassNotification);
+                var damage=target.WeaponDamage(stats.Damage,stats.Kind,selected,random,true,primaryNotification,bypassNotification,side);
                 return new ShotResult(ShotOutcome.Ship,damage:damage,readyAt:ReadyAt(mountId));
             }
             return new ShotResult(ShotOutcome.Miss,readyAt:ReadyAt(mountId));

@@ -13,7 +13,7 @@ public static class StatsDataAdapter
         var result=new List<EquipmentStatBonus>();
         if(loadout!=null)foreach(var slots in new[]{loadout.weaponSlots,loadout.shieldSlots,loadout.engineSlots})
             if(slots!=null)foreach(var item in slots)if(item!=null&&!string.IsNullOrEmpty(item.id))
-                result.Add(new EquipmentStatBonus { Shield=item.shieldBonus,Mass=item.massBonus,Speed=item.speedBonus,
+                result.Add(new EquipmentStatBonus { Shield=item.shieldBonus,ShieldRegenPerSecond=item.shieldRegenPerSecond,Mass=item.massBonus,Speed=item.speedBonus,
                     Thrust=item.accelBonus,LockTime=item.lockTimeBonus,Resistance=item.EffectiveHeatResistanceBonus,
                     Energy=item.energyBonus,Regeneration=item.regenerationBonus,Cooling=item.coolingBonus,
                     SpeedPercent=item.speedPercent,ThrustPercent=item.thrustPercent,ReversePercent=item.reversePercent,

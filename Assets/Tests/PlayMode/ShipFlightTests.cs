@@ -80,6 +80,32 @@ public class ShipFlightTests
         yield return new WaitForSeconds(.5f);
         Assert.AreEqual("HoldPosition",Get(orders,"Mode").ToString(),"manual route must never resume orbit");
     }
+    [UnityTest] public IEnumerator TacticalPause_PlansWithoutSimulation_QueuesOnce_AndRestoresExactTempo()
+    {
+        Rigidbody2D rb;object orders;var movement=Ship(out rb,out orders);movement.gameObject.tag="Player";
+        var health=movement.gameObject.AddComponent(T("ShipHealth"));var data=Get(health,"Data");
+        var weapon=movement.gameObject.AddComponent(T("ShipWeapon"));var abilities=movement.gameObject.AddComponent(T("ShipAbilities"));
+        var reactor=movement.GetComponent(T("ShipReactor"));
+        var input=Node("pause input").AddComponent(T("PlayerInputHandler"));Field(input,"playerMovement",movement);Field(input,"playerWeapon",weapon);
+        var existing=T("TimeController").GetProperty("Instance").GetValue(null);
+        var time=existing??Node("pause controller").AddComponent(T("TimeController"));
+        Time.timeScale=1.75f;Call(time,"TogglePause");Assert.AreEqual(0,Time.timeScale);
+        Call(input,"ProcessRightPointer",true,true,false,false,false,new Vector2(10,2),0f);
+        Call(input,"ProcessRightPointer",false,true,false,false,false,new Vector2(20,2),1f);
+        Assert.AreEqual("MoveToPoint",Get(orders,"Mode").ToString());
+        var kind=Enum.Parse(Type.GetType("Game.Core.AbilityCommandKind, Game.Core",true),"ShieldBoost");
+        Call(time,"RequestAbility",kind);
+        float energy=(float)Get(reactor,"Energy");Vector2 position=rb.position;
+        var damage=Get(data,"Damage");var shields=Get(damage,"Shields");Call(shields,"SetDesired",1f);
+        yield return new WaitForSecondsRealtime(.15f);
+        Assert.AreEqual(position,rb.position);Assert.AreEqual(energy,Get(reactor,"Energy"));Assert.AreEqual(.5f,Get(shields,"Fraction"));
+        Assert.AreEqual(0f,Get(abilities,"shieldBoostCooldown"));
+        Call(time,"TogglePause");Assert.AreEqual(1.75f,Time.timeScale);Assert.AreEqual(8f,Get(abilities,"shieldBoostCooldown"));
+        Assert.AreEqual(energy-30f,(float)Get(reactor,"Energy"),.001f);
+        Assert.AreEqual(0,((ICollection)Get(time.GetType().GetField("Plan").GetValue(time),"Commands")).Count);
+        yield return null;
+        Assert.Greater((float)Get(abilities,"shieldBoostCooldown"),0f);
+    }
     [UnityTest] public IEnumerator Arrival_LightHull_WithLateralVelocity(){yield return Arrival(1,3,1);}
     [UnityTest] public IEnumerator StandardHull_LongStraightReachesSpeed_AndBrakesWithoutDrift()
     {
@@ -186,7 +212,7 @@ public class ShipFlightTests
         var owner=movement.gameObject.AddComponent(T("ShipHealth"));
         var weapon=movement.gameObject.AddComponent(T("ShipWeapon"));Field(weapon,"useFallbackWeapon",true);Field(weapon,"firingArcAngle",360f);
         var enemy=Node("weapon target");enemy.transform.position=new Vector3(0,3);var target=enemy.AddComponent(T("ShipHealth"));
-        var data=Get(target,"Data");data.GetType().GetProperty("currentShieldHP").SetValue(data,1000f);data.GetType().GetProperty("maxShieldHP").SetValue(data,1000f);
+        var data=Get(target,"Data");data.GetType().GetProperty("maxShieldHP").SetValue(data,1000f);data.GetType().GetProperty("currentShieldHP").SetValue(data,1000f);
         var ownData=Get(owner,"Data");ownData.GetType().GetField("lockTime").SetValue(ownData,.4f);
         // Lock/EMP contract must not fail because every permitted shot randomly misses.
         Field(ownData,"accuracy",1f);Field(data,"baseEvasion",0f);Field(data,"speedEvasionMultiplier",0f);

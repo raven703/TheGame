@@ -10,7 +10,7 @@ public class ShipAbilities : MonoBehaviour
     private bool Spend(float energy, float heat)
     {
         var reactor = GetComponent<ShipReactor>();
-        return !CombatSession.IsPreparing && reactor != null && reactor.TrySpend(energy, heat);
+        return Time.timeScale>0f && !CombatSession.IsPreparing && ShipOrderController.Available(shipHealth) && reactor != null && reactor.TrySpend(energy, heat);
     }
 
     // Таймеры перезарядки
@@ -38,6 +38,7 @@ public class ShipAbilities : MonoBehaviour
     /// <summary> Форсаж (2 группа): +100% к скорости на 2 секунды, КД 10 сек </summary>
     public bool UseAfterburner()
     {
+        if(shipHealth==null || shipHealth.Data==null || shipHealth.Data.GetModule(ModuleType.Engine).isDestroyed)return false;
         if (afterburnerCooldown > 0f || isAfterburnerActive || shipMovement == null)
             return false;
 
@@ -90,10 +91,15 @@ public class ShipAbilities : MonoBehaviour
     /// <summary> Импульс помех (2 группа): Сбивает захват цели у врага на 3 сек, КД 12 сек </summary>
     public bool UseEMPulse()
     {
-        if (emPulseCooldown > 0f || shipWeapon == null || shipWeapon.Target == null)
+        return UseEMPulseOn(shipWeapon!=null?shipWeapon.Target:null);
+    }
+    public bool UseEMPulseOn(ShipHealth target)
+    {
+        if (emPulseCooldown > 0f || shipWeapon == null || !ShipOrderController.Available(target) ||
+            shipHealth==null || shipHealth.Data.GetModule(ModuleType.Weapon).isDestroyed)
             return false;
 
-        var enemyWeapon = shipWeapon.Target.GetComponent<ShipWeapon>();
+        var enemyWeapon = target.GetComponent<ShipWeapon>();
         if (enemyWeapon == null)
             return false;
 

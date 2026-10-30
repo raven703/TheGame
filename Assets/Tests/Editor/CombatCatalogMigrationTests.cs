@@ -8,6 +8,21 @@ public class CombatCatalogMigrationTests
 {
     private static Type T(string name)=>Type.GetType(name+", Assembly-CSharp",true);
     private static object Field(object item,string name)=>item.GetType().GetField(name).GetValue(item);
+    [Test] public void ShieldV2Migration_PreservesPlacementIdentitiesOtherStatsAndCustomItems()
+    {
+        const string json="{\"formatVersion\":4,\"combatStarterVersion\":1,\"starterInventoryIssued\":true,\"inventory\":[{\"id\":\"s1\",\"instanceId\":\"light\",\"allowedGroup\":1,\"shieldBonus\":99,\"massBonus\":0.37},{\"id\":\"custom-shield\",\"instanceId\":\"custom\",\"allowedGroup\":1,\"shieldBonus\":123}],\"loadouts\":[{\"shipId\":\"one\",\"shieldSlots\":[null,{\"id\":\"s2\",\"instanceId\":\"heavy\",\"balanceVersion\":1,\"allowedGroup\":1,\"shieldBonus\":80,\"massBonus\":0.6}]}]}";
+        var ledger=Activator.CreateInstance(T("PlayerEquipment"),json,(Action<string>)(_=>Assert.Fail("Detached migration must not write")));
+        var data=T("PlayerEquipment").GetProperty("Snapshot").GetValue(ledger);
+        var inventory=(IList)Field(data,"inventory");Assert.AreEqual(2,inventory.Count);
+        Assert.AreEqual("light",Field(inventory[0],"instanceId"));Assert.AreEqual(25f,Field(inventory[0],"shieldBonus"));
+        Assert.AreEqual(5f,Field(inventory[0],"shieldRegenPerSecond"));Assert.AreEqual(.37f,Field(inventory[0],"massBonus"));
+        Assert.AreEqual(123f,Field(inventory[1],"shieldBonus"));Assert.AreEqual(0f,Field(inventory[1],"shieldRegenPerSecond"));
+        var slots=(IList)Field(((IList)Field(data,"loadouts"))[0],"shieldSlots");Assert.AreEqual(2,slots.Count);Assert.IsNull(slots[0]);
+        Assert.AreEqual("heavy",Field(slots[1],"instanceId"));Assert.AreEqual(40f,Field(slots[1],"shieldBonus"));Assert.AreEqual(2f,Field(slots[1],"shieldRegenPerSecond"));
+        string once=(string)T("PlayerEquipment").GetProperty("Json").GetValue(ledger);
+        var again=Activator.CreateInstance(T("PlayerEquipment"),once,(Action<string>)(_=>Assert.Fail("Read must not write")));
+        Assert.AreEqual(once,T("PlayerEquipment").GetProperty("Json").GetValue(again));
+    }
     [Test] public void SpeedZoomIsMonotonicBoundedAndHasLowSpeedDeadZone()
     {
         var method=T("CameraFollow").GetMethod("SpeedZoomMultiplier");float previous=1;

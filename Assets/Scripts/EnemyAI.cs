@@ -59,7 +59,7 @@ public class EnemyAI : MonoBehaviour
 
     public void UpdateOrders()
     {
-        if (CombatSession.IsPreparing || shipMovement == null || shipWeapon == null) return;
+        if (Time.timeScale<=0f || CombatSession.IsPreparing || shipMovement == null || shipWeapon == null) return;
         var orders = shipMovement.Orders;
         if(useCombatRole){UpdateCombatRole(orders);return;}
         if (!ShipOrderController.Available(playerTarget))

@@ -6,11 +6,12 @@ namespace Game.Core
     /// <summary>Versioned standard balance data. Does not own or grant equipment instances.</summary>
     public static class CombatArchetypeCatalog
     {
-        public const int Version = 1;
+        public const int Version = 2;
         public const string PulseLaser = "w4", Plasma = "w2", Railgun = "w3";
         public const string LaserTurret = "combat-v1:laser-turret";
         public const string LightweightEngine = "combat-v1:lightweight-engine";
         public const string ManeuverBlock = "combat-v1:maneuver-block";
+        public const string LightShield="s1";
         public const string HeavyShield = "s2", Radiator = "combat-v1:radiator", Capacitor = "combat-v1:capacitor";
 
         private static readonly IReadOnlyDictionary<string, WeaponStatValues> weapons =
@@ -24,7 +25,8 @@ namespace Game.Core
             new System.Collections.ObjectModel.ReadOnlyDictionary<string, EquipmentStatBonus>(new Dictionary<string, EquipmentStatBonus> {
                 { LightweightEngine,new EquipmentStatBonus {SpeedPercent=.15f,ThrustPercent=.10f,AfterburnerHeatPercent=.25f} },
                 { ManeuverBlock,new EquipmentStatBonus {ReversePercent=.30f,LateralPercent=.30f,Mass=.3f} },
-                { HeavyShield,new EquipmentStatBonus {Shield=40f,Mass=.6f} },
+                { LightShield,new EquipmentStatBonus {Shield=25f,ShieldRegenPerSecond=5f} },
+                { HeavyShield,new EquipmentStatBonus {Shield=40f,ShieldRegenPerSecond=2f,Mass=.6f} },
                 { Radiator,new EquipmentStatBonus {Cooling=6f,Mass=.4f} },
                 { Capacitor,new EquipmentStatBonus {Energy=35f,Mass=.4f} }
             });

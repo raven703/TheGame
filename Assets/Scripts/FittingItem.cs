@@ -48,6 +48,7 @@ public class FittingItem
     public float energyBonus, regenerationBonus, coolingBonus;
     public float speedPercent, thrustPercent, reversePercent, lateralPercent, afterburnerHeatPercent;
     public float shieldBonus;
+    public float shieldRegenPerSecond;
     public float speedBonus;
     public float accelBonus;
     public float massBonus;

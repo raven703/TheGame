@@ -379,7 +379,7 @@ public class ShipWeapon : MonoBehaviour
                 targetedModule.HasValue ? (Game.Core.CombatModule?)(int)targetedModule.Value : null,
                 Target.ReportDamage, bypass=>Target.ReportBypass(bypass),
                 transition=>reactor.ReportCombatTransition(transition),
-                (state,destroyed)=>cover.ReportDamage(destroyed));
+                (state,destroyed)=>cover.ReportDamage(destroyed),Target.ShieldSideFromSource(spawnPos));
             float moduleAfter=0;foreach(var module in Target.Data.Damage.Modules)moduleAfter+=module.Current;
             OnShotResolved?.Invoke(shot,Mathf.Max(0,hullBefore-Target.Data.Damage.Hull),Mathf.Max(0,shieldBefore-Target.Data.Damage.Shield),Mathf.Max(0,moduleBefore-moduleAfter));
             if(!shot.Fired)continue;

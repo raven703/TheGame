@@ -46,7 +46,7 @@ public class PlayerInputHandler : MonoBehaviour
             if(!blocked && playerMovement!=null)
             {
                 IssueClick(false,world,null,shift,false);
-                if(!shift){rightGesture=true;gestureShip=playerMovement;pressedAt=now;}
+                if(!shift && !TimeController.IsPaused){rightGesture=true;gestureShip=playerMovement;pressedAt=now;}
             }
         }
         if(!rightGesture)return;
@@ -61,9 +61,9 @@ public class PlayerInputHandler : MonoBehaviour
     {
         var mouse=Mouse.current;
         var health=playerMovement!=null?playerMovement.GetComponent<ShipHealth>():null;
-        if(mouse==null || !Application.isFocused || Time.timeScale<=0f || CombatSession.IsPreparing ||
+        if(mouse==null || !Application.isFocused || (Time.timeScale<=0f && !TimeController.IsPaused) || CombatSession.IsPreparing ||
             FittingWindow.OpenWindow!=null || !ShipOrderController.Available(health)) {EndGesture();return;}
-        if(Keyboard.current!=null && Keyboard.current.sKey.wasPressedThisFrame && !IsPointerOverUI())
+        if(Keyboard.current!=null && Keyboard.current.xKey.wasPressedThisFrame && !TimeController.TextInputFocused)
         {EndGesture();playerMovement.Stop();return;}
         if(mainCamera==null)mainCamera=Camera.main;
         if(mainCamera==null){EndGesture();return;}

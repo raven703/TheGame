@@ -142,7 +142,7 @@ public class CombatHUDManager : MonoBehaviour
             playerShieldBarFill.color = shieldColor;
         }
         if (playerShieldText != null)
-            playerShieldText.text = $"Щит: {playerHealth.Data.currentShieldHP:F0}/{playerHealth.Data.maxShieldHP:F0}";
+            playerShieldText.text = $"Щит П: {playerHealth.Data.Damage.Shields.Front:F0}/{playerHealth.Data.Damage.Shields.FrontCapacity:F0}  К: {playerHealth.Data.Damage.Shields.Rear:F0}/{playerHealth.Data.Damage.Shields.RearCapacity:F0}";
 
         // Модули
         UpdateModuleBox(playerWeaponBoxImage, playerHealth.Data.GetModule(ModuleType.Weapon));

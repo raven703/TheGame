@@ -79,7 +79,7 @@ public class TacticalCommandPanel : MonoBehaviour
         stopButton=CombatUIStyle.Button("StopOrder",transform,"Стоп",()=>PlayerOrders()?.Stop());
         CombatUIStyle.Box(stopButton.transform,206,28,58,48);
         var stopCaption=stopButton.GetComponentInChildren<TextMeshProUGUI>(true);stopCaption.gameObject.SetActive(true);stopCaption.fontSize=12;
-        var stopTip=CombatUIStyle.Ensure<TacticalTooltip>(stopButton.gameObject);stopTip.panel=this;stopTip.description="Стоп [S] — очистить маршрут и активно затормозить. При выбитом двигателе остаётся только пассивное замедление.";
+        var stopTip=CombatUIStyle.Ensure<TacticalTooltip>(stopButton.gameObject);stopTip.panel=this;stopTip.description="Стоп [X] — очистить маршрут и активно затормозить. При выбитом двигателе остаётся только пассивное замедление.";
         for(int i=0;i<4;i++)
         {
             float limit=(i+1)*.25f;
@@ -148,9 +148,9 @@ public class TacticalCommandPanel : MonoBehaviour
         engineTargetButton.onClick.AddListener(() => playerWeapon.SetTargetModule(ModuleType.Engine));
 
         // Abilities
-        afterburnerButton.onClick.AddListener(() => playerAbilities?.UseAfterburner());
-        shieldBoostButton.onClick.AddListener(() => playerAbilities?.UseShieldBoost());
-        empButton.onClick.AddListener(() => playerAbilities?.UseEMPulse());
+        afterburnerButton.onClick.AddListener(() => TimeController.Instance?.RequestAbility(Game.Core.AbilityCommandKind.Afterburner));
+        shieldBoostButton.onClick.AddListener(() => TimeController.Instance?.RequestAbility(Game.Core.AbilityCommandKind.ShieldBoost));
+        empButton.onClick.AddListener(() => TimeController.Instance?.RequestAbility(Game.Core.AbilityCommandKind.Emp));
     }
 
     private Button courseButton, targetFacingButton;
@@ -252,7 +252,14 @@ public class TacticalCommandPanel : MonoBehaviour
         string state=playerAbilities==null||reactor==null?"Нет корабля":CombatSession.IsPreparing?"Подготовка":
             cooldown>0f?$"{Mathf.CeilToInt(cooldown)} с":reactor.Overheated?"Перегрев":reactor.Energy<cost?"Нет энергии":
             btn==empButton&&(playerWeapon==null||playerWeapon.Target==null)?"Нет цели":"";
-        btn.interactable=state=="";
+        btn.interactable=TimeController.IsPaused || state=="";
+        if(TimeController.IsPaused && TimeController.Instance!=null)
+        {
+            var kind=btn==afterburnerButton?Game.Core.AbilityCommandKind.Afterburner:btn==shieldBoostButton?Game.Core.AbilityCommandKind.ShieldBoost:Game.Core.AbilityCommandKind.Emp;
+            int number=0;var queue=TimeController.Instance.Plan.Commands;
+            for(int i=0;i<queue.Count;i++)if(queue[i].Kind==kind)number=i+1;
+            if(number>0)state="#"+number+" "+(state==""?baseLabel:state);
+        }
         if(label!=null){label.text=state==""?baseLabel:state;label.fontSize=state.Length>9?8:10;}
         var icon=btn.transform.Find("CommandIcon");
         if(icon!=null)icon.GetComponent<Image>().color=state==""?Color.white:new Color(.42f,.48f,.54f);

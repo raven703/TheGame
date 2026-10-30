@@ -30,6 +30,7 @@ public class ShipHealth : MonoBehaviour
             Data.lockTime = shipDefinition.baseLockTime;
         }
         if (GetComponent<ShipReactor>() == null) gameObject.AddComponent<ShipReactor>();
+        if(Application.isPlaying && GetComponent<ShieldArcs>()==null)gameObject.AddComponent<ShieldArcs>();
         if (shipDefinition != null)
             GetComponent<ShipReactor>().Configure(shipDefinition.baseMaxEnergy, shipDefinition.baseEnergyRegeneration,
                 shipDefinition.baseCooling, shipDefinition.baseHeatResistance);
@@ -37,6 +38,7 @@ public class ShipHealth : MonoBehaviour
 
     private void Update()
     {
+        if(Data!=null && !CombatSession.IsPreparing)Data.Damage.TickShields(Time.deltaTime);
         if (Data == null || !Data.IsDestroyed)
             return;
 
@@ -47,13 +49,26 @@ public class ShipHealth : MonoBehaviour
     {
         if(Data==null)return;
         Data.Damage.WeaponDamage(amount,(Game.Core.WeaponKind)(int)kind,ToCore(targetedModule),UnityCombatRandom.Instance,
-            !CombatSession.IsPreparing,ReportDamage,ReportBypass);
+            !CombatSession.IsPreparing && Time.timeScale>0f,ReportDamage,ReportBypass);
+    }
+    public Game.Core.ShieldSide ShieldSideFromSource(Vector2 source)
+    {
+        var movement=GetComponent<ShipMovement>();
+        Vector2 forward=movement!=null?movement.GetForwardVector():(Vector2)transform.up;
+        Vector2 direction=source-(Vector2)transform.position;
+        return Game.Core.DirectionalShield.Side(new Game.Core.AimPoint(forward.x,forward.y),new Game.Core.AimPoint(direction.x,direction.y));
+    }
+    public void TakeWeaponDamageFrom(float amount,WeaponKind kind,Vector2 source,ModuleType? module=null)
+    {
+        if(Data==null)return;
+        Data.Damage.WeaponDamage(amount,(Game.Core.WeaponKind)(int)kind,ToCore(module),UnityCombatRandom.Instance,
+            !CombatSession.IsPreparing && Time.timeScale>0f,ReportDamage,ReportBypass,ShieldSideFromSource(source));
     }
     private static Game.Core.CombatModule? ToCore(ModuleType? module) => module.HasValue ? (Game.Core.CombatModule?)(int)module.Value : null;
     public void TakeDamage(float amount, ModuleType? targetedModule = null)
     {
         if(Data==null)return;
-        ReportDamage(Data.Damage.Damage(amount,ToCore(targetedModule),UnityCombatRandom.Instance,!CombatSession.IsPreparing));
+        ReportDamage(Data.Damage.Damage(amount,ToCore(targetedModule),UnityCombatRandom.Instance,!CombatSession.IsPreparing && Time.timeScale>0f));
     }
     internal void ReportDamage(Game.Core.DamageResult result)
     {

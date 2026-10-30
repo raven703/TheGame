@@ -31,8 +31,9 @@ namespace Game.Core
     {
         public float MaxHull { get; private set; }
         public float Hull { get; private set; }
-        public float MaxShield { get; private set; } = 50f;
-        public float Shield { get; private set; } = 50f;
+        public DirectionalShield Shields { get; }=new DirectionalShield();
+        public float MaxShield => Shields.Maximum;
+        public float Shield => Shields.Total;
         public bool Destroyed => Hull<=0f;
         public bool DestructionReported { get; private set; }
         private readonly float[] maxima={30f,40f,30f};
@@ -42,32 +43,29 @@ namespace Game.Core
         public IReadOnlyList<ModuleSnapshot> Modules => new ReadOnlyCollection<ModuleSnapshot>(new[]{Module(CombatModule.Weapon),Module(CombatModule.Shield),Module(CombatModule.Engine)});
         // Compatibility setters for old setup/fixture APIs; storage remains exclusively here.
         public void SetHull(float value) { Hull=value; }
-        public void SetShield(float value) { Shield=value; }
+        public void SetShield(float value) { Shields.SetTotal(value); }
         public void SetMaxHull(float value) { MaxHull=value; }
-        public void SetMaxShield(float value) { MaxShield=value; }
+        public void SetMaxShield(float value) { Shields.SetMaximum(value); }
         public void ConfigureMaximums(float hull,float shield)
         {
             Hull=StatMath.Clamp(Hull+hull-MaxHull,0f,hull);
-            Shield=StatMath.Clamp(Shield+shield-MaxShield,0f,shield);
-            MaxHull=hull;MaxShield=shield;
+            Shields.SetMaximum(shield,true);
+            MaxHull=hull;
         }
-        public void InitializeMaximums(float hull,float shield) { MaxHull=hull;Hull=hull;MaxShield=shield;Shield=shield; }
+        public void InitializeMaximums(float hull,float shield) { MaxHull=hull;Hull=hull;Shields.Initialize(shield); }
         public void HullDamage(float amount) { if(amount>0f)Hull=Math.Max(0f,Hull-amount); }
         public void ModuleDamage(CombatModule type,float amount) { if(amount>0f)current[(int)type]=Math.Max(0f,current[(int)type]-amount); }
         public void InitializeModule(CombatModule type,float maximum) { maxima[(int)type]=Math.Max(0f,maximum);current[(int)type]=maxima[(int)type]; }
         public void RepairModule(CombatModule type,float amount) { if(amount>0f)current[(int)type]=Math.Min(maxima[(int)type],current[(int)type]+amount); }
-        public void BoostShield(float amount,float hullCost) { Shield=Math.Min(MaxShield,Shield+amount);HullDamage(hullCost); }
+        public void BoostShield(float amount,float hullCost) { Shields.Restore(amount);HullDamage(hullCost); }
+        public void TickShields(float dt) => Shields.Tick(dt,!Destroyed&&!Module(CombatModule.Shield).Destroyed);
         public float Evasion(float speed,float basis,float multiplier) => Module(CombatModule.Engine).Destroyed?0f:basis+speed*multiplier;
-        public float Absorb(float damage)
-        {
-            if(Module(CombatModule.Shield).Destroyed||Shield<=0f)return damage;
-            if(Shield>=damage){Shield-=damage;return 0f;}
-            float excess=damage-Shield;Shield=0f;return excess;
-        }
-        public DamageResult Damage(float amount,CombatModule? selected,ICombatRandom random,bool allowed=true)
+        public float Absorb(float damage) => Shields.Absorb(damage,ShieldSide.Front,!Module(CombatModule.Shield).Destroyed);
+        public DamageResult Damage(float amount,CombatModule? selected,ICombatRandom random,bool allowed=true,ShieldSide side=ShieldSide.Front)
         {
             if(!allowed||Destroyed||amount<=0f)return default;
-            float remaining=Absorb(amount);
+            Shields.Hit(side);
+            float remaining=Shields.Absorb(amount,side,!Module(CombatModule.Shield).Destroyed);
             if(remaining<=0f)return new DamageResult(true,true,null,false,remaining,0f,Destroyed,amount);
             CombatModule? module=selected;
             if(!module.HasValue&&random.Value()<.4f)module=(CombatModule)random.Index(3);
@@ -89,12 +87,12 @@ namespace Game.Core
         }
         // Preserve the historical observable two-phase railgun notification order.
         public DamageResult WeaponDamage(float amount,WeaponKind kind,CombatModule? selected,ICombatRandom random,
-            bool allowed,Action<DamageResult> primaryNotification=null,Action<float> bypassNotification=null)
+            bool allowed,Action<DamageResult> primaryNotification=null,Action<float> bypassNotification=null,ShieldSide side=ShieldSide.Front)
         {
             if(!allowed||Destroyed||amount<=0f)return default;
-            if(kind==WeaponKind.Plasma&&!Module(CombatModule.Shield).Destroyed)Shield-=Math.Min(Shield,amount*.5f);
+            if(kind==WeaponKind.Plasma)Shields.Absorb(amount*.5f,side,!Module(CombatModule.Shield).Destroyed);
             float bypass=kind==WeaponKind.Railgun?amount*.4f:0f;
-            var result=Damage(amount-bypass,selected,random,allowed);
+            var result=Damage(amount-bypass,selected,random,allowed,side);
             if(result.Applied)primaryNotification?.Invoke(result);
             if(bypass>0f){HullDamage(bypass);bypassNotification?.Invoke(bypass);}
             return new DamageResult(result.Applied,result.ShieldOnly,result.Module,result.ModuleDestroyed,result.Remaining,result.HullDamage+bypass,Destroyed);

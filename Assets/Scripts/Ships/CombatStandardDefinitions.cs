@@ -28,7 +28,7 @@ public static class CombatStandardDefinitions
         foreach(var item in PlayerEquipment.Items(data))
         {
             var expected=CombatArchetypeCatalog.TryWeapon(item.id,out _)?SlotGroup.Top_Weapons:
-                item.id==CombatArchetypeCatalog.HeavyShield?SlotGroup.Center_Shields:SlotGroup.Bottom_Engines;
+                IsShield(item.id)?SlotGroup.Center_Shields:SlotGroup.Bottom_Engines;
             if(item.allowedGroup==expected)owned.Add(item.id);
         }
         foreach(string id in StarterIds)if(!owned.Contains(id))data.inventory.Add(Create(id,Guid.NewGuid().ToString("N")));
@@ -42,7 +42,13 @@ public static class CombatStandardDefinitions
         bool module=CombatArchetypeCatalog.TryModule(item.id,out var m);
         if(!weapon&&!module)return false;
         if(weapon && item.allowedGroup!=SlotGroup.Top_Weapons || module &&
-            item.allowedGroup!=(item.id==CombatArchetypeCatalog.HeavyShield?SlotGroup.Center_Shields:SlotGroup.Bottom_Engines))return false;
+            item.allowedGroup!=(IsShield(item.id)?SlotGroup.Center_Shields:SlotGroup.Bottom_Engines))return false;
+        // Version 2 changes only shield capacity/regeneration. Do not reapply old balance to v1 items.
+        if(item.balanceVersion>=1)
+        {
+            if(IsShield(item.id)){item.shieldBonus=m.Shield;item.shieldRegenPerSecond=m.ShieldRegenPerSecond;}
+            item.balanceVersion=CombatArchetypeCatalog.Version;return true;
+        }
         if(weapon)
         {
             item.explicitWeaponStats=true;item.weaponKind=(global::WeaponKind)(int)w.Kind;
@@ -55,7 +61,9 @@ public static class CombatStandardDefinitions
         else
         {
             // Only the balance-owned fields of the five listed standards are refreshed.
-            item.shieldBonus=m.Shield;item.massBonus=m.Mass;item.speedBonus=m.Speed;item.accelBonus=m.Thrust;
+            item.shieldBonus=m.Shield;item.shieldRegenPerSecond=m.ShieldRegenPerSecond;
+            if(item.id==CombatArchetypeCatalog.LightShield){item.balanceVersion=CombatArchetypeCatalog.Version;return true;}
+            item.massBonus=m.Mass;item.speedBonus=m.Speed;item.accelBonus=m.Thrust;
             item.energyBonus=m.Energy;item.regenerationBonus=m.Regeneration;item.coolingBonus=m.Cooling;
             item.speedPercent=m.SpeedPercent;item.thrustPercent=m.ThrustPercent;
             item.reversePercent=m.ReversePercent;item.lateralPercent=m.LateralPercent;
@@ -68,7 +76,7 @@ public static class CombatStandardDefinitions
     {
         bool weapon=CombatArchetypeCatalog.TryWeapon(id,out _);
         if(!weapon&&!CombatArchetypeCatalog.TryModule(id,out _))throw new ArgumentException("Unknown standard definition",nameof(id));
-        var group=weapon?SlotGroup.Top_Weapons:id==CombatArchetypeCatalog.HeavyShield?SlotGroup.Center_Shields:SlotGroup.Bottom_Engines;
+        var group=weapon?SlotGroup.Top_Weapons:IsShield(id)?SlotGroup.Center_Shields:SlotGroup.Bottom_Engines;
         var item=new FittingItem(id,Name(id),group,weapon?Color.red:Color.cyan,Description(id)){instanceId=instanceId};
         Upgrade(item);return item;
     }
@@ -82,6 +90,7 @@ public static class CombatStandardDefinitions
             case CombatArchetypeCatalog.LaserTurret:return "Лазерная турель";
             case CombatArchetypeCatalog.LightweightEngine:return "Облегчённый двигатель";
             case CombatArchetypeCatalog.ManeuverBlock:return "Маневровый блок";
+            case CombatArchetypeCatalog.LightShield:return "Лёгкий щит";
             case CombatArchetypeCatalog.HeavyShield:return "Тяжёлый щит";
             case CombatArchetypeCatalog.Radiator:return "Радиатор";
             case CombatArchetypeCatalog.Capacitor:return "Конденсатор";
@@ -94,8 +103,9 @@ public static class CombatStandardDefinitions
         CombatArchetypeCatalog.TryModule(id,out var m);
         if(id==CombatArchetypeCatalog.LightweightEngine)return $"Скорость +{m.SpeedPercent:P0}; маршевая тяга +{m.ThrustPercent:P0}; нагрев форсажа +{m.AfterburnerHeatPercent:P0}.";
         if(id==CombatArchetypeCatalog.ManeuverBlock)return $"Обратная/боковая тяга +{m.ReversePercent:P0}/+{m.LateralPercent:P0}; масса +{m.Mass:0.0}.";
-        if(id==CombatArchetypeCatalog.HeavyShield)return $"Щит +{m.Shield}; масса +{m.Mass:0.0}.";
+        if(IsShield(id))return $"Щит +{m.Shield}; реген +{m.ShieldRegenPerSecond}/с; масса +{m.Mass:0.0}.";
         if(id==CombatArchetypeCatalog.Radiator)return $"Охлаждение +{m.Cooling}/с; масса +{m.Mass:0.0}.";
         return $"Энергия +{m.Energy}; масса +{m.Mass:0.0}.";
     }
+    private static bool IsShield(string id) => id==CombatArchetypeCatalog.LightShield || id==CombatArchetypeCatalog.HeavyShield;
 }
