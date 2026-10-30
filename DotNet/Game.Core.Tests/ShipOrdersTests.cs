@@ -5,6 +5,22 @@ using NUnit.Framework;
 
 public class ShipOrdersTests
 {
+    [Test] public void ExplicitFacingTargetPreservesRouteSpeedAndNavigationRevision()
+    {
+        var order=new ShipOrders();order.MoveTo(P(8,4));order.MoveTo(P(12,6),true);order.SetSpeedLimit(.5f);
+        int revision=order.NavigationRevision;
+        Assert.True(order.SetOrientationTarget("pending-a"));
+        Assert.AreEqual(OrderMode.MoveToPoint,order.Mode);Assert.IsNull(order.TargetId);
+        Assert.AreEqual(2,order.Waypoints.Count);Assert.AreEqual(8,order.Waypoints[0].X);
+        Assert.AreEqual(.5f,order.SpeedLimit);Assert.AreEqual(revision,order.NavigationRevision);
+        order.ValidateOrientationTarget(true);Assert.AreEqual("pending-a",order.OrientationTargetId);
+        order.SetOrientationTarget("b");Assert.AreEqual("b",order.OrientationTargetId);
+        order.ValidateOrientationTarget(false);Assert.AreEqual(OrderOrientation.Course,order.Orientation);
+        Assert.AreEqual(2,order.Waypoints.Count);Assert.AreEqual(revision,order.NavigationRevision);
+        order.SetOrientationTarget("c");order.MoveTo(P(16));Assert.IsNull(order.OrientationTargetId);
+        Assert.AreEqual(OrderOrientation.Course,order.Orientation);
+        order.SetOrientationTarget("d");order.Stop(P());Assert.IsNull(order.OrientationTargetId);Assert.True(order.IsBraking);
+    }
     private static AimPoint P(float x=0,float y=0) => new AimPoint(x,y);
     private static OrderObservation O(float x=0,float y=0,float speed=0,bool available=true) =>
         new OrderObservation {Position=P(x,y),Velocity=P(speed),TargetAvailable=available,TargetForward=P(0,1),WeaponRange=10};

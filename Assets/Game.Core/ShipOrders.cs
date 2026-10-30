@@ -23,6 +23,16 @@ namespace Game.Core
         private AimPoint hold;
         public OrderMode Mode { get; private set; }
         public string TargetId { get; private set; }
+        public string OrientationTargetId { get; private set; }
+        public bool SetOrientationTarget(string id)
+        {
+            if(string.IsNullOrEmpty(id))return false;
+            OrientationTargetId=id;orientationOverride=OrderOrientation.OrderTarget;return true;
+        }
+        public void ValidateOrientationTarget(bool available)
+        {
+            if(OrientationTargetId!=null&&!available){OrientationTargetId=null;orientationOverride=OrderOrientation.Course;}
+        }
         public float SpeedLimit { get; private set; } = 1f;
         public float PreferredDistance { get; set; }
         public AimPoint Destination { get; private set; }
@@ -36,13 +46,13 @@ namespace Game.Core
         public bool SetOrientation(OrderOrientation value, bool targetAvailable)
         {
             if (value == OrderOrientation.OrderTarget && !targetAvailable) return false;
-            orientationOverride = value; return true;
+            OrientationTargetId=null;orientationOverride = value; return true;
         }
         public void SetSpeedLimit(float value) { SpeedLimit = MountGeometry.Clamp(value, .25f, 1f); }
         public void MoveTo(AimPoint accessiblePoint, bool append = false)
         {
             if (!append || Mode != OrderMode.MoveToPoint) points.Clear();
-            orientationOverride = null; flankAttacking = false; TargetId = null; Error = null;
+            OrientationTargetId=null;orientationOverride = null; flankAttacking = false; TargetId = null; Error = null;
             Mode = OrderMode.MoveToPoint; IsBraking = false; points.Add(accessiblePoint);
             Destination = points[0]; initialized = true; NavigationRevision++;
         }
@@ -62,13 +72,13 @@ namespace Game.Core
         public void Tactical(OrderMode mode, string targetId)
         {
             if (string.IsNullOrEmpty(targetId)) return;
-            if (Mode != mode || TargetId != targetId) { orientationOverride = null; flankAttacking = false; }
+            if (Mode != mode || TargetId != targetId) { if(OrientationTargetId==null)orientationOverride = null; flankAttacking = false; }
             points.Clear(); TargetId = targetId; Mode = mode; Error = null;
             initialized = true; IsBraking = false; NavigationRevision++;
         }
         public void Stop(AimPoint position)
         {
-            orientationOverride = null; flankAttacking = false; points.Clear(); TargetId = null;
+            OrientationTargetId=null;orientationOverride = null; flankAttacking = false; points.Clear(); TargetId = null;
             Mode = OrderMode.HoldPosition; hold = position; Destination = hold; initialized = true;
             IsBraking = true; Error = null; NavigationRevision++;
         }

@@ -46,11 +46,24 @@ public class ShipOrderController : MonoBehaviour
     {
         if(!Available(target))return null;
         string id=identities.GetValue(target,_=>new TargetIdentity()).Id;
-        targets.Clear();targets[id]=new WeakReference<ShipHealth>(target);return id;
+        targets[id]=new WeakReference<ShipHealth>(target);return id;
     }
     public static string RuntimeTargetId(ShipHealth target)=>Available(target)?identities.GetValue(target,_=>new TargetIdentity()).Id:null;
     public bool SetOrientation(HullOrientation value) => model.SetOrientation((OrderOrientation)value,Available(OrderTarget));
-    public Vector2 FacingDirection(Vector2 position, Vector2 fallback) => V(model.Facing(Observe(position,Vector2.zero),P(fallback)));
+    public string OrientationTargetId=>model.OrientationTargetId;
+    private ShipHealth ResolveTarget(string id)
+    {
+        ShipHealth target;return id!=null&&targets.TryGetValue(id,out var reference)&&reference.TryGetTarget(out target)&&target!=null?target:null;
+    }
+    public bool FaceSelectedTarget(ShipHealth target)=>Available(target)&&model.SetOrientationTarget(Register(target));
+    public void ValidateFacingTarget()=>model.ValidateOrientationTarget(Available(ResolveTarget(model.OrientationTargetId)));
+    public Vector2 FacingDirection(Vector2 position, Vector2 fallback)
+    {
+        ValidateFacingTarget();
+        var target=ResolveTarget(model.OrientationTargetId);
+        if(model.Orientation==OrderOrientation.OrderTarget&&Available(target))return (Vector2)target.transform.position-position;
+        return V(model.Facing(Observe(position,Vector2.zero),P(fallback)));
+    }
     public void SetSpeedLimit(float value) => model.SetSpeedLimit(value);
     public void MoveTo(Vector2 point, bool append = false)
     {

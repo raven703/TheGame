@@ -41,6 +41,8 @@ public class TacticalShieldPanel : MonoBehaviour
         CombatUIStyle.Box(forward.transform,8,28,86,28);CombatUIStyle.Box(even.transform,98,28,70,28);CombatUIStyle.Box(rear.transform,172,28,92,28);
         foreach(var button in new[]{forward,even,rear})
         {
+            var tip=CombatUIStyle.Ensure<TacticalTooltip>(button.gameObject);
+            tip.description=button==forward?"Перенести распределение щита вперёд [W]":button==rear?"Перенести распределение щита назад [S]":"Распределить щит поровну";
             var label=button.GetComponentInChildren<TextMeshProUGUI>();label.fontSize=12;label.textWrappingMode=TextWrappingModes.NoWrap;
         }
     }
@@ -53,6 +55,8 @@ public class TacticalShieldPanel : MonoBehaviour
     private static void Shift(int step) => Shield()?.StepDesired(step);
     private void LateUpdate()
     {
+        var commandPanel=FindFirstObjectByType<TacticalCommandPanel>();
+        foreach(var tip in GetComponentsInChildren<TacticalTooltip>(true))tip.panel=commandPanel;
         if(!TimeController.TextInputFocused && Keyboard.current!=null && FittingWindow.OpenWindow==null)
         {
             if(Keyboard.current.wKey.wasPressedThisFrame)Shift(1);

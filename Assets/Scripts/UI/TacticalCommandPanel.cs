@@ -50,15 +50,32 @@ public class TacticalCommandPanel : MonoBehaviour
         tooltipPopup.SetActive(visible);
         if(!visible)return;
         tooltip.text=text;
-        var root=(RectTransform)transform;
-        float y=source!=null?root.InverseTransformPoint(source.position).y:0f;
+        var canvas=GetComponentInParent<Canvas>().rootCanvas;
+        var root=(RectTransform)canvas.transform;
         var popup=(RectTransform)tooltipPopup.transform;
-        popup.anchorMin=popup.anchorMax=new Vector2(0,.5f);
-        popup.pivot=new Vector2(1,.5f);
-        popup.sizeDelta=new Vector2(260,82);
-        popup.anchoredPosition=new Vector2(-10,Mathf.Clamp(y,-root.rect.height*.5f+41,root.rect.height*.5f-41));
+        popup.SetParent(root,false);
+        var overlay=CombatUIStyle.Ensure<Canvas>(tooltipPopup);overlay.overrideSorting=true;overlay.sortingOrder=200;
+        var group=CombatUIStyle.Ensure<CanvasGroup>(tooltipPopup);group.blocksRaycasts=false;group.interactable=false;
+        foreach(var graphic in tooltipPopup.GetComponentsInChildren<Graphic>(true))graphic.raycastTarget=false;
+        const float gap=12;
+        float width=Mathf.Min(340,root.rect.width-gap*2);
+        tooltip.fontSize=14;tooltip.enableAutoSizing=false;
+        float height=Mathf.Min(root.rect.height-gap*2,tooltip.GetPreferredValues(text,width-20,0).y+20);
+        var corners=new Vector3[4];((RectTransform)transform).GetWorldCorners(corners);
+        Vector2 low=root.InverseTransformPoint(corners[0]),high=root.InverseTransformPoint(corners[2]);
+        // Include shield distribution in the control envelope, independent of resolution.
+        RectTransform shields=null;
+        foreach(var rect in root.GetComponentsInChildren<RectTransform>(true))if(rect.name=="ShieldDistribution"){shields=rect;break;}
+        if(shields!=null){shields.GetWorldCorners(corners);low=Vector2.Min(low,root.InverseTransformPoint(corners[0]));high=Vector2.Max(high,root.InverseTransformPoint(corners[2]));}
+        float x=high.x-width*.5f,y=high.y+gap+height*.5f;
+        if(y+height*.5f>root.rect.yMax-gap){x=low.x-gap-width*.5f;y=high.y-height*.5f;}
+        x=Mathf.Clamp(x,root.rect.xMin+gap+width*.5f,root.rect.xMax-gap-width*.5f);
+        y=Mathf.Clamp(y,root.rect.yMin+gap+height*.5f,root.rect.yMax-gap-height*.5f);
+        popup.anchorMin=popup.anchorMax=new Vector2(.5f,.5f);popup.pivot=new Vector2(.5f,.5f);
+        popup.sizeDelta=new Vector2(width,height);popup.position=root.TransformPoint(new Vector3(x,y,0));popup.SetAsLastSibling();
     }
     private void OnDisable() { ShowTooltip(null); }
+    private void OnDestroy(){if(tooltipPopup!=null)Destroy(tooltipPopup);}
     public void ConfigureLayout()
     {
         CombatUIStyle.Rect(transform,Vector2.one,Vector2.one,new Vector2(-288,-714),new Vector2(-16,-394));
@@ -167,12 +184,15 @@ public class TacticalCommandPanel : MonoBehaviour
             CombatUIStyle.Box(panel.transform, 10 + i * 128, 290, 124, 25);
             var button = CombatUIStyle.Ensure<Button>(panel.gameObject);
             button.targetGraphic = panel;
-            var label = CombatUIStyle.Text("Label", panel.transform, i == 0 ? "По курсу" : "На цель приказа", 11);
+            var label = CombatUIStyle.Text("Label", panel.transform, i == 0 ? "По курсу" : "На цель", 11);
             label.gameObject.SetActive(true);
             label.raycastTarget = false;
             label.alignment = TextAlignmentOptions.Center;
             CombatUIStyle.Rect(label.transform, Vector2.zero, Vector2.one, Vector2.zero, Vector2.zero);
-            button.onClick.AddListener(() => PlayerOrders()?.SetOrientation(index == 0 ? HullOrientation.Course : HullOrientation.OrderTarget));
+            button.onClick.AddListener(() => {
+                if(index==0)PlayerOrders()?.SetOrientation(HullOrientation.Course);
+                else PlayerOrders()?.FaceSelectedTarget(playerWeapon!=null?(playerWeapon.PendingTarget!=null?playerWeapon.PendingTarget:playerWeapon.Target):null);
+            });
             var tip = CombatUIStyle.Ensure<TacticalTooltip>(panel.gameObject);
             tip.panel = this;
             tip.description = i == 0 ? "Нос по траектории. Торможение имеет приоритет." : "Нос на цель текущего приказа, не выбранную оружейную цель. Боковая сила ограничена.";
@@ -191,9 +211,10 @@ public class TacticalCommandPanel : MonoBehaviour
         if(orders!=null)
         {
             SetButtonColor(stopButton,orders.Mode==ShipOrderMode.HoldPosition?activeColor:normalColor);
-            targetFacingButton.interactable = ShipOrderController.Available(orders.OrderTarget);
+            orders.ValidateFacingTarget();
+            targetFacingButton.interactable = ShipOrderController.Available(playerWeapon.PendingTarget!=null?playerWeapon.PendingTarget:playerWeapon.Target);
             var facingTip=CombatUIStyle.Ensure<TacticalTooltip>(targetFacingButton.gameObject);facingTip.panel=this;
-            facingTip.description=targetFacingButton.interactable?"Ориентация на цель приказа.":"Нужна действующая цель приказа.";
+            facingTip.description=targetFacingButton.interactable?"Держать нос на выбранном противнике, сохраняя маршрут":"Выберите противника ЛКМ";
             if(engageButton!=null)
             {
                 engageButton.interactable=ShipOrderController.Available(playerWeapon.PendingTarget!=null?playerWeapon.PendingTarget:playerWeapon.Target);
